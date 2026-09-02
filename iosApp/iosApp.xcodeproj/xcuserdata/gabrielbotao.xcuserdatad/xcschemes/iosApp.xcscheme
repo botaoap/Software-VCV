@@ -7,8 +7,8 @@
             buildForRunning = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "1D4E1541687E836BEE72926A"
-               BuildableName = "VCV.app"
+               BlueprintIdentifier = "9C0A02757632AA50EC71BB54"
+               BuildableName = "SoftwareVCV.app"
                BlueprintName = "iosApp"
                ReferencedContainer = "container:iosApp.xcodeproj">
             </BuildableReference>
@@ -22,8 +22,8 @@
       <BuildableProductRunnable>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "1D4E1541687E836BEE72926A"
-            BuildableName = "VCV.app"
+            BlueprintIdentifier = "9C0A02757632AA50EC71BB54"
+            BuildableName = "SoftwareVCV.app"
             BlueprintName = "iosApp"
             ReferencedContainer = "container:iosApp.xcodeproj">
          </BuildableReference>
