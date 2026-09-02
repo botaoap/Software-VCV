@@ -88,7 +88,9 @@
           "org.jetbrains.compose.components:components-resources",
           "org.jetbrains.compose.ui:ui-tooling-preview",
           "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose",
-          "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose"
+          "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose",
+          "io.insert-koin:koin-core",
+          "org.jetbrains.kotlinx:kotlinx-coroutines-core"
         ],
         "sourceSetCInteropMetadataDirectory": "appleMain-cinterop",
         "binaryLayout": "klib",
@@ -106,7 +108,9 @@
           "org.jetbrains.compose.components:components-resources",
           "org.jetbrains.compose.ui:ui-tooling-preview",
           "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose",
-          "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose"
+          "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose",
+          "io.insert-koin:koin-core",
+          "org.jetbrains.kotlinx:kotlinx-coroutines-core"
         ],
         "binaryLayout": "klib"
       },
@@ -123,7 +127,9 @@
           "org.jetbrains.compose.components:components-resources",
           "org.jetbrains.compose.ui:ui-tooling-preview",
           "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose",
-          "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose"
+          "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose",
+          "io.insert-koin:koin-core",
+          "org.jetbrains.kotlinx:kotlinx-coroutines-core"
         ],
         "sourceSetCInteropMetadataDirectory": "iosMain-cinterop",
         "binaryLayout": "klib",
@@ -142,7 +148,9 @@
           "org.jetbrains.compose.components:components-resources",
           "org.jetbrains.compose.ui:ui-tooling-preview",
           "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose",
-          "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose"
+          "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose",
+          "io.insert-koin:koin-core",
+          "org.jetbrains.kotlinx:kotlinx-coroutines-core"
         ],
         "sourceSetCInteropMetadataDirectory": "nativeMain-cinterop",
         "binaryLayout": "klib",
@@ -162,7 +170,9 @@
           "org.jetbrains.compose.components:components-resources",
           "org.jetbrains.compose.ui:ui-tooling-preview",
           "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose",
-          "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose"
+          "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose",
+          "io.insert-koin:koin-core",
+          "org.jetbrains.kotlinx:kotlinx-coroutines-core"
         ],
         "binaryLayout": "klib"
       }
