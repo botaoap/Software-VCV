@@ -1,20 +1,21 @@
 package com.gabrielbotao.softwarevcv.presentation.navigation
 
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.snapshots.SnapshotStateList
 
 /**
- * The shell-owned navigator: a back stack exposed as [current] for Compose to observe. Screens receive
- * typed navigation lambdas, never this object's internals or a platform nav controller. Created once
- * (in `App`, or in the web entrypoint so the history bridge shares the instance). See
- * [[MVVM-Multiplatform]] §Navigation.
+ * The shell-owned navigator. Wraps the Navigation 3 back stack (a [SnapshotStateList] of [AppRoute]
+ * keys) that `NavDisplay` renders and Compose observes. Created once — in `App` by default, or in the
+ * web entrypoint so the browser-history bridge mutates the same instance. Screens receive typed nav
+ * lambdas, never this object or a nav controller. See [[MVVM-Multiplatform]] §Navigation.
  */
 class Navigator(initial: AppRoute = AppRoute.Home) {
 
-    private val backStack = mutableListOf(initial)
-    private val _current = MutableStateFlow(initial)
-    val current: StateFlow<AppRoute> = _current.asStateFlow()
+    /** The live back stack; hand this to `NavDisplay(backStack = …)`. */
+    val backStack: SnapshotStateList<AppRoute> = mutableStateListOf(initial)
+
+    /** Current (top) route. */
+    val current: AppRoute get() = backStack.lastOrNull() ?: AppRoute.Home
 
     /**
      * Fired when navigation changes the route **from within the app** (navigate/replace/pop) — the web
@@ -24,13 +25,11 @@ class Navigator(initial: AppRoute = AppRoute.Home) {
 
     fun navigate(route: AppRoute) {
         backStack.add(route)
-        _current.value = route
         onNavigated?.invoke(route)
     }
 
     fun replace(route: AppRoute) {
         if (backStack.isEmpty()) backStack.add(route) else backStack[backStack.lastIndex] = route
-        _current.value = route
         onNavigated?.invoke(route)
     }
 
@@ -39,7 +38,6 @@ class Navigator(initial: AppRoute = AppRoute.Home) {
         if (backStack.size <= 1) return false
         backStack.removeAt(backStack.lastIndex)
         val top = backStack.last()
-        _current.value = top
         onNavigated?.invoke(top)
         return true
     }
@@ -47,6 +45,5 @@ class Navigator(initial: AppRoute = AppRoute.Home) {
     /** Update the current route from a browser back/forward event — without re-notifying the bridge. */
     fun syncFromHistory(route: AppRoute) {
         if (backStack.isEmpty()) backStack.add(route) else backStack[backStack.lastIndex] = route
-        _current.value = route
     }
 }

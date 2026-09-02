@@ -70,6 +70,8 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             // VCV-3 components: Coil 3 for images (network ImageLoader wired in VCV-5).
             implementation(libs.coil.compose)
+            // VCV-4 navigation: Jetpack Navigation 3 (JetBrains multiplatform build).
+            implementation(libs.navigation3.ui)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

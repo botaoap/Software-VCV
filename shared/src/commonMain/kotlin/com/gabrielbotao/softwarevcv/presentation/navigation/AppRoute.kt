@@ -1,10 +1,13 @@
 package com.gabrielbotao.softwarevcv.presentation.navigation
 
+import androidx.navigation3.runtime.NavKey
+
 /**
- * The app's type-safe route hierarchy. Each route maps 1:1 to a URL via [RouteCodec], so pages are
- * shareable, deep-linkable, and back/forward works on web. See [[MVVM-Multiplatform]] §Navigation.
+ * The app's type-safe route hierarchy — Navigation 3 back-stack keys ([NavKey]). Each route maps 1:1 to
+ * a URL via [RouteCodec], so pages are shareable, deep-linkable, and browser back/forward works on web.
+ * See [[MVVM-Multiplatform]] §Navigation.
  */
-sealed interface AppRoute {
+sealed interface AppRoute : NavKey {
     data object Home : AppRoute
     data object Collections : AppRoute
     data class Collection(val slug: String) : AppRoute

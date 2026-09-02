@@ -9,51 +9,65 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.ui.NavDisplay
 import com.gabrielbotao.softwarevcv.core.ui.components.SectionHeader
 import com.gabrielbotao.softwarevcv.core.ui.components.VcvButton
 import com.gabrielbotao.softwarevcv.core.ui.components.VcvOutlinedButton
 import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
 
 /**
- * Renders the screen for the navigator's current route. VCV-4 uses placeholder screens (title + a few
- * navigation actions) so the shell + routing + web-history are demonstrable end-to-end; the real feature
- * screens replace these per page card (VCV-6…VCV-10). See [[VCV Screens-and-UX]].
+ * The Navigation 3 host: renders the entry for the navigator's back-stack top. VCV-4 uses placeholder
+ * screens (title + a few navigation actions) so the shell + routing + web-history are demonstrable
+ * end-to-end; the real feature screens replace these per page card (VCV-6…VCV-10). See [[VCV Screens-and-UX]].
  */
 @Composable
 fun AppNavHost(navigator: Navigator, modifier: Modifier = Modifier) {
-    val route by navigator.current.collectAsState()
-    when (val current = route) {
-        AppRoute.Home -> PlaceholderScreen(
-            "Início", "VCV — Veste Com Você", navigator,
-            listOf(AppRoute.Catalog, AppRoute.Collections, AppRoute.Atelier, AppRoute.Contact), modifier,
-        )
-        AppRoute.Collections -> PlaceholderScreen(
-            "Coleções", "Nossas coleções", navigator,
-            listOf(AppRoute.Collection("verao"), AppRoute.Catalog), modifier,
-        )
-        is AppRoute.Collection -> PlaceholderScreen(
-            "Coleção: ${current.slug}", "Peças desta coleção", navigator,
-            listOf(AppRoute.Product("zebra"), AppRoute.Catalog), modifier,
-        )
-        AppRoute.Catalog -> PlaceholderScreen(
-            "Catálogo", "Todas as peças", navigator,
-            listOf(AppRoute.Product("zebra"), AppRoute.Product("linho")), modifier,
-        )
-        is AppRoute.Product -> PlaceholderScreen(
-            "Produto: ${current.id}", "Detalhe do produto", navigator,
-            listOf(AppRoute.Catalog, AppRoute.Home), modifier,
-        )
-        AppRoute.Atelier -> PlaceholderScreen(
-            "Atelier", "Gaspar · Vale do Itajaí", navigator, listOf(AppRoute.Home), modifier,
-        )
-        AppRoute.Contact -> PlaceholderScreen(
-            "Contato", "Fale com a VCV", navigator, listOf(AppRoute.Home), modifier,
-        )
-    }
+    NavDisplay(
+        backStack = navigator.backStack,
+        modifier = modifier,
+        onBack = { navigator.pop() },
+        entryProvider = entryProvider {
+            entry<AppRoute.Home> {
+                PlaceholderScreen(
+                    "Início", "VCV — Veste Com Você", navigator,
+                    listOf(AppRoute.Catalog, AppRoute.Collections, AppRoute.Atelier, AppRoute.Contact),
+                )
+            }
+            entry<AppRoute.Collections> {
+                PlaceholderScreen(
+                    "Coleções", "Nossas coleções", navigator,
+                    listOf(AppRoute.Collection("verao"), AppRoute.Catalog),
+                )
+            }
+            entry<AppRoute.Collection> { key ->
+                PlaceholderScreen(
+                    "Coleção: ${key.slug}", "Peças desta coleção", navigator,
+                    listOf(AppRoute.Product("zebra"), AppRoute.Catalog),
+                )
+            }
+            entry<AppRoute.Catalog> {
+                PlaceholderScreen(
+                    "Catálogo", "Todas as peças", navigator,
+                    listOf(AppRoute.Product("zebra"), AppRoute.Product("linho")),
+                )
+            }
+            entry<AppRoute.Product> { key ->
+                PlaceholderScreen(
+                    "Produto: ${key.id}", "Detalhe do produto", navigator,
+                    listOf(AppRoute.Catalog, AppRoute.Home),
+                )
+            }
+            entry<AppRoute.Atelier> {
+                PlaceholderScreen("Atelier", "Gaspar · Vale do Itajaí", navigator, listOf(AppRoute.Home))
+            }
+            entry<AppRoute.Contact> {
+                PlaceholderScreen("Contato", "Fale com a VCV", navigator, listOf(AppRoute.Home))
+            }
+        },
+    )
 }
 
 @Composable
