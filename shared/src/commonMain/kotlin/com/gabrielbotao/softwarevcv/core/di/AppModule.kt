@@ -4,7 +4,6 @@ import com.gabrielbotao.softwarevcv.core.logger.AppLogger
 import com.gabrielbotao.softwarevcv.core.logger.PrintAppLogger
 import com.gabrielbotao.softwarevcv.core.platform.Platform
 import com.gabrielbotao.softwarevcv.core.platform.getPlatform
-import org.koin.core.Koin
 import org.koin.core.context.startKoin
 import org.koin.dsl.KoinAppDeclaration
 import org.koin.dsl.module
@@ -29,15 +28,16 @@ val domainModule = module { }
 val presentationModule = module { }
 
 /**
- * Boots the Koin graph once and returns it. Idempotent — safe to call from any platform entrypoint
- * (and repeatedly, e.g. iOS `MainViewController`): a second call returns the already-started [Koin].
- * Pass [appDeclaration] for platform extras (e.g. Android context). Uses [KoinPlatformTools] rather
- * than `GlobalContext` so it resolves on every target, Kotlin/Native included.
+ * Boots the Koin graph once. Idempotent — safe to call from any platform entrypoint (and repeatedly,
+ * e.g. iOS `MainViewController`): a second call is a no-op. Pass [appDeclaration] for platform extras
+ * (e.g. Android context). Uses [KoinPlatformTools] rather than `GlobalContext` so it resolves on every
+ * target, Kotlin/Native included. Returns `Unit` so callers (the app entrypoints) don't need `koin-core`
+ * on their classpath; resolve the graph via `KoinPlatformTools.defaultContext().get()` / `koinInject()`.
  */
-fun initKoin(appDeclaration: KoinAppDeclaration = {}): Koin {
-    KoinPlatformTools.defaultContext().getOrNull()?.let { return it }
-    return startKoin {
+fun initKoin(appDeclaration: KoinAppDeclaration = {}) {
+    if (KoinPlatformTools.defaultContext().getOrNull() != null) return
+    startKoin {
         appDeclaration()
         modules(coreModule, dataModule, domainModule, presentationModule)
-    }.koin
+    }
 }
