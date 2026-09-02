@@ -68,6 +68,8 @@ kotlin {
             // VCV-1 foundation: DI + coroutines (cross-cutting core).
             implementation(libs.koin.core)
             implementation(libs.kotlinx.coroutines.core)
+            // VCV-3 components: Coil 3 for images (network ImageLoader wired in VCV-5).
+            implementation(libs.coil.compose)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
