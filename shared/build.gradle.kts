@@ -65,9 +65,15 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            // VCV-1 foundation: DI + coroutines (cross-cutting core).
+            implementation(libs.koin.core)
+            implementation(libs.kotlinx.coroutines.core)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            // VCV-1 foundation: multiplatform test stack.
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.turbine)
         }
         jsMain.dependencies {
             implementation(libs.wrappers.browser)

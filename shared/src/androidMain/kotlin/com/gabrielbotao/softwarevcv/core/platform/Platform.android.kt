@@ -1,4 +1,4 @@
-package com.gabrielbotao.softwarevcv
+package com.gabrielbotao.softwarevcv.core.platform
 
 import android.os.Build
 
