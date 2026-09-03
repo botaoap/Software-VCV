@@ -1,0 +1,174 @@
+package com.gabrielbotao.softwarevcv.presentation.features.product.view
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.UriHandler
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.gabrielbotao.softwarevcv.core.ui.components.PriceText
+import com.gabrielbotao.softwarevcv.core.ui.components.RemoteImage
+import com.gabrielbotao.softwarevcv.core.ui.components.SectionHeader
+import com.gabrielbotao.softwarevcv.core.ui.components.SizePills
+import com.gabrielbotao.softwarevcv.core.ui.components.VcvButton
+import com.gabrielbotao.softwarevcv.core.ui.responsive.WindowWidthClass
+import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
+import com.gabrielbotao.softwarevcv.domain.model.FabricSpec
+import com.gabrielbotao.softwarevcv.domain.model.ImageRef
+import com.gabrielbotao.softwarevcv.domain.model.Product
+import com.gabrielbotao.softwarevcv.presentation.features.common.LoadingState
+import com.gabrielbotao.softwarevcv.presentation.features.product.viewmodel.ProductViewModel
+import org.koin.compose.viewmodel.koinViewModel
+
+private val ThumbWidth = 64.dp
+private val SpecLabelWidth = 96.dp
+
+/**
+ * Product detail (`/produto/{id}`) — gallery, name, price, ficha técnica, sizes, and an external buy CTA
+ * (or "Em breve" when there's no link). Not-found → a friendly 404. See [[VCV Screens-and-UX]] §4.
+ */
+@Composable
+fun ProductScreen(
+    id: String,
+    onCatalog: () -> Unit,
+    viewModel: ProductViewModel = koinViewModel(),
+) {
+    LaunchedEffect(id) { viewModel.load(id) }
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val product = state.product
+    when {
+        state.isLoading -> LoadingState()
+        product != null -> ProductDetail(product)
+        else -> NotFound(onCatalog)
+    }
+}
+
+@Composable
+private fun ProductDetail(product: Product) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        if (WindowWidthClass.of(maxWidth) == WindowWidthClass.COMPACT) {
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                Gallery(product.images, Modifier.fillMaxWidth())
+                Info(product, Modifier.padding(Vcv.spacing.lg))
+            }
+        } else {
+            Row(Modifier.fillMaxSize()) {
+                Gallery(product.images, Modifier.weight(1f))
+                Info(
+                    product,
+                    Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(Vcv.spacing.lg),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun Gallery(images: List<ImageRef>, modifier: Modifier = Modifier) {
+    var selected by remember(images) { mutableStateOf(0) }
+    Column(modifier) {
+        val cover = images.getOrNull(selected)
+        RemoteImage(
+            url = cover?.url,
+            contentDescription = cover?.alt,
+            aspectRatio = cover?.aspectRatio ?: 3f / 4f,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        if (images.size > 1) {
+            LazyRow(
+                contentPadding = PaddingValues(Vcv.spacing.md),
+                horizontalArrangement = Arrangement.spacedBy(Vcv.spacing.sm),
+            ) {
+                itemsIndexed(images) { index, image ->
+                    RemoteImage(
+                        url = image.url,
+                        contentDescription = image.alt,
+                        aspectRatio = 1f,
+                        modifier = Modifier.width(ThumbWidth).clickable { selected = index },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun Info(product: Product, modifier: Modifier = Modifier) {
+    val uriHandler = LocalUriHandler.current
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(Vcv.spacing.md)) {
+        Text(product.name, style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.onBackground)
+        PriceText(product.price.amountCents, style = MaterialTheme.typography.titleLarge, color = Vcv.colors.wine)
+        if (product.shortDescription.isNotBlank()) {
+            Text(product.shortDescription, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onBackground)
+        }
+        val sizes = product.variants.map { it.size.value }.distinct().sorted()
+        if (sizes.isNotEmpty()) {
+            Text("Tamanhos", style = MaterialTheme.typography.labelLarge, color = Vcv.colors.muted)
+            SizePills(sizes)
+        }
+        FabricSpecBlock(product.fabric)
+        BuyButton(product.buyUrl, uriHandler)
+    }
+}
+
+@Composable
+private fun FabricSpecBlock(fabric: FabricSpec) {
+    Column(verticalArrangement = Arrangement.spacedBy(Vcv.spacing.xs)) {
+        SectionHeader(title = "Ficha técnica")
+        SpecRow("Material", fabric.material)
+        SpecRow("Origem", fabric.origin)
+        if (fabric.care.isNotEmpty()) SpecRow("Cuidados", fabric.care.joinToString(" · "))
+        fabric.notes?.let { SpecRow("Notas", it) }
+    }
+}
+
+@Composable
+private fun SpecRow(label: String, value: String) {
+    Row(horizontalArrangement = Arrangement.spacedBy(Vcv.spacing.sm)) {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = Vcv.colors.muted, modifier = Modifier.width(SpecLabelWidth))
+        Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onBackground)
+    }
+}
+
+@Composable
+private fun BuyButton(buyUrl: String?, uriHandler: UriHandler) {
+    if (buyUrl != null) {
+        VcvButton(text = "Comprar", onClick = { uriHandler.openUri(buyUrl) })
+    } else {
+        VcvButton(text = "Em breve", onClick = {}, enabled = false)
+    }
+}
+
+@Composable
+private fun NotFound(onCatalog: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(Vcv.spacing.xl),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Vcv.spacing.md),
+    ) {
+        SectionHeader(title = "Produto não encontrado", subtitle = "A peça que você procura não está disponível.")
+        VcvButton(text = "Ver catálogo", onClick = onCatalog)
+    }
+}
