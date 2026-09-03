@@ -1,17 +1,16 @@
 package com.gabrielbotao.softwarevcv.presentation.navigation.routes
 
 import androidx.navigation3.runtime.EntryProviderScope
+import com.gabrielbotao.softwarevcv.presentation.features.catalog.view.CatalogScreen
 import com.gabrielbotao.softwarevcv.presentation.navigation.AppRoute
 import com.gabrielbotao.softwarevcv.presentation.navigation.Navigator
 
-/** Single-collection destination wiring (`/colecao/{slug}`). Real `CollectionScreen` (VCV-7) later. */
+/** Single-collection destination wiring (`/colecao/{slug}`) — reuses the catalog grid with the slug. */
 fun EntryProviderScope<AppRoute>.collectionEntry(navigator: Navigator) {
     entry<AppRoute.Collection> { key ->
-        RoutePlaceholder(
-            title = "Coleção: ${key.slug}",
-            subtitle = "Peças desta coleção",
-            navigator = navigator,
-            actions = listOf(AppRoute.Product("zebra"), AppRoute.Catalog),
+        CatalogScreen(
+            slug = key.slug,
+            onProduct = { id -> navigator.navigate(AppRoute.Product(id)) },
         )
     }
 }
