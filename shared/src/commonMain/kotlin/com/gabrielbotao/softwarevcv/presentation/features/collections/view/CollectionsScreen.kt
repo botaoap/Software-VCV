@@ -22,7 +22,7 @@ import com.gabrielbotao.softwarevcv.presentation.features.collections.state.Coll
 import com.gabrielbotao.softwarevcv.presentation.features.collections.viewmodel.CollectionsViewModel
 import com.gabrielbotao.softwarevcv.presentation.features.common.EmptyState
 import com.gabrielbotao.softwarevcv.presentation.features.common.ErrorState
-import com.gabrielbotao.softwarevcv.presentation.features.common.LoadingState
+import com.gabrielbotao.softwarevcv.presentation.features.common.LoadingGrid
 import org.koin.compose.viewmodel.koinViewModel
 
 /** Collections list (`/colecoes`) — cover cards that open a collection. See [[VCV Screens-and-UX]] §2. */
@@ -34,7 +34,7 @@ fun CollectionsScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val error = state.error
     when {
-        state.isLoading -> LoadingState()
+        state.isLoading -> LoadingGrid()
         error != null -> ErrorState(message = error, onRetry = { viewModel.onEvent(CollectionsUiEvent.Retry) })
         state.collections.isEmpty() -> EmptyState(message = "Em breve novas coleções.")
         else -> ProductGrid(

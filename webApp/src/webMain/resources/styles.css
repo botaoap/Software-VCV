@@ -4,4 +4,36 @@ html, body {
     margin: 0;
     padding: 0;
     overflow: hidden;
+    background: #F6F0EA; /* 1C "Corpo" cream — matches the app ground so first paint is on-brand */
+}
+
+/* Branded splash shown while the Wasm bundle loads; the Compose canvas paints over it. */
+#splash {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: #6E2B39; /* wine */
+}
+
+#splash .wordmark {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 48px;
+    letter-spacing: 10px;
+    padding-left: 10px; /* balance the tracking */
+}
+
+#splash .tagline {
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #6B5F5A; /* muted ink */
+}
+
+#splash .spinner {
+    margin-top: 14px;
 }
