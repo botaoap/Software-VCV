@@ -12,6 +12,8 @@
 
 # Package Files #
 *.jar
+# ...but the Gradle wrapper jar MUST be committed so CI (and fresh clones) can run ./gradlew
+!gradle/wrapper/gradle-wrapper.jar
 *.war
 *.nar
 *.ear
