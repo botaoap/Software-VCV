@@ -1,0 +1,18 @@
+[
+  {
+    "slug": "essenciais",
+    "title": "Essenciais",
+    "subtitle": "As peças que sustentam o guarda-roupa",
+    "cover": { "url": "https://picsum.photos/seed/vcv-col-essenciais/900/1200", "alt": "Coleção Essenciais" },
+    "productIds": ["vestido-zebra", "calca-viscolinho"],
+    "story": "Poucas peças, bem feitas. Tecido escolhido rolo a rolo, modelagem provada em corpo real."
+  },
+  {
+    "slug": "verao",
+    "title": "Verão",
+    "subtitle": "Leveza para o calor do vale",
+    "cover": { "url": "https://picsum.photos/seed/vcv-col-verao/900/1200", "alt": "Coleção Verão" },
+    "productIds": ["blusa-linho", "saia-midi"],
+    "story": "Linho e viscose para os dias quentes do Vale do Itajaí."
+  }
+]

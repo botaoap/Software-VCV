@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.kotlinSerialization)
 }
 
 kotlin {
@@ -72,6 +73,8 @@ kotlin {
             implementation(libs.coil.compose)
             // VCV-4 navigation: Jetpack Navigation 3 (JetBrains multiplatform build).
             implementation(libs.navigation3.ui)
+            // VCV-5 content: kotlinx.serialization for DTOs (bundled-JSON ContentSource).
+            implementation(libs.kotlinx.serialization.json)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

@@ -1,0 +1,87 @@
+[
+  {
+    "id": "vestido-zebra",
+    "name": "Vestido Curto Zebra",
+    "collectionSlug": "essenciais",
+    "priceCents": 18900,
+    "images": [
+      { "url": "https://picsum.photos/seed/vcv-zebra-1/600/800", "alt": "Vestido Curto Zebra, frente" },
+      { "url": "https://picsum.photos/seed/vcv-zebra-2/600/800", "alt": "Vestido Curto Zebra, costas" }
+    ],
+    "shortDescription": "Viscose com toque seco, cortada no Vale do Itajaí. Modelagem provada em corpo real.",
+    "fabric": {
+      "material": "Viscolinho",
+      "origin": "Gaspar, SC",
+      "care": ["Lavar à mão", "Não usar alvejante", "Passar em temperatura média"],
+      "notes": "Toque seco, caimento fluido."
+    },
+    "variants": [
+      { "size": 38 }, { "size": 40 }, { "size": 42 }, { "size": 44 },
+      { "size": 46 }, { "size": 48 }, { "size": 50 }, { "size": 52 }
+    ],
+    "badges": ["BEST_SELLER"],
+    "buyUrl": "https://wa.me/5547999999999?text=Tenho%20interesse%20no%20Vestido%20Curto%20Zebra"
+  },
+  {
+    "id": "calca-viscolinho",
+    "name": "Calça Pantalona Viscolinho",
+    "collectionSlug": "essenciais",
+    "priceCents": 22900,
+    "images": [
+      { "url": "https://picsum.photos/seed/vcv-calca-1/600/800", "alt": "Calça Pantalona Viscolinho" }
+    ],
+    "shortDescription": "Cintura alta e caimento reto. A base que sustenta o guarda-roupa.",
+    "fabric": {
+      "material": "Viscolinho",
+      "origin": "Gaspar, SC",
+      "care": ["Lavar à mão", "Passar em temperatura média"]
+    },
+    "variants": [
+      { "size": 38 }, { "size": 40 }, { "size": 42 }, { "size": 44 },
+      { "size": 46 }, { "size": 48 }, { "size": 50 }, { "size": 52 }
+    ],
+    "badges": ["ATELIER_PICK"],
+    "buyUrl": null
+  },
+  {
+    "id": "blusa-linho",
+    "name": "Blusa Ampla Linho",
+    "collectionSlug": "verao",
+    "priceCents": 14900,
+    "images": [
+      { "url": "https://picsum.photos/seed/vcv-blusa-1/600/800", "alt": "Blusa Ampla Linho" }
+    ],
+    "shortDescription": "Linho leve, respirável, feito para o calor do vale.",
+    "fabric": {
+      "material": "Linho",
+      "origin": "Gaspar, SC",
+      "care": ["Lavar à mão", "Secar à sombra"]
+    },
+    "variants": [
+      { "size": 38 }, { "size": 40 }, { "size": 42 }, { "size": 44 }, { "size": 46 }, { "size": 48 }
+    ],
+    "badges": ["NEW_IN"],
+    "buyUrl": null
+  },
+  {
+    "id": "saia-midi",
+    "name": "Saia Midi Viscose",
+    "collectionSlug": "verao",
+    "priceCents": 17900,
+    "images": [
+      { "url": "https://picsum.photos/seed/vcv-saia-1/600/800", "alt": "Saia Midi Viscose" }
+    ],
+    "shortDescription": "Comprimento midi, movimento leve. Do dia ao fim de tarde.",
+    "fabric": {
+      "material": "Viscose",
+      "origin": "Gaspar, SC",
+      "care": ["Lavar à mão"]
+    },
+    "variants": [
+      { "size": 38 }, { "size": 40 }, { "size": 42 }, { "size": 44 },
+      { "size": 46 }, { "size": 48 }, { "size": 50 }, { "size": 52 }
+    ],
+    "badges": [],
+    "buyUrl": null
+  }
+]
