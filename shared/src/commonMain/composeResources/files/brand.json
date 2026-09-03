@@ -1,0 +1,28 @@
+{
+  "atelier": {
+    "headline": "Veste Com Você — de Gaspar, Vale do Itajaí",
+    "sections": [
+      {
+        "title": "Origem",
+        "body": "A VCV é uma casa têxtil, não uma loja. Cada peça vem com ficha técnica: tecido nomeado e procedência declarada.",
+        "image": { "url": "https://picsum.photos/seed/vcv-atelier-1/1200/800", "alt": "Ateliê VCV em Gaspar" }
+      },
+      {
+        "title": "Ateliê próprio",
+        "body": "Produção em pequena escala, rolo a rolo. Tecido escolhido à mão, modelagem provada em corpo real.",
+        "image": { "url": "https://picsum.photos/seed/vcv-atelier-2/1200/800", "alt": "Produção rolo a rolo" }
+      },
+      {
+        "title": "Compra pouco e bem",
+        "body": "Peças pensadas para durar — a durabilidade é a resposta, não a promoção.",
+        "image": null
+      }
+    ]
+  },
+  "contact": {
+    "whatsapp": "https://wa.me/5547999999999",
+    "instagram": "https://instagram.com/vestecomvoce",
+    "email": "contato@vestecomvoce.com.br",
+    "whereToBuy": ["Ateliê em Gaspar, SC (com hora marcada)", "Envio para todo o Brasil"]
+  }
+}
