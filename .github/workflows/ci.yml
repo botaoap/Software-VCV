@@ -1,0 +1,88 @@
+name: CI
+
+# Build + test on every PR into develop/main (and on pushes to those branches).
+# Keeps the integration branches green and verifies the deployable web artifact.
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    name: Build & test (non-Apple targets)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          # Only write the dependency cache from the default branch, so PR runs
+          # read a warm cache without each one persisting its own entry.
+          cache-read-only: ${{ github.ref != 'refs/heads/develop' && github.ref != 'refs/heads/main' }}
+
+      # iOS is intentionally NOT built here: Kotlin/Native iOS targets require a
+      # macOS runner, and this is a web-first MVP. Add a gated macOS job if/when
+      # the iOS app is prioritised (see the VCV-12 plan note).
+      - name: Build & test
+        run: |
+          ./gradlew --no-daemon --stacktrace \
+            :shared:jvmTest \
+            :shared:compileKotlinJs :shared:compileKotlinWasmJs \
+            :androidApp:assembleDebug \
+            :desktopApp:compileKotlin \
+            :server:build \
+            :webApp:compileKotlinJs :webApp:compileKotlinWasmJs
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: '**/build/reports/tests/**'
+          if-no-files-found: ignore
+          retention-days: 7
+
+  web-dist:
+    name: Web distribution + size budget
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/develop' && github.ref != 'refs/heads/main' }}
+
+      - name: Build Wasm distribution
+        run: ./gradlew --no-daemon --stacktrace :webApp:wasmJsBrowserDistribution
+
+      - name: Check bundle-size budget
+        run: ./scripts/check-web-budget.sh
+
+      - name: Upload web distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dist-wasmjs
+          path: webApp/build/dist/wasmJs/productionExecutable
+          retention-days: 7
