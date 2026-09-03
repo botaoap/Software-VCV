@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.runtime.Composable
@@ -15,12 +16,14 @@ import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
 /**
  * Responsive product grid — columns follow the measured width (1 → 2 → 4). It is the page's scroller
  * (a `LazyVerticalGrid`), so give it the available height. Generic over the item type; pages supply the
- * `itemContent` (typically a [ProductCard]). See [[VCV Design-System]] §8, [[VCV Screens-and-UX]] §3.
+ * `itemContent` (typically a [ProductCard]) and an optional full-width [header] (e.g. a collection story).
+ * See [[VCV Design-System]] §8, [[VCV Screens-and-UX]] §3.
  */
 @Composable
 fun <T> ProductGrid(
     items: List<T>,
     modifier: Modifier = Modifier,
+    header: (@Composable () -> Unit)? = null,
     itemContent: @Composable (T) -> Unit,
 ) {
     BoxWithConstraints(modifier) {
@@ -31,6 +34,9 @@ fun <T> ProductGrid(
             verticalArrangement = Arrangement.spacedBy(Vcv.spacing.lg),
             contentPadding = PaddingValues(Vcv.spacing.md),
         ) {
+            if (header != null) {
+                item(span = { GridItemSpan(maxLineSpan) }) { header() }
+            }
             items(items) { item -> itemContent(item) }
         }
     }

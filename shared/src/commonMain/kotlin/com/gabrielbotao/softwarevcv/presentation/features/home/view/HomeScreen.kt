@@ -30,7 +30,8 @@ import com.gabrielbotao.softwarevcv.core.ui.components.VcvButton
 import com.gabrielbotao.softwarevcv.core.ui.components.VcvOutlinedButton
 import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
 import com.gabrielbotao.softwarevcv.domain.model.Product
-import com.gabrielbotao.softwarevcv.domain.model.ProductBadge
+import com.gabrielbotao.softwarevcv.presentation.features.common.productBadgeColor
+import com.gabrielbotao.softwarevcv.presentation.features.common.productBadgeLabel
 import com.gabrielbotao.softwarevcv.presentation.features.home.state.HomeUiEvent
 import com.gabrielbotao.softwarevcv.presentation.features.home.state.HomeUiState
 import com.gabrielbotao.softwarevcv.presentation.features.home.viewmodel.HomeViewModel
@@ -112,12 +113,13 @@ private fun FeaturedSection(products: List<Product>, onProduct: (String) -> Unit
             horizontalArrangement = Arrangement.spacedBy(Vcv.spacing.md),
         ) {
             items(products) { product ->
+                val badge = product.badges.firstOrNull()
                 ProductCard(
                     name = product.name,
                     priceCents = product.price.amountCents,
                     imageUrl = product.cover?.url,
-                    badgeText = product.badges.firstOrNull()?.let(::badgeLabel),
-                    badgeColor = Vcv.colors.badgeBestSeller,
+                    badgeText = badge?.let(::productBadgeLabel),
+                    badgeColor = badge?.let { productBadgeColor(it) } ?: MaterialTheme.colorScheme.primary,
                     onClick = { onProduct(product.id) },
                     modifier = Modifier.width(CardWidth),
                 )
@@ -154,11 +156,4 @@ private fun ErrorSection(message: String, onRetry: () -> Unit) {
         Text(message, style = MaterialTheme.typography.bodyMedium, color = Vcv.colors.muted)
         VcvButton(text = "Tentar de novo", onClick = onRetry)
     }
-}
-
-private fun badgeLabel(badge: ProductBadge): String = when (badge) {
-    ProductBadge.BEST_SELLER -> "Best-seller"
-    ProductBadge.NEW_IN -> "Novo"
-    ProductBadge.LAST_UNITS -> "Últimas peças"
-    ProductBadge.ATELIER_PICK -> "Escolha do ateliê"
 }
