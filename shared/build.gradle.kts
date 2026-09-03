@@ -56,6 +56,7 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
+            implementation(libs.ktor.client.okhttp) // VCV-6: Coil network engine
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -69,8 +70,12 @@ kotlin {
             // VCV-1 foundation: DI + coroutines (cross-cutting core).
             implementation(libs.koin.core)
             implementation(libs.kotlinx.coroutines.core)
-            // VCV-3 components: Coil 3 for images (network ImageLoader wired in VCV-5).
+            // VCV-6 presentation: Koin Compose + koinViewModel().
+            implementation(libs.koin.compose)
+            implementation(libs.koin.composeViewModel)
+            // VCV-3 components: Coil 3 for images. VCV-6: network loader (Ktor fetcher + per-platform engines below).
             implementation(libs.coil.compose)
+            implementation(libs.coil.network.ktor)
             // VCV-4 navigation: Jetpack Navigation 3 (JetBrains multiplatform build).
             implementation(libs.navigation3.ui)
             // VCV-5 content: kotlinx.serialization for DTOs (bundled-JSON ContentSource).
@@ -84,6 +89,16 @@ kotlin {
         }
         jsMain.dependencies {
             implementation(libs.wrappers.browser)
+            implementation(libs.ktor.client.js) // VCV-6: Coil network engine
+        }
+        jvmMain.dependencies {
+            implementation(libs.ktor.client.okhttp) // VCV-6: Coil network engine (Desktop)
+        }
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin) // VCV-6: Coil network engine
+        }
+        wasmJsMain.dependencies {
+            implementation(libs.ktor.client.js) // VCV-6: Coil network engine (primary web target)
         }
     }
 }
