@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.gabrielbotao.softwarevcv.core.image.configureImageLoader
 import com.gabrielbotao.softwarevcv.core.ui.components.VcvFooter
 import com.gabrielbotao.softwarevcv.core.ui.components.VcvNavItem
 import com.gabrielbotao.softwarevcv.core.ui.components.VcvTopNav
@@ -26,6 +27,7 @@ import com.gabrielbotao.softwarevcv.presentation.navigation.Navigator
 @Composable
 @Preview
 fun App(navigator: Navigator = remember { Navigator() }) {
+    remember { configureImageLoader() } // once: Coil singleton loader (Ktor network fetcher)
     VcvTheme {
         Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
             VcvTopNav(
