@@ -3,6 +3,7 @@ package com.gabrielbotao.softwarevcv.presentation.di
 import com.gabrielbotao.softwarevcv.presentation.features.catalog.viewmodel.CatalogViewModel
 import com.gabrielbotao.softwarevcv.presentation.features.collections.viewmodel.CollectionsViewModel
 import com.gabrielbotao.softwarevcv.presentation.features.home.viewmodel.HomeViewModel
+import com.gabrielbotao.softwarevcv.presentation.features.product.viewmodel.ProductViewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
@@ -11,4 +12,5 @@ val presentationModule = module {
     viewModelOf(::HomeViewModel)
     viewModelOf(::CatalogViewModel)
     viewModelOf(::CollectionsViewModel)
+    viewModelOf(::ProductViewModel)
 }
