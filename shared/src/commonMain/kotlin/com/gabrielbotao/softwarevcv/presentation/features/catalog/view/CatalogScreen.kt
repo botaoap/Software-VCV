@@ -20,7 +20,7 @@ import com.gabrielbotao.softwarevcv.presentation.features.catalog.state.CatalogU
 import com.gabrielbotao.softwarevcv.presentation.features.catalog.viewmodel.CatalogViewModel
 import com.gabrielbotao.softwarevcv.presentation.features.common.EmptyState
 import com.gabrielbotao.softwarevcv.presentation.features.common.ErrorState
-import com.gabrielbotao.softwarevcv.presentation.features.common.LoadingState
+import com.gabrielbotao.softwarevcv.presentation.features.common.LoadingGrid
 import com.gabrielbotao.softwarevcv.presentation.features.common.productBadgeColor
 import com.gabrielbotao.softwarevcv.presentation.features.common.productBadgeLabel
 import org.koin.compose.viewmodel.koinViewModel
@@ -39,7 +39,7 @@ fun CatalogScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val error = state.error
     when {
-        state.isLoading -> LoadingState()
+        state.isLoading -> LoadingGrid()
         error != null -> ErrorState(message = error, onRetry = { viewModel.onEvent(CatalogUiEvent.Retry) })
         state.products.isEmpty() -> EmptyState(message = "Em breve novas peças.")
         else -> ProductGrid(
