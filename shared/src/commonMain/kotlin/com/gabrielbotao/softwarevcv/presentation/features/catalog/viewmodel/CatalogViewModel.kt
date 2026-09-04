@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gabrielbotao.softwarevcv.domain.usecase.GetCollectionUseCase
 import com.gabrielbotao.softwarevcv.domain.usecase.GetProductsUseCase
+import com.gabrielbotao.softwarevcv.presentation.features.common.toUserMessage
 import com.gabrielbotao.softwarevcv.presentation.features.catalog.state.CatalogUiEvent
 import com.gabrielbotao.softwarevcv.presentation.features.catalog.state.CatalogUiState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,7 +50,7 @@ class CatalogViewModel(
                     _uiState.update { it.copy(isLoading = false, products = products, collection = collection) }
                 }
                 .onFailure { e ->
-                    _uiState.update { it.copy(isLoading = false, error = e.message ?: "Erro ao carregar") }
+                    _uiState.update { it.copy(isLoading = false, error = e.toUserMessage("Coleção não encontrada.")) }
                 }
         }
     }

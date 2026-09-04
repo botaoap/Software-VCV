@@ -3,6 +3,7 @@ package com.gabrielbotao.softwarevcv.presentation.features.collections.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gabrielbotao.softwarevcv.domain.usecase.GetCollectionsUseCase
+import com.gabrielbotao.softwarevcv.presentation.features.common.toUserMessage
 import com.gabrielbotao.softwarevcv.presentation.features.collections.state.CollectionsUiEvent
 import com.gabrielbotao.softwarevcv.presentation.features.collections.state.CollectionsUiState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,7 +31,7 @@ class CollectionsViewModel(private val getCollections: GetCollectionsUseCase) : 
             _uiState.update { it.copy(isLoading = true, error = null) }
             getCollections()
                 .onSuccess { collections -> _uiState.update { it.copy(isLoading = false, collections = collections) } }
-                .onFailure { e -> _uiState.update { it.copy(isLoading = false, error = e.message ?: "Erro ao carregar") } }
+                .onFailure { e -> _uiState.update { it.copy(isLoading = false, error = e.toUserMessage()) } }
         }
     }
 }

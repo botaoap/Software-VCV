@@ -2,6 +2,12 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <!-- Pin the document base to the site root so ALL relative URLs — including Compose's runtime
+         `./composeResources/…` resource fetches — resolve against "/" regardless of the current route.
+         Without this, at a nested route like /produto/{id} or /colecao/{slug} the resource fetch
+         resolves to /produto/composeResources/… (404) and the bundled catalog JSON fails to load.
+         (Root-hosted deploy assumed; a sub-path deploy would need href="/<base>/". See VCV-12.) -->
+    <base href="/">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VCV — Veste Com Você</title>
     <link type="text/css" rel="stylesheet" href="styles.css">
