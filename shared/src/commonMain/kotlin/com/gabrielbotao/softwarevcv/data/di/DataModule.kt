@@ -1,6 +1,7 @@
 package com.gabrielbotao.softwarevcv.data.di
 
-import com.gabrielbotao.softwarevcv.data.cart.InMemoryCartRepository
+import com.gabrielbotao.softwarevcv.data.cart.LocalCartRepository
+import com.gabrielbotao.softwarevcv.data.cart.platformCartStore
 import com.gabrielbotao.softwarevcv.data.commerce.WhatsAppCheckoutGateway
 import com.gabrielbotao.softwarevcv.data.content.BundledContentSource
 import com.gabrielbotao.softwarevcv.data.remote.VcvContentApi
@@ -21,6 +22,6 @@ val dataModule = module {
     single<BrandRepository> { BrandRepositoryImpl(get()) }
     // Cart is shared state → single. CheckoutGateway is the commerce-agnostic seam: the MVP binds the
     // WhatsApp (links-out) prototype; swap to an own-backend / 3rd-party impl here, UI untouched (VCV-20).
-    single<CartRepository> { InMemoryCartRepository() }
+    single<CartRepository> { LocalCartRepository(get(), platformCartStore()) }
     single<CheckoutGateway> { WhatsAppCheckoutGateway(get()) }
 }

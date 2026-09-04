@@ -1,7 +1,7 @@
 package com.gabrielbotao.softwarevcv.presentation.features.product
 
 import app.cash.turbine.test
-import com.gabrielbotao.softwarevcv.data.cart.InMemoryCartRepository
+import com.gabrielbotao.softwarevcv.data.cart.LocalCartRepository
 import com.gabrielbotao.softwarevcv.domain.usecase.AddToCartUseCase
 import com.gabrielbotao.softwarevcv.domain.usecase.GetProductUseCase
 import com.gabrielbotao.softwarevcv.presentation.features.catalog.FakeCatalogRepository
@@ -32,7 +32,7 @@ class ProductViewModelTest {
 
     @Test
     fun loads_product_by_id() = runTest {
-        val vm = ProductViewModel(GetProductUseCase(FakeCatalogRepository(listOf(testProduct("zebra")))), AddToCartUseCase(InMemoryCartRepository()))
+        val vm = ProductViewModel(GetProductUseCase(FakeCatalogRepository(listOf(testProduct("zebra")))), AddToCartUseCase(LocalCartRepository()))
         vm.load("zebra")
         vm.uiState.test {
             val state = awaitItem()
@@ -44,7 +44,7 @@ class ProductViewModelTest {
 
     @Test
     fun missing_id_is_not_found() = runTest {
-        val vm = ProductViewModel(GetProductUseCase(FakeCatalogRepository(listOf(testProduct("zebra")))), AddToCartUseCase(InMemoryCartRepository()))
+        val vm = ProductViewModel(GetProductUseCase(FakeCatalogRepository(listOf(testProduct("zebra")))), AddToCartUseCase(LocalCartRepository()))
         vm.load("nope")
         vm.uiState.test {
             val state = awaitItem()

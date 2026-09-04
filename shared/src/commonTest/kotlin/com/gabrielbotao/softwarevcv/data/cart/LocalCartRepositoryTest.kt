@@ -8,7 +8,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class InMemoryCartRepositoryTest {
+class LocalCartRepositoryTest {
 
     private fun product(id: String, cents: Long) = Product(
         id = id,
@@ -25,7 +25,7 @@ class InMemoryCartRepositoryTest {
 
     @Test
     fun adding_same_product_and_size_merges_quantity() {
-        val repo = InMemoryCartRepository()
+        val repo = LocalCartRepository()
         val p = product("a", 10000)
         repo.add(p, Size(40))
         repo.add(p, Size(40), 2)
@@ -36,7 +36,7 @@ class InMemoryCartRepositoryTest {
 
     @Test
     fun same_product_different_size_is_a_separate_line() {
-        val repo = InMemoryCartRepository()
+        val repo = LocalCartRepository()
         val p = product("a", 10000)
         repo.add(p, Size(40))
         repo.add(p, Size(42))
@@ -45,7 +45,7 @@ class InMemoryCartRepositoryTest {
 
     @Test
     fun subtotal_sums_line_totals() {
-        val repo = InMemoryCartRepository()
+        val repo = LocalCartRepository()
         repo.add(product("a", 10000), Size(40), 2) // 20000
         repo.add(product("b", 5000), Size(38))      // 5000
         assertEquals(25000, repo.cart.value.subtotalCents)
@@ -53,7 +53,7 @@ class InMemoryCartRepositoryTest {
 
     @Test
     fun setQuantity_zero_removes_the_line_and_clear_empties() {
-        val repo = InMemoryCartRepository()
+        val repo = LocalCartRepository()
         val p = product("a", 10000)
         repo.add(p, Size(40))
         val key = repo.cart.value.lines.first().key
