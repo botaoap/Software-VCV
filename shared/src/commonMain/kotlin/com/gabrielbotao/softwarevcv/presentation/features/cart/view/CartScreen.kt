@@ -3,7 +3,6 @@ package com.gabrielbotao.softwarevcv.presentation.features.cart.view
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,12 +16,10 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -42,22 +39,16 @@ import org.koin.compose.viewmodel.koinViewModel
 private val ThumbWidth = 72.dp
 private val CartMaxWidth = 720.dp
 
-/** Cart / sacola (`/carrinho`) — lines, quantity, subtotal, and the agnostic checkout CTA. */
+/** Cart / sacola (`/carrinho`) — lines, quantity, subtotal, and a CTA into the checkout flow. */
 @Composable
 fun CartScreen(
     onProduct: (String) -> Unit,
     onContinue: () -> Unit,
+    onCheckout: () -> Unit,
     viewModel: CartViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val uriHandler = LocalUriHandler.current
-    LaunchedEffect(state.openUrl) {
-        state.openUrl?.let { url ->
-            uriHandler.openUri(url)
-            viewModel.onEvent(CartUiEvent.UrlOpened)
-        }
-    }
-    CartContent(state, viewModel::onEvent, onProduct, onContinue)
+    CartContent(state, viewModel::onEvent, onProduct, onContinue, onCheckout)
 }
 
 @Composable
@@ -66,6 +57,7 @@ private fun CartContent(
     onEvent: (CartUiEvent) -> Unit,
     onProduct: (String) -> Unit,
     onContinue: () -> Unit,
+    onCheckout: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Column(
@@ -77,11 +69,7 @@ private fun CartContent(
         ) {
             SectionHeader(title = "Sacola")
             if (state.cart.isEmpty) {
-                Text(
-                    "Sua sacola está vazia.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Vcv.colors.muted,
-                )
+                Text("Sua sacola está vazia.", style = MaterialTheme.typography.bodyLarge, color = Vcv.colors.muted)
                 VcvOutlinedButton(text = "Ver catálogo", onClick = onContinue)
             } else {
                 state.cart.lines.forEach { line ->
@@ -92,22 +80,7 @@ private fun CartContent(
                     Text("Subtotal", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
                     PriceText(state.cart.subtotalCents, style = MaterialTheme.typography.titleMedium, color = Vcv.colors.wine)
                 }
-                state.error?.let {
-                    Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
-                }
-                VcvButton(
-                    text = if (state.checkingOut) "Enviando…" else "Finalizar no WhatsApp",
-                    onClick = { onEvent(CartUiEvent.Checkout) },
-                    enabled = !state.checkingOut,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Text(
-                    text = "Pagamento e entrega combinados no atendimento. (Fluxo de checkout/pagamento definido com o backend ou a plataforma escolhida.)",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Vcv.colors.muted,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                VcvButton(text = "Finalizar compra", onClick = onCheckout, modifier = Modifier.fillMaxWidth())
             }
         }
         AppFooter(Modifier.padding(top = Vcv.spacing.xl))
