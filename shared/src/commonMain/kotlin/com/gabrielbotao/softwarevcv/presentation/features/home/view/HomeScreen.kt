@@ -2,6 +2,7 @@ package com.gabrielbotao.softwarevcv.presentation.features.home.view
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -28,6 +29,7 @@ import com.gabrielbotao.softwarevcv.core.ui.components.RemoteImage
 import com.gabrielbotao.softwarevcv.core.ui.components.SectionHeader
 import com.gabrielbotao.softwarevcv.core.ui.components.VcvButton
 import com.gabrielbotao.softwarevcv.core.ui.components.VcvOutlinedButton
+import com.gabrielbotao.softwarevcv.core.ui.responsive.WindowWidthClass
 import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
 import com.gabrielbotao.softwarevcv.domain.model.Product
 import com.gabrielbotao.softwarevcv.presentation.features.common.productBadgeColor
@@ -38,6 +40,11 @@ import com.gabrielbotao.softwarevcv.presentation.features.home.viewmodel.HomeVie
 import org.koin.compose.viewmodel.koinViewModel
 
 private val CardWidth = 240.dp
+
+// Bounded hero heights per width class (see [Hero]). Capped so the CTA + first products reach the fold.
+private val HeroHeightCompact = 360.dp
+private val HeroHeightMedium = 420.dp
+private val HeroHeightExpanded = 460.dp
 
 /** Home page — the brand's first impression. Nav is via lambdas; data via [HomeViewModel]. §1. */
 @Composable
@@ -79,26 +86,36 @@ private fun HomeContent(
 
 @Composable
 private fun Hero(imageUrl: String?, onCatalog: () -> Unit) {
-    Column {
-        if (imageUrl != null) {
-            RemoteImage(
-                url = imageUrl,
-                contentDescription = "VCV — Veste Com Você",
-                aspectRatio = 4f / 5f,
-                modifier = Modifier.fillMaxWidth(),
-            )
+    // The hero is a *bounded* band (cropped), not a full-width portrait — otherwise a 4:5 image at
+    // desktop width is ~1.25× the viewport tall and pushes the CTA + first products far below the fold
+    // (VCV-14). Height is capped per width class so content reaches the fold on phone → desktop.
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val heroHeight = when (WindowWidthClass.of(maxWidth)) {
+            WindowWidthClass.COMPACT -> HeroHeightCompact
+            WindowWidthClass.MEDIUM -> HeroHeightMedium
+            WindowWidthClass.EXPANDED -> HeroHeightExpanded
         }
-        Column(
-            modifier = Modifier.padding(Vcv.spacing.lg),
-            verticalArrangement = Arrangement.spacedBy(Vcv.spacing.sm),
-        ) {
-            Text("Veste Com Você", style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.primary)
-            Text(
-                "De Gaspar, Vale do Itajaí — poucas peças, bem feitas.",
-                style = MaterialTheme.typography.bodyLarge,
-                color = Vcv.colors.muted,
-            )
-            VcvButton(text = "Ver catálogo", onClick = onCatalog)
+        Column {
+            if (imageUrl != null) {
+                RemoteImage(
+                    url = imageUrl,
+                    contentDescription = "VCV — Veste Com Você",
+                    aspectRatio = null,
+                    modifier = Modifier.fillMaxWidth().height(heroHeight),
+                )
+            }
+            Column(
+                modifier = Modifier.padding(Vcv.spacing.lg),
+                verticalArrangement = Arrangement.spacedBy(Vcv.spacing.sm),
+            ) {
+                Text("Veste Com Você", style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.primary)
+                Text(
+                    "De Gaspar, Vale do Itajaí — poucas peças, bem feitas.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Vcv.colors.muted,
+                )
+                VcvButton(text = "Ver catálogo", onClick = onCatalog)
+            }
         }
     }
 }

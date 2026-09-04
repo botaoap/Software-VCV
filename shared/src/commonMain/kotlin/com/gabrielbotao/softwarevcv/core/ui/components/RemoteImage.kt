@@ -13,6 +13,8 @@ import coil3.compose.AsyncImage
 /**
  * The one image primitive. Reserves its space via [aspectRatio] over a placeholder background, so a card
  * **never reflows** when the photo arrives (no layout shift). Portrait `3:4` by default (product shots).
+ * Pass `aspectRatio = null` to fill a caller-sized box instead (e.g. a fixed-height hero band) — the
+ * caller must then constrain the size via [modifier].
  *
  * VCV-3 ships the layout + Coil `AsyncImage`; the platform network `ImageLoader` is configured in VCV-5
  * (with the Ktor HTTP engine). Until then remote URLs show the placeholder — callers don't change.
@@ -23,12 +25,12 @@ fun RemoteImage(
     url: String?,
     contentDescription: String?,
     modifier: Modifier = Modifier,
-    aspectRatio: Float = 3f / 4f,
+    aspectRatio: Float? = 3f / 4f,
     contentScale: ContentScale = ContentScale.Crop,
 ) {
     Box(
         modifier = modifier
-            .aspectRatio(aspectRatio)
+            .then(if (aspectRatio != null) Modifier.aspectRatio(aspectRatio) else Modifier)
             .background(MaterialTheme.colorScheme.surfaceVariant),
     ) {
         if (url != null) {
