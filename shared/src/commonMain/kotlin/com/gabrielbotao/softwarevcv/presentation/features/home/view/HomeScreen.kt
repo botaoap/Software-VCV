@@ -19,11 +19,13 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.gabrielbotao.softwarevcv.core.ui.components.ImageCarousel
 import com.gabrielbotao.softwarevcv.core.ui.components.ProductCard
-import com.gabrielbotao.softwarevcv.core.ui.components.RemoteImage
+import com.gabrielbotao.softwarevcv.core.ui.components.RevealOnAppear
 import com.gabrielbotao.softwarevcv.core.ui.components.SectionHeader
 import com.gabrielbotao.softwarevcv.core.ui.components.TrustBadge
 import com.gabrielbotao.softwarevcv.core.ui.components.TrustBadges
@@ -57,22 +59,25 @@ fun HomeScreen(
     onCatalog: () -> Unit,
     onAtelier: () -> Unit,
 ) {
+    val heroImages = remember(state.featured, state.bestSeller) {
+        state.featured.mapNotNull { it.cover?.url }.ifEmpty { listOfNotNull(state.bestSeller?.cover?.url) }
+    }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        Hero(imageUrl = state.bestSeller?.cover?.url, onCatalog = onCatalog)
-        TrustBadges(homeTrustBadges)
+        Hero(images = heroImages, onCatalog = onCatalog)
+        RevealOnAppear { TrustBadges(homeTrustBadges) }
         when {
             state.isLoading -> LoadingSection()
             state.error != null -> ErrorSection(message = state.error, onRetry = onRetry)
-            else -> FeaturedSection(products = state.featured, onProduct = onProduct)
+            else -> RevealOnAppear(delayMillis = 80) { FeaturedSection(products = state.featured, onProduct = onProduct) }
         }
-        AtelierTeaser(onAtelier = onAtelier)
+        RevealOnAppear(delayMillis = 160) { AtelierTeaser(onAtelier = onAtelier) }
         Spacer(Modifier.height(Vcv.spacing.xl))
         AppFooter()
     }
 }
 
 @Composable
-private fun Hero(imageUrl: String?, onCatalog: () -> Unit) {
+private fun Hero(images: List<String>, onCatalog: () -> Unit) {
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val heroHeight = when (WindowWidthClass.of(maxWidth)) {
             WindowWidthClass.COMPACT -> HeroHeightCompact
@@ -80,13 +85,8 @@ private fun Hero(imageUrl: String?, onCatalog: () -> Unit) {
             WindowWidthClass.EXPANDED -> HeroHeightExpanded
         }
         Column {
-            if (imageUrl != null) {
-                RemoteImage(
-                    url = imageUrl,
-                    contentDescription = Strings.Home.heroTitle,
-                    aspectRatio = null,
-                    modifier = Modifier.fillMaxWidth().height(heroHeight),
-                )
+            if (images.isNotEmpty()) {
+                ImageCarousel(imageUrls = images, modifier = Modifier.fillMaxWidth().height(heroHeight))
             }
             Column(
                 modifier = Modifier.padding(Vcv.spacing.lg),
