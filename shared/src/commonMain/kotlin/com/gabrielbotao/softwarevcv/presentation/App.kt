@@ -44,11 +44,12 @@ fun App(
 ) {
     remember { configureImageLoader() } // once: Coil singleton loader (Ktor network fetcher)
     val contact by chromeViewModel.contact.collectAsStateWithLifecycle()
+    val cartCount by chromeViewModel.cartCount.collectAsStateWithLifecycle()
     VcvTheme {
         Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
             PromoBar(promoMessages)
             VcvTopNav(
-                items = mainNavItems(navigator),
+                items = mainNavItems(navigator) + cartNavItem(navigator, cartCount),
                 onLogoClick = { navigator.navigate(AppRoute.Home) },
             )
             Box(Modifier.weight(1f).fillMaxWidth()) {
@@ -80,3 +81,9 @@ private fun mainNavItems(navigator: Navigator): List<VcvNavItem> = listOf(
     VcvNavItem("Atelier") { navigator.navigate(AppRoute.Atelier) },
     VcvNavItem("Contato") { navigator.navigate(AppRoute.Contact) },
 )
+
+/** The cart entry, with a live item-count badge in the label. */
+private fun cartNavItem(navigator: Navigator, count: Int): VcvNavItem {
+    val label = if (count > 0) "Sacola ($count)" else "Sacola"
+    return VcvNavItem(label) { navigator.navigate(AppRoute.Cart) }
+}

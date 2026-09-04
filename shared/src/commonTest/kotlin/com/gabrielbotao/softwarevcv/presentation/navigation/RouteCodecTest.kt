@@ -13,6 +13,7 @@ class RouteCodecTest {
         AppRoute.Product("vestido-zebra"),
         AppRoute.Atelier,
         AppRoute.Contact,
+        AppRoute.Cart,
     )
 
     @Test

@@ -15,6 +15,7 @@ object RouteCodec {
         is AppRoute.Product -> "/produto/${route.id}"
         AppRoute.Atelier -> "/atelier"
         AppRoute.Contact -> "/contato"
+        AppRoute.Cart -> "/carrinho"
     }
 
     fun fromPath(path: String): AppRoute {
@@ -27,6 +28,7 @@ object RouteCodec {
                 "catalogo" -> AppRoute.Catalog
                 "atelier" -> AppRoute.Atelier
                 "contato" -> AppRoute.Contact
+                "carrinho" -> AppRoute.Cart
                 else -> AppRoute.Home
             }
             segments.size == 2 && segments[0] == "colecao" -> AppRoute.Collection(segments[1])
