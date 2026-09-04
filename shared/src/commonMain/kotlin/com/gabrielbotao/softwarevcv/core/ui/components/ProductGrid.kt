@@ -16,7 +16,8 @@ import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
 /**
  * Responsive product grid — columns follow the measured width (1 → 2 → 4). It is the page's scroller
  * (a `LazyVerticalGrid`), so give it the available height. Generic over the item type; pages supply the
- * `itemContent` (typically a [ProductCard]) and an optional full-width [header] (e.g. a collection story).
+ * `itemContent` (typically a [ProductCard]), an optional full-width [header] (e.g. a collection story),
+ * and an optional full-width [footer] (e.g. [VcvFooter], so it scrolls with the page — VCV-17).
  * See [[VCV Design-System]] §8, [[VCV Screens-and-UX]] §3.
  */
 @Composable
@@ -24,6 +25,7 @@ fun <T> ProductGrid(
     items: List<T>,
     modifier: Modifier = Modifier,
     header: (@Composable () -> Unit)? = null,
+    footer: (@Composable () -> Unit)? = null,
     itemContent: @Composable (T) -> Unit,
 ) {
     BoxWithConstraints(modifier) {
@@ -38,6 +40,9 @@ fun <T> ProductGrid(
                 item(span = { GridItemSpan(maxLineSpan) }) { header() }
             }
             items(items) { item -> itemContent(item) }
+            if (footer != null) {
+                item(span = { GridItemSpan(maxLineSpan) }) { footer() }
+            }
         }
     }
 }

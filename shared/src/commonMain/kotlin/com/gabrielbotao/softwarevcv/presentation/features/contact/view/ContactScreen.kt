@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gabrielbotao.softwarevcv.core.ui.components.SectionHeader
+import com.gabrielbotao.softwarevcv.core.ui.components.VcvFooter
 import com.gabrielbotao.softwarevcv.core.ui.components.VcvOutlinedButton
 import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
 import com.gabrielbotao.softwarevcv.domain.model.ContactContent
@@ -42,20 +43,23 @@ fun ContactScreen(viewModel: ContactViewModel = koinViewModel()) {
 @Composable
 private fun ContactContentView(content: ContactContent) {
     val uriHandler = LocalUriHandler.current
-    Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Vcv.spacing.lg),
-        verticalArrangement = Arrangement.spacedBy(Vcv.spacing.md),
-    ) {
-        SectionHeader(title = "Contato", subtitle = "Fale com a VCV")
-        content.whatsapp?.let { LinkButton("WhatsApp", it, uriHandler) }
-        content.instagram?.let { LinkButton("Instagram", it, uriHandler) }
-        content.email?.let { LinkButton("E-mail", "mailto:$it", uriHandler) }
-        if (content.whereToBuy.isNotEmpty()) {
-            SectionHeader(title = "Onde comprar")
-            content.whereToBuy.forEach {
-                Text(it, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onBackground)
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        Column(
+            modifier = Modifier.padding(Vcv.spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(Vcv.spacing.md),
+        ) {
+            SectionHeader(title = "Contato", subtitle = "Fale com a VCV")
+            content.whatsapp?.let { LinkButton("WhatsApp", it, uriHandler) }
+            content.instagram?.let { LinkButton("Instagram", it, uriHandler) }
+            content.email?.let { LinkButton("E-mail", "mailto:$it", uriHandler) }
+            if (content.whereToBuy.isNotEmpty()) {
+                SectionHeader(title = "Onde comprar")
+                content.whereToBuy.forEach {
+                    Text(it, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onBackground)
+                }
             }
         }
+        VcvFooter()
     }
 }
 

@@ -28,6 +28,7 @@ import com.gabrielbotao.softwarevcv.core.ui.components.ProductCard
 import com.gabrielbotao.softwarevcv.core.ui.components.RemoteImage
 import com.gabrielbotao.softwarevcv.core.ui.components.SectionHeader
 import com.gabrielbotao.softwarevcv.core.ui.components.VcvButton
+import com.gabrielbotao.softwarevcv.core.ui.components.VcvFooter
 import com.gabrielbotao.softwarevcv.core.ui.components.VcvOutlinedButton
 import com.gabrielbotao.softwarevcv.core.ui.responsive.WindowWidthClass
 import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
@@ -81,6 +82,7 @@ private fun HomeContent(
         }
         AtelierTeaser(onAtelier = onAtelier)
         Spacer(Modifier.height(Vcv.spacing.xl))
+        VcvFooter()
     }
 }
 

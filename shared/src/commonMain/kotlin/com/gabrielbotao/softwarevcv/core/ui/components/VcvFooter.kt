@@ -1,10 +1,7 @@
 package com.gabrielbotao.softwarevcv.core.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,12 +13,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
 
-/** Site footer: brand line, location, and optional links. See [[VCV Screens-and-UX]] §0. */
+/**
+ * Site footer: brand line + location. A **real footer**, not navigation — the top bar is the single
+ * primary nav (VCV-17), so the footer no longer repeats those links. It flows at the end of each page's
+ * scroll content (not pinned to the viewport). Social / contact links belong to the redesign
+ * ([[VCV-18]] / [[VCV-19]]). See [[VCV Screens-and-UX]] §0.
+ */
 @Composable
-fun VcvFooter(
-    modifier: Modifier = Modifier,
-    items: List<VcvNavItem> = emptyList(),
-) {
+fun VcvFooter(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -40,18 +39,5 @@ fun VcvFooter(
             style = MaterialTheme.typography.labelMedium,
             color = Vcv.colors.muted,
         )
-        if (items.isNotEmpty()) {
-            Spacer(Modifier.height(Vcv.spacing.md))
-            Row(horizontalArrangement = Arrangement.spacedBy(Vcv.spacing.lg)) {
-                items.forEach { item ->
-                    Text(
-                        text = item.label,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = Vcv.colors.muted,
-                        modifier = Modifier.clickable(onClick = item.onClick),
-                    )
-                }
-            }
-        }
     }
 }
