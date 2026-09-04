@@ -1,7 +1,7 @@
 package com.gabrielbotao.softwarevcv.presentation.features.checkout
 
 import app.cash.turbine.test
-import com.gabrielbotao.softwarevcv.data.cart.InMemoryCartRepository
+import com.gabrielbotao.softwarevcv.data.cart.LocalCartRepository
 import com.gabrielbotao.softwarevcv.domain.commerce.CheckoutGateway
 import com.gabrielbotao.softwarevcv.domain.commerce.CheckoutOutcome
 import com.gabrielbotao.softwarevcv.domain.commerce.CustomerInfo
@@ -49,7 +49,7 @@ class CheckoutViewModelTest {
 
     @Test
     fun cannot_submit_without_name_or_with_empty_cart() = runTest {
-        val repo = InMemoryCartRepository()
+        val repo = LocalCartRepository()
         val model = vm(repo, CheckoutOutcome.Confirmed("x"))
         assertFalse(model.uiState.value.canSubmit) // empty cart + blank name
         repo.add(product(), Size(40))
@@ -59,7 +59,7 @@ class CheckoutViewModelTest {
 
     @Test
     fun handoff_outcome_marks_done_and_sets_openUrl() = runTest {
-        val repo = InMemoryCartRepository().apply { add(product(), Size(40)) }
+        val repo = LocalCartRepository().apply { add(product(), Size(40)) }
         val model = vm(repo, CheckoutOutcome.ExternalHandoff("https://wa.me/55?text=abc"))
         model.onEvent(CheckoutUiEvent.NameChanged("Maria"))
         model.onEvent(CheckoutUiEvent.Submit)
@@ -73,7 +73,7 @@ class CheckoutViewModelTest {
 
     @Test
     fun confirmed_outcome_sets_reference_and_clears_cart() = runTest {
-        val repo = InMemoryCartRepository().apply { add(product(), Size(40)) }
+        val repo = LocalCartRepository().apply { add(product(), Size(40)) }
         val model = vm(repo, CheckoutOutcome.Confirmed("VCV-1001"))
         model.onEvent(CheckoutUiEvent.NameChanged("Maria"))
         model.onEvent(CheckoutUiEvent.Submit)
