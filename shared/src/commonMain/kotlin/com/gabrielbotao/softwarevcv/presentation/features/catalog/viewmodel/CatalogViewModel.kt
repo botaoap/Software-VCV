@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gabrielbotao.softwarevcv.domain.usecase.GetCollectionUseCase
 import com.gabrielbotao.softwarevcv.domain.usecase.GetProductsUseCase
+import com.gabrielbotao.softwarevcv.domain.model.Product
 import com.gabrielbotao.softwarevcv.presentation.features.common.toUserMessage
+import com.gabrielbotao.softwarevcv.presentation.features.catalog.state.CatalogSort
 import com.gabrielbotao.softwarevcv.presentation.features.catalog.state.CatalogUiEvent
 import com.gabrielbotao.softwarevcv.presentation.features.catalog.state.CatalogUiState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,6 +29,7 @@ class CatalogViewModel(
 
     private var currentSlug: String? = null
     private var loaded = false
+    private var allProducts: List<Product> = emptyList()
 
     /** Load (or reload if the slug changed). Called from the screen for the current route. */
     fun load(slug: String?) {
@@ -38,6 +41,8 @@ class CatalogViewModel(
 
     fun onEvent(event: CatalogUiEvent) = when (event) {
         CatalogUiEvent.Retry -> refresh()
+        is CatalogUiEvent.SortChanged ->
+            _uiState.update { it.copy(sort = event.sort, products = allProducts.sortedBy(event.sort)) }
     }
 
     private fun refresh() {
@@ -46,12 +51,23 @@ class CatalogViewModel(
             val slug = currentSlug
             getProducts(slug)
                 .onSuccess { products ->
+                    allProducts = products
                     val collection = slug?.let { getCollection(it).getOrNull() }
-                    _uiState.update { it.copy(isLoading = false, products = products, collection = collection) }
+                    _uiState.update {
+                        it.copy(isLoading = false, products = products.sortedBy(it.sort), collection = collection)
+                    }
                 }
                 .onFailure { e ->
                     _uiState.update { it.copy(isLoading = false, error = e.toUserMessage("Coleção não encontrada.")) }
                 }
         }
     }
+}
+
+/** Apply a [CatalogSort]; `FEATURED` preserves the content order. */
+private fun List<Product>.sortedBy(sort: CatalogSort): List<Product> = when (sort) {
+    CatalogSort.FEATURED -> this
+    CatalogSort.PRICE_ASC -> sortedBy { it.price.amountCents }
+    CatalogSort.PRICE_DESC -> sortedByDescending { it.price.amountCents }
+    CatalogSort.NAME_ASC -> sortedBy { it.name.lowercase() }
 }

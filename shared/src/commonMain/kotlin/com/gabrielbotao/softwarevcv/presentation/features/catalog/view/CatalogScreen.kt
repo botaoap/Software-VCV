@@ -1,14 +1,24 @@
 package com.gabrielbotao.softwarevcv.presentation.features.catalog.view
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gabrielbotao.softwarevcv.core.ui.components.ProductCard
@@ -17,6 +27,7 @@ import com.gabrielbotao.softwarevcv.core.ui.components.SectionHeader
 import com.gabrielbotao.softwarevcv.core.ui.components.VcvFooter
 import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
 import com.gabrielbotao.softwarevcv.domain.model.Collection
+import com.gabrielbotao.softwarevcv.presentation.features.catalog.state.CatalogSort
 import com.gabrielbotao.softwarevcv.presentation.features.catalog.state.CatalogUiEvent
 import com.gabrielbotao.softwarevcv.presentation.features.catalog.viewmodel.CatalogViewModel
 import com.gabrielbotao.softwarevcv.presentation.features.common.EmptyState
@@ -46,7 +57,13 @@ fun CatalogScreen(
         else -> ProductGrid(
             items = state.products,
             modifier = Modifier.fillMaxSize(),
-            header = { CatalogHeader(state.collection) },
+            header = {
+                CatalogHeader(
+                    collection = state.collection,
+                    sort = state.sort,
+                    onSort = { viewModel.onEvent(CatalogUiEvent.SortChanged(it)) },
+                )
+            },
             footer = { VcvFooter() },
         ) { product ->
             val badge = product.badges.firstOrNull()
@@ -63,7 +80,7 @@ fun CatalogScreen(
 }
 
 @Composable
-private fun CatalogHeader(collection: Collection?) {
+private fun CatalogHeader(collection: Collection?, sort: CatalogSort, onSort: (CatalogSort) -> Unit) {
     Column(
         modifier = Modifier.padding(bottom = Vcv.spacing.sm),
         verticalArrangement = Arrangement.spacedBy(Vcv.spacing.sm),
@@ -74,6 +91,36 @@ private fun CatalogHeader(collection: Collection?) {
         )
         collection?.story?.let {
             Text(it, style = MaterialTheme.typography.bodyMedium, color = Vcv.colors.muted)
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            SortControl(sort = sort, onSort = onSort)
+        }
+    }
+}
+
+/** A small "Ordenar por: X" menu for the catalog grid (VCV-24). */
+@Composable
+private fun SortControl(sort: CatalogSort, onSort: (CatalogSort) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        Text(
+            text = "Ordenar por: ${sort.label}",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .clickable { expanded = true }
+                .padding(Vcv.spacing.xs),
+        )
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            CatalogSort.entries.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option.label) },
+                    onClick = {
+                        onSort(option)
+                        expanded = false
+                    },
+                )
+            }
         }
     }
 }
