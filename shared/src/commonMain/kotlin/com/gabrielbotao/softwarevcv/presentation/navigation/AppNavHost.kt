@@ -7,6 +7,7 @@ import androidx.navigation3.ui.NavDisplay
 import com.gabrielbotao.softwarevcv.presentation.navigation.routes.atelierEntry
 import com.gabrielbotao.softwarevcv.presentation.navigation.routes.cartEntry
 import com.gabrielbotao.softwarevcv.presentation.navigation.routes.catalogEntry
+import com.gabrielbotao.softwarevcv.presentation.navigation.routes.checkoutEntry
 import com.gabrielbotao.softwarevcv.presentation.navigation.routes.collectionEntry
 import com.gabrielbotao.softwarevcv.presentation.navigation.routes.collectionsEntry
 import com.gabrielbotao.softwarevcv.presentation.navigation.routes.contactEntry
@@ -34,6 +35,7 @@ fun AppNavHost(navigator: Navigator, modifier: Modifier = Modifier) {
             atelierEntry(navigator)
             contactEntry(navigator)
             cartEntry(navigator)
+            checkoutEntry(navigator)
         },
     )
 }

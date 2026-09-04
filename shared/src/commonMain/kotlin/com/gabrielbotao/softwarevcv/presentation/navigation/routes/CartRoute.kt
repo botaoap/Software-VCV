@@ -11,6 +11,7 @@ fun EntryProviderScope<AppRoute>.cartEntry(navigator: Navigator) {
         CartScreen(
             onProduct = { id -> navigator.navigate(AppRoute.Product(id)) },
             onContinue = { navigator.navigate(AppRoute.Catalog) },
+            onCheckout = { navigator.navigate(AppRoute.Checkout) },
         )
     }
 }

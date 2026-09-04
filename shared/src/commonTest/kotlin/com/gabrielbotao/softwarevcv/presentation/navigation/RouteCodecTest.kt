@@ -14,6 +14,7 @@ class RouteCodecTest {
         AppRoute.Atelier,
         AppRoute.Contact,
         AppRoute.Cart,
+        AppRoute.Checkout,
     )
 
     @Test

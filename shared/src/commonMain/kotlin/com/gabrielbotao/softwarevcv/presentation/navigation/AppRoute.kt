@@ -16,6 +16,7 @@ sealed interface AppRoute : NavKey {
     data object Atelier : AppRoute
     data object Contact : AppRoute
     data object Cart : AppRoute
+    data object Checkout : AppRoute
 }
 
 /** Human label (pt-BR) for nav links / placeholders. */
@@ -28,4 +29,5 @@ fun AppRoute.label(): String = when (this) {
     AppRoute.Atelier -> "Atelier"
     AppRoute.Contact -> "Contato"
     AppRoute.Cart -> "Sacola"
+    AppRoute.Checkout -> "Checkout"
 }
