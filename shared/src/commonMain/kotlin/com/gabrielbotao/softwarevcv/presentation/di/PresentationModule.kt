@@ -1,5 +1,6 @@
 package com.gabrielbotao.softwarevcv.presentation.di
 
+import com.gabrielbotao.softwarevcv.presentation.chrome.ChromeViewModel
 import com.gabrielbotao.softwarevcv.presentation.features.atelier.viewmodel.AtelierViewModel
 import com.gabrielbotao.softwarevcv.presentation.features.catalog.viewmodel.CatalogViewModel
 import com.gabrielbotao.softwarevcv.presentation.features.collections.viewmodel.CollectionsViewModel
@@ -17,4 +18,5 @@ val presentationModule = module {
     viewModelOf(::ProductViewModel)
     viewModelOf(::AtelierViewModel)
     viewModelOf(::ContactViewModel)
+    viewModelOf(::ChromeViewModel)
 }
