@@ -1,10 +1,15 @@
 package com.gabrielbotao.softwarevcv.core.ui.components
 
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -13,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -22,22 +26,28 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
 import kotlinx.coroutines.delay
 
 private val DotSize = 8.dp
-private val ChevronSize = 36.dp
+private val ChevronSize = 40.dp
+private val ChevronGlyph = 14.dp
 private const val SwipeThresholdPx = 48f
+private const val ChevronRestAlpha = 0.12f
 
 /**
- * Image carousel with auto-advance **and** manual control: horizontal **swipe/drag**, tappable **prev/next
- * chevrons**, and tappable **dots**. Any manual change restarts the auto-advance timer. The caller sizes
- * it (e.g. a fixed-height hero band); images fill + crop. Static when there's a single image. See [[VCV-22]].
+ * Image carousel with auto-advance **and** manual control: horizontal **swipe/drag**, **prev/next
+ * chevrons** (drawn as shapes so they're perfectly centered), and tappable **dots**. The chevrons rest
+ * nearly invisible and fade in on hover — so they don't clutter both sides of every image, but reveal as
+ * buttons when the pointer is over them. Any manual change re-arms the auto-advance timer. Caller sizes
+ * it; images fill + crop; static for a single image. See [[VCV-22]].
  */
 @Composable
 fun ImageCarousel(
@@ -50,7 +60,6 @@ fun ImageCarousel(
     var index by remember(imageUrls) { mutableIntStateOf(0) }
     fun go(delta: Int) { index = (index + delta + count) % count }
 
-    // Re-armed on every change (manual or auto), so a user interaction resets the countdown.
     LaunchedEffect(imageUrls, index) {
         if (count > 1) {
             delay(autoAdvanceMillis)
@@ -64,8 +73,8 @@ fun ImageCarousel(
             detectHorizontalDragGestures(
                 onDragStart = { total = 0f },
                 onDragEnd = {
-                    if (total > SwipeThresholdPx) go(-1)          // dragged right → previous
-                    else if (total < -SwipeThresholdPx) go(1)     // dragged left → next
+                    if (total > SwipeThresholdPx) go(-1)
+                    else if (total < -SwipeThresholdPx) go(1)
                 },
             ) { _, dragAmount -> total += dragAmount }
         }
@@ -81,8 +90,8 @@ fun ImageCarousel(
             )
         }
         if (count > 1) {
-            Chevron("‹", Modifier.align(Alignment.CenterStart).padding(Vcv.spacing.sm)) { go(-1) }
-            Chevron("›", Modifier.align(Alignment.CenterEnd).padding(Vcv.spacing.sm)) { go(1) }
+            Chevron(pointingLeft = true, modifier = Modifier.align(Alignment.CenterStart).padding(Vcv.spacing.sm)) { go(-1) }
+            Chevron(pointingLeft = false, modifier = Modifier.align(Alignment.CenterEnd).padding(Vcv.spacing.sm)) { go(1) }
             Row(
                 modifier = Modifier.align(Alignment.BottomCenter).padding(Vcv.spacing.md),
                 horizontalArrangement = Arrangement.spacedBy(Vcv.spacing.xs),
@@ -98,16 +107,35 @@ fun ImageCarousel(
 }
 
 @Composable
-private fun Chevron(glyph: String, modifier: Modifier, onClick: () -> Unit) {
+private fun Chevron(pointingLeft: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
+    val hovered by interaction.collectIsHoveredAsState()
+    val alpha by animateFloatAsState(
+        targetValue = if (hovered) 1f else ChevronRestAlpha,
+        animationSpec = tween(200),
+        label = "chevron-alpha",
+    )
+    val glyphColor = MaterialTheme.colorScheme.onSurface
+    val bg = MaterialTheme.colorScheme.surface
     Box(
         modifier = modifier
             .size(ChevronSize)
+            .alpha(alpha)
             .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.55f))
+            .background(bg.copy(alpha = 0.6f))
+            .hoverable(interaction)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Text(glyph, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Center)
+        Canvas(Modifier.size(ChevronGlyph)) {
+            val w = size.width
+            val h = size.height
+            val stroke = 2.dp.toPx()
+            val near = if (pointingLeft) w * 0.38f else w * 0.62f
+            val far = if (pointingLeft) w * 0.62f else w * 0.38f
+            drawLine(glyphColor, Offset(far, h * 0.22f), Offset(near, h * 0.5f), stroke, StrokeCap.Round)
+            drawLine(glyphColor, Offset(near, h * 0.5f), Offset(far, h * 0.78f), stroke, StrokeCap.Round)
+        }
     }
 }
 
