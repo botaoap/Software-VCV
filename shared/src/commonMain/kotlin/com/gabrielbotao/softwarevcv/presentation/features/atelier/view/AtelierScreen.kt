@@ -13,39 +13,36 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gabrielbotao.softwarevcv.core.ui.components.RemoteImage
 import com.gabrielbotao.softwarevcv.core.ui.components.SectionHeader
-import com.gabrielbotao.softwarevcv.presentation.chrome.AppFooter
 import com.gabrielbotao.softwarevcv.core.ui.responsive.WindowWidthClass
+import com.gabrielbotao.softwarevcv.core.ui.strings.Strings
 import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
 import com.gabrielbotao.softwarevcv.domain.model.AtelierContent
 import com.gabrielbotao.softwarevcv.domain.model.AtelierSection
-import com.gabrielbotao.softwarevcv.presentation.features.atelier.state.AtelierUiEvent
-import com.gabrielbotao.softwarevcv.presentation.features.atelier.viewmodel.AtelierViewModel
+import com.gabrielbotao.softwarevcv.presentation.chrome.AppFooter
+import com.gabrielbotao.softwarevcv.presentation.features.atelier.state.AtelierUiState
 import com.gabrielbotao.softwarevcv.presentation.features.common.EmptyState
 import com.gabrielbotao.softwarevcv.presentation.features.common.ErrorState
 import com.gabrielbotao.softwarevcv.presentation.features.common.LoadingState
-import org.koin.compose.viewmodel.koinViewModel
 
 // Cap the editorial column so images + text don't sprawl across a wide desktop (VCV-16).
 private val AtelierMaxWidth = 960.dp
 
-/** Atelier / Sobre — the origin story, photo-led editorial sections. See [[VCV Screens-and-UX]] §5. */
+/**
+ * Atelier / Sobre — the origin story, photo-led editorial sections. Stateless: the route owns the
+ * ViewModel and passes [state] + [onRetry] (VCV-28). See [[VCV Screens-and-UX]] §5.
+ */
 @Composable
-fun AtelierScreen(viewModel: AtelierViewModel = koinViewModel()) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val error = state.error
-    val content = state.content
+fun AtelierScreen(state: AtelierUiState, onRetry: () -> Unit) {
     when {
         state.isLoading -> LoadingState()
-        error != null -> ErrorState(message = error, onRetry = { viewModel.onEvent(AtelierUiEvent.Retry) })
-        content != null -> AtelierContentView(content)
-        else -> EmptyState(message = "Em breve.")
+        state.error != null -> ErrorState(message = state.error, onRetry = onRetry)
+        state.content != null -> AtelierContentView(state.content)
+        else -> EmptyState(message = Strings.Common.soon)
     }
 }
 
@@ -54,7 +51,6 @@ private fun AtelierContentView(content: AtelierContent) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val stacked = WindowWidthClass.of(maxWidth) == WindowWidthClass.COMPACT
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-            // Centered editorial column, capped width.
             Column(
                 modifier = Modifier
                     .widthIn(max = AtelierMaxWidth)
@@ -72,7 +68,6 @@ private fun AtelierContentView(content: AtelierContent) {
                     AtelierSectionView(section, imageFirst = index % 2 == 0, stacked = stacked)
                 }
             }
-            // Full-bleed footer at the end.
             AppFooter(Modifier.padding(top = Vcv.spacing.xl))
         }
     }
@@ -82,12 +77,7 @@ private fun AtelierContentView(content: AtelierContent) {
 private fun AtelierSectionView(section: AtelierSection, imageFirst: Boolean, stacked: Boolean) {
     val image: @Composable (Modifier) -> Unit = { m ->
         section.image?.let { img ->
-            RemoteImage(
-                url = img.url,
-                contentDescription = img.alt,
-                aspectRatio = img.aspectRatio,
-                modifier = m,
-            )
+            RemoteImage(url = img.url, contentDescription = img.alt, aspectRatio = img.aspectRatio, modifier = m)
         }
     }
     val text: @Composable (Modifier) -> Unit = { m ->
@@ -103,17 +93,14 @@ private fun AtelierSectionView(section: AtelierSection, imageFirst: Boolean, sta
             text(Modifier.fillMaxWidth())
         }
     } else {
-        // Side-by-side, alternating which side the photo sits on for editorial rhythm.
         Row(
             horizontalArrangement = Arrangement.spacedBy(Vcv.spacing.xl),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (imageFirst) {
-                image(Modifier.weight(1f))
-                text(Modifier.weight(1f))
+                image(Modifier.weight(1f)); text(Modifier.weight(1f))
             } else {
-                text(Modifier.weight(1f))
-                image(Modifier.weight(1f))
+                text(Modifier.weight(1f)); image(Modifier.weight(1f))
             }
         }
     }

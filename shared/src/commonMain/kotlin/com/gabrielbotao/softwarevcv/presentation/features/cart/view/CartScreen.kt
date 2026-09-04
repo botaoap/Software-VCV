@@ -5,85 +5,62 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.gabrielbotao.softwarevcv.core.ui.components.PageScaffold
 import com.gabrielbotao.softwarevcv.core.ui.components.PriceText
 import com.gabrielbotao.softwarevcv.core.ui.components.RemoteImage
 import com.gabrielbotao.softwarevcv.core.ui.components.SectionHeader
 import com.gabrielbotao.softwarevcv.core.ui.components.VcvButton
 import com.gabrielbotao.softwarevcv.core.ui.components.VcvOutlinedButton
+import com.gabrielbotao.softwarevcv.core.ui.strings.Strings
 import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
 import com.gabrielbotao.softwarevcv.domain.model.CartLine
 import com.gabrielbotao.softwarevcv.presentation.chrome.AppFooter
 import com.gabrielbotao.softwarevcv.presentation.features.cart.state.CartUiEvent
 import com.gabrielbotao.softwarevcv.presentation.features.cart.state.CartUiState
-import com.gabrielbotao.softwarevcv.presentation.features.cart.viewmodel.CartViewModel
-import org.koin.compose.viewmodel.koinViewModel
 
 private val ThumbWidth = 72.dp
 private val CartMaxWidth = 720.dp
 
-/** Cart / sacola (`/carrinho`) — lines, quantity, subtotal, and a CTA into the checkout flow. */
+/**
+ * Cart / sacola (`/carrinho`). Stateless: the route owns the ViewModel and passes [state] + [onEvent] +
+ * nav callbacks (VCV-28).
+ */
 @Composable
 fun CartScreen(
-    onProduct: (String) -> Unit,
-    onContinue: () -> Unit,
-    onCheckout: () -> Unit,
-    viewModel: CartViewModel = koinViewModel(),
-) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
-    CartContent(state, viewModel::onEvent, onProduct, onContinue, onCheckout)
-}
-
-@Composable
-private fun CartContent(
     state: CartUiState,
     onEvent: (CartUiEvent) -> Unit,
     onProduct: (String) -> Unit,
     onContinue: () -> Unit,
     onCheckout: () -> Unit,
 ) {
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        Column(
-            modifier = Modifier
-                .widthIn(max = CartMaxWidth)
-                .align(Alignment.CenterHorizontally)
-                .padding(Vcv.spacing.lg),
-            verticalArrangement = Arrangement.spacedBy(Vcv.spacing.lg),
-        ) {
-            SectionHeader(title = "Sacola")
-            if (state.cart.isEmpty) {
-                Text("Sua sacola está vazia.", style = MaterialTheme.typography.bodyLarge, color = Vcv.colors.muted)
-                VcvOutlinedButton(text = "Ver catálogo", onClick = onContinue)
-            } else {
-                state.cart.lines.forEach { line ->
-                    CartLineRow(line, onEvent, onProduct)
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outline)
-                }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Subtotal", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
-                    PriceText(state.cart.subtotalCents, style = MaterialTheme.typography.titleMedium, color = Vcv.colors.wine)
-                }
-                VcvButton(text = "Finalizar compra", onClick = onCheckout, modifier = Modifier.fillMaxWidth())
+    PageScaffold(footer = { AppFooter() }, maxWidth = CartMaxWidth) {
+        SectionHeader(title = Strings.Cart.title)
+        if (state.cart.isEmpty) {
+            Text(Strings.Cart.empty, style = MaterialTheme.typography.bodyLarge, color = Vcv.colors.muted)
+            VcvOutlinedButton(text = Strings.Common.seeCatalog, onClick = onContinue)
+        } else {
+            state.cart.lines.forEach { line ->
+                CartLineRow(line, onEvent, onProduct)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline)
             }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(Strings.Cart.subtotal, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
+                PriceText(state.cart.subtotalCents, style = MaterialTheme.typography.titleMedium, color = Vcv.colors.wine)
+            }
+            VcvButton(text = Strings.Cart.checkout, onClick = onCheckout, modifier = Modifier.fillMaxWidth())
         }
-        AppFooter(Modifier.padding(top = Vcv.spacing.xl))
     }
 }
 
@@ -107,7 +84,7 @@ private fun CartLineRow(line: CartLine, onEvent: (CartUiEvent) -> Unit, onProduc
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.clickable { onProduct(line.productId) },
             )
-            Text("Tamanho ${line.size.value}", style = MaterialTheme.typography.bodySmall, color = Vcv.colors.muted)
+            Text(Strings.Cart.size(line.size.value), style = MaterialTheme.typography.bodySmall, color = Vcv.colors.muted)
             QuantityStepper(line, onEvent)
         }
         PriceText(line.lineTotalCents, style = MaterialTheme.typography.titleSmall, color = Vcv.colors.wine)
@@ -121,7 +98,7 @@ private fun QuantityStepper(line: CartLine, onEvent: (CartUiEvent) -> Unit) {
         Text(line.quantity.toString(), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
         StepperButton("+") { onEvent(CartUiEvent.SetQuantity(line.key, line.quantity + 1)) }
         Text(
-            "Remover",
+            Strings.Cart.remove,
             style = MaterialTheme.typography.labelMedium,
             color = Vcv.colors.muted,
             modifier = Modifier.padding(start = Vcv.spacing.sm).clickable { onEvent(CartUiEvent.Remove(line.key)) },
