@@ -10,38 +10,37 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gabrielbotao.softwarevcv.core.ui.components.ProductGrid
 import com.gabrielbotao.softwarevcv.core.ui.components.RemoteImage
 import com.gabrielbotao.softwarevcv.core.ui.components.SectionHeader
-import com.gabrielbotao.softwarevcv.presentation.chrome.AppFooter
+import com.gabrielbotao.softwarevcv.core.ui.strings.Strings
 import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
 import com.gabrielbotao.softwarevcv.domain.model.Collection
-import com.gabrielbotao.softwarevcv.presentation.features.collections.state.CollectionsUiEvent
-import com.gabrielbotao.softwarevcv.presentation.features.collections.viewmodel.CollectionsViewModel
+import com.gabrielbotao.softwarevcv.presentation.chrome.AppFooter
+import com.gabrielbotao.softwarevcv.presentation.features.collections.state.CollectionsUiState
 import com.gabrielbotao.softwarevcv.presentation.features.common.EmptyState
 import com.gabrielbotao.softwarevcv.presentation.features.common.ErrorState
 import com.gabrielbotao.softwarevcv.presentation.features.common.LoadingGrid
-import org.koin.compose.viewmodel.koinViewModel
 
-/** Collections list (`/colecoes`) — cover cards that open a collection. See [[VCV Screens-and-UX]] §2. */
+/**
+ * Collections list (`/colecoes`) — cover cards that open a collection. Stateless: the route owns the
+ * ViewModel and passes [state] + callbacks (VCV-28). See [[VCV Screens-and-UX]] §2.
+ */
 @Composable
 fun CollectionsScreen(
+    state: CollectionsUiState,
+    onRetry: () -> Unit,
     onCollection: (String) -> Unit,
-    viewModel: CollectionsViewModel = koinViewModel(),
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val error = state.error
     when {
         state.isLoading -> LoadingGrid()
-        error != null -> ErrorState(message = error, onRetry = { viewModel.onEvent(CollectionsUiEvent.Retry) })
-        state.collections.isEmpty() -> EmptyState(message = "Em breve novas coleções.")
+        state.error != null -> ErrorState(message = state.error, onRetry = onRetry)
+        state.collections.isEmpty() -> EmptyState(message = Strings.Collections.empty)
         else -> ProductGrid(
             items = state.collections,
             modifier = Modifier.fillMaxSize(),
-            header = { SectionHeader(title = "Coleções", modifier = Modifier.padding(bottom = Vcv.spacing.sm)) },
+            header = { SectionHeader(title = Strings.Collections.title, modifier = Modifier.padding(bottom = Vcv.spacing.sm)) },
             footer = { AppFooter() },
         ) { collection ->
             CollectionCover(collection = collection, onClick = { onCollection(collection.slug) })

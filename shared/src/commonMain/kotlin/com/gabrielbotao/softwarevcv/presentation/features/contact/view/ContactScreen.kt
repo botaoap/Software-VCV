@@ -15,39 +15,36 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gabrielbotao.softwarevcv.core.ui.components.SectionHeader
-import com.gabrielbotao.softwarevcv.presentation.chrome.AppFooter
 import com.gabrielbotao.softwarevcv.core.ui.responsive.WindowWidthClass
+import com.gabrielbotao.softwarevcv.core.ui.strings.Strings
 import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
 import com.gabrielbotao.softwarevcv.domain.model.ContactContent
+import com.gabrielbotao.softwarevcv.presentation.chrome.AppFooter
+import com.gabrielbotao.softwarevcv.presentation.features.contact.state.ContactUiState
 import com.gabrielbotao.softwarevcv.presentation.features.common.EmptyState
 import com.gabrielbotao.softwarevcv.presentation.features.common.ErrorState
 import com.gabrielbotao.softwarevcv.presentation.features.common.LoadingState
-import com.gabrielbotao.softwarevcv.presentation.features.contact.state.ContactUiEvent
-import com.gabrielbotao.softwarevcv.presentation.features.contact.viewmodel.ContactViewModel
-import org.koin.compose.viewmodel.koinViewModel
 
 private val ContactMaxWidth = 880.dp
 
-/** Contato — a modern contact page: channel cards + where-to-buy. No form in the MVP. §6 (VCV-18). */
+/**
+ * Contato — channel cards + where-to-buy. Stateless: the route owns the ViewModel and passes [state] +
+ * [onRetry] (VCV-28). See [[VCV Screens-and-UX]] §6.
+ */
 @Composable
-fun ContactScreen(viewModel: ContactViewModel = koinViewModel()) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val error = state.error
-    val content = state.content
+fun ContactScreen(state: ContactUiState, onRetry: () -> Unit) {
     when {
         state.isLoading -> LoadingState()
-        error != null -> ErrorState(message = error, onRetry = { viewModel.onEvent(ContactUiEvent.Retry) })
-        content != null -> ContactContentView(content)
-        else -> EmptyState(message = "Em breve.")
+        state.error != null -> ErrorState(message = state.error, onRetry = onRetry)
+        state.content != null -> ContactContentView(state.content)
+        else -> EmptyState(message = Strings.Common.soon)
     }
 }
 
@@ -57,9 +54,9 @@ private data class Channel(val label: String, val hint: String, val url: String)
 private fun ContactContentView(content: ContactContent) {
     val uriHandler = LocalUriHandler.current
     val channels = buildList {
-        content.whatsapp?.let { add(Channel("WhatsApp", "Chame a gente por aqui", it)) }
-        content.instagram?.let { add(Channel("Instagram", "Veja as novidades", it)) }
-        content.email?.let { add(Channel("E-mail", "Escreva pra gente", "mailto:$it")) }
+        content.whatsapp?.let { add(Channel(Strings.Contact.whatsapp.first, Strings.Contact.whatsapp.second, it)) }
+        content.instagram?.let { add(Channel(Strings.Contact.instagram.first, Strings.Contact.instagram.second, it)) }
+        content.email?.let { add(Channel(Strings.Contact.email.first, Strings.Contact.email.second, "mailto:$it")) }
     }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val stacked = WindowWidthClass.of(maxWidth) == WindowWidthClass.COMPACT
@@ -75,16 +72,8 @@ private fun ContactContentView(content: ContactContent) {
                     modifier = Modifier.padding(top = Vcv.spacing.xl),
                     verticalArrangement = Arrangement.spacedBy(Vcv.spacing.sm),
                 ) {
-                    Text(
-                        text = "Contato",
-                        style = MaterialTheme.typography.displaySmall,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                    Text(
-                        text = "Fale com a VCV — atendimento direto, de Gaspar pra você.",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = Vcv.colors.muted,
-                    )
+                    Text(Strings.Contact.title, style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.primary)
+                    Text(Strings.Contact.subtitle, style = MaterialTheme.typography.bodyLarge, color = Vcv.colors.muted)
                 }
 
                 if (channels.isNotEmpty()) {
@@ -101,7 +90,7 @@ private fun ContactContentView(content: ContactContent) {
 
                 if (content.whereToBuy.isNotEmpty()) {
                     Column(verticalArrangement = Arrangement.spacedBy(Vcv.spacing.sm)) {
-                        SectionHeader(title = "Onde comprar")
+                        SectionHeader(title = Strings.Contact.whereToBuy)
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()

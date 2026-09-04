@@ -3,82 +3,49 @@ package com.gabrielbotao.softwarevcv.presentation.features.checkout.view
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.gabrielbotao.softwarevcv.core.ui.components.PageScaffold
 import com.gabrielbotao.softwarevcv.core.ui.components.PriceText
 import com.gabrielbotao.softwarevcv.core.ui.components.SectionHeader
 import com.gabrielbotao.softwarevcv.core.ui.components.VcvButton
 import com.gabrielbotao.softwarevcv.core.ui.components.VcvOutlinedButton
+import com.gabrielbotao.softwarevcv.core.ui.strings.Strings
 import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
 import com.gabrielbotao.softwarevcv.domain.model.Cart
 import com.gabrielbotao.softwarevcv.presentation.chrome.AppFooter
 import com.gabrielbotao.softwarevcv.presentation.features.checkout.state.CheckoutUiEvent
 import com.gabrielbotao.softwarevcv.presentation.features.checkout.state.CheckoutUiState
-import com.gabrielbotao.softwarevcv.presentation.features.checkout.viewmodel.CheckoutViewModel
-import org.koin.compose.viewmodel.koinViewModel
 
 private val CheckoutMaxWidth = 640.dp
 
-/** Checkout (`/checkout`) — order summary + buyer form → the agnostic gateway, then a confirmation. */
+/**
+ * Checkout (`/checkout`). Stateless: the route owns the ViewModel, state, and the openUrl side-effect,
+ * passing [state] + [onEvent] + nav callbacks (VCV-28).
+ */
 @Composable
 fun CheckoutScreen(
-    onDone: () -> Unit,
-    onBackToCart: () -> Unit,
-    viewModel: CheckoutViewModel = koinViewModel(),
-) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val uriHandler = LocalUriHandler.current
-    LaunchedEffect(state.openUrl) {
-        state.openUrl?.let { url ->
-            uriHandler.openUri(url)
-            viewModel.onEvent(CheckoutUiEvent.UrlOpened)
-        }
-    }
-    CheckoutContent(state, viewModel::onEvent, onDone, onBackToCart)
-}
-
-@Composable
-private fun CheckoutContent(
     state: CheckoutUiState,
     onEvent: (CheckoutUiEvent) -> Unit,
     onDone: () -> Unit,
     onBackToCart: () -> Unit,
 ) {
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        Column(
-            modifier = Modifier
-                .widthIn(max = CheckoutMaxWidth)
-                .align(Alignment.CenterHorizontally)
-                .padding(Vcv.spacing.lg),
-            verticalArrangement = Arrangement.spacedBy(Vcv.spacing.lg),
-        ) {
-            SectionHeader(title = "Checkout")
-            when {
-                state.done -> Confirmation(state, onDone)
-                state.cart.isEmpty -> {
-                    Text("Sua sacola está vazia.", style = MaterialTheme.typography.bodyLarge, color = Vcv.colors.muted)
-                    VcvOutlinedButton(text = "Voltar à sacola", onClick = onBackToCart)
-                }
-                else -> CheckoutForm(state, onEvent)
+    PageScaffold(footer = { AppFooter() }, maxWidth = CheckoutMaxWidth) {
+        SectionHeader(title = Strings.Checkout.title)
+        when {
+            state.done -> Confirmation(state, onDone)
+            state.cart.isEmpty -> {
+                Text(Strings.Cart.empty, style = MaterialTheme.typography.bodyLarge, color = Vcv.colors.muted)
+                VcvOutlinedButton(text = Strings.Checkout.backToCart, onClick = onBackToCart)
             }
+            else -> CheckoutForm(state, onEvent)
         }
-        AppFooter(Modifier.padding(top = Vcv.spacing.xl))
     }
 }
 
@@ -88,37 +55,33 @@ private fun CheckoutForm(state: CheckoutUiState, onEvent: (CheckoutUiEvent) -> U
     OutlinedTextField(
         value = state.name,
         onValueChange = { onEvent(CheckoutUiEvent.NameChanged(it)) },
-        label = { Text("Nome*") },
+        label = { Text(Strings.Checkout.name) },
         singleLine = true,
         modifier = Modifier.fillMaxWidth(),
     )
     OutlinedTextField(
         value = state.phone,
         onValueChange = { onEvent(CheckoutUiEvent.PhoneChanged(it)) },
-        label = { Text("WhatsApp / telefone") },
+        label = { Text(Strings.Checkout.phone) },
         singleLine = true,
         modifier = Modifier.fillMaxWidth(),
     )
     OutlinedTextField(
         value = state.note,
         onValueChange = { onEvent(CheckoutUiEvent.NoteChanged(it)) },
-        label = { Text("Observação (opcional)") },
+        label = { Text(Strings.Checkout.note) },
         modifier = Modifier.fillMaxWidth(),
     )
     state.error?.let {
         Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
     }
     VcvButton(
-        text = if (state.submitting) "Enviando…" else "Finalizar pedido",
+        text = if (state.submitting) Strings.Checkout.submitting else Strings.Checkout.submit,
         onClick = { onEvent(CheckoutUiEvent.Submit) },
         enabled = state.canSubmit,
         modifier = Modifier.fillMaxWidth(),
     )
-    Text(
-        text = "Pagamento e entrega são combinados no atendimento. O checkout/pagamento real será definido com o backend próprio ou a plataforma escolhida.",
-        style = MaterialTheme.typography.bodySmall,
-        color = Vcv.colors.muted,
-    )
+    Text(Strings.Checkout.paymentNote, style = MaterialTheme.typography.bodySmall, color = Vcv.colors.muted)
 }
 
 @Composable
@@ -127,7 +90,7 @@ private fun OrderSummary(cart: Cart) {
         cart.lines.forEach { line ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
-                    "${line.name} · tam ${line.size.value} · x${line.quantity}",
+                    "${line.name} · ${Strings.Cart.size(line.size.value)} · x${line.quantity}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onBackground,
                 )
@@ -136,7 +99,7 @@ private fun OrderSummary(cart: Cart) {
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outline)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("Subtotal", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
+            Text(Strings.Checkout.subtotal, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
             PriceText(cart.subtotalCents, style = MaterialTheme.typography.titleMedium, color = Vcv.colors.wine)
         }
     }
@@ -145,17 +108,12 @@ private fun OrderSummary(cart: Cart) {
 @Composable
 private fun Confirmation(state: CheckoutUiState, onDone: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(Vcv.spacing.md)) {
+        Text(Strings.Checkout.sentTitle, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
         Text(
-            "Pedido enviado!",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        Text(
-            text = state.confirmationRef?.let { "Número do pedido: $it" }
-                ?: "Enviamos seu pedido para o nosso WhatsApp. Conclua a conversa por lá para combinar pagamento e entrega.",
+            text = state.confirmationRef?.let { Strings.Checkout.orderRef(it) } ?: Strings.Checkout.sentBody,
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onBackground,
         )
-        VcvButton(text = "Voltar à loja", onClick = onDone)
+        VcvButton(text = Strings.Checkout.backToStore, onClick = onDone)
     }
 }

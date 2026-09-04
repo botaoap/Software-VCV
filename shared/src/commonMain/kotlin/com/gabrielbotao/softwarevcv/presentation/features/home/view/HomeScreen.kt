@@ -19,64 +19,38 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gabrielbotao.softwarevcv.core.ui.components.ProductCard
 import com.gabrielbotao.softwarevcv.core.ui.components.RemoteImage
 import com.gabrielbotao.softwarevcv.core.ui.components.SectionHeader
 import com.gabrielbotao.softwarevcv.core.ui.components.TrustBadge
 import com.gabrielbotao.softwarevcv.core.ui.components.TrustBadges
 import com.gabrielbotao.softwarevcv.core.ui.components.VcvButton
-import com.gabrielbotao.softwarevcv.presentation.chrome.AppFooter
 import com.gabrielbotao.softwarevcv.core.ui.components.VcvOutlinedButton
 import com.gabrielbotao.softwarevcv.core.ui.responsive.WindowWidthClass
+import com.gabrielbotao.softwarevcv.core.ui.strings.Strings
 import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
 import com.gabrielbotao.softwarevcv.domain.model.Product
+import com.gabrielbotao.softwarevcv.presentation.chrome.AppFooter
 import com.gabrielbotao.softwarevcv.presentation.features.common.productBadgeColor
 import com.gabrielbotao.softwarevcv.presentation.features.common.productBadgeLabel
-import com.gabrielbotao.softwarevcv.presentation.features.home.state.HomeUiEvent
 import com.gabrielbotao.softwarevcv.presentation.features.home.state.HomeUiState
-import com.gabrielbotao.softwarevcv.presentation.features.home.viewmodel.HomeViewModel
-import org.koin.compose.viewmodel.koinViewModel
 
 private val CardWidth = 240.dp
-
-// Bounded hero heights per width class (see [Hero]). Capped so the CTA + first products reach the fold.
 private val HeroHeightCompact = 360.dp
 private val HeroHeightMedium = 420.dp
 private val HeroHeightExpanded = 460.dp
 
-// Reassurance strip under the hero (VCV-19 global chrome) — true for the atelier, no commerce claims.
-private val homeTrustBadges = listOf(
-    TrustBadge("Ateliê próprio", "Produção em Gaspar, SC"),
-    TrustBadge("Ficha técnica", "Tecido e origem em cada peça"),
-    TrustBadge("Envio nacional", "Para todo o Brasil"),
-    TrustBadge("Atendimento", "Direto no WhatsApp"),
-)
+private val homeTrustBadges = Strings.Home.trust.map { TrustBadge(it.first, it.second) }
 
-/** Home page — the brand's first impression. Nav is via lambdas; data via [HomeViewModel]. §1. */
+/**
+ * Home — the brand's first impression. Stateless: the route owns the ViewModel and passes [state] +
+ * callbacks (VCV-28). See [[VCV Screens-and-UX]] §1.
+ */
 @Composable
 fun HomeScreen(
-    onProduct: (String) -> Unit,
-    onCatalog: () -> Unit,
-    onAtelier: () -> Unit,
-    viewModel: HomeViewModel = koinViewModel(),
-) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
-    HomeContent(
-        state = state,
-        onRetry = { viewModel.onEvent(HomeUiEvent.Retry) },
-        onProduct = onProduct,
-        onCatalog = onCatalog,
-        onAtelier = onAtelier,
-    )
-}
-
-@Composable
-private fun HomeContent(
     state: HomeUiState,
     onRetry: () -> Unit,
     onProduct: (String) -> Unit,
@@ -99,9 +73,6 @@ private fun HomeContent(
 
 @Composable
 private fun Hero(imageUrl: String?, onCatalog: () -> Unit) {
-    // The hero is a *bounded* band (cropped), not a full-width portrait — otherwise a 4:5 image at
-    // desktop width is ~1.25× the viewport tall and pushes the CTA + first products far below the fold
-    // (VCV-14). Height is capped per width class so content reaches the fold on phone → desktop.
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val heroHeight = when (WindowWidthClass.of(maxWidth)) {
             WindowWidthClass.COMPACT -> HeroHeightCompact
@@ -112,7 +83,7 @@ private fun Hero(imageUrl: String?, onCatalog: () -> Unit) {
             if (imageUrl != null) {
                 RemoteImage(
                     url = imageUrl,
-                    contentDescription = "VCV — Veste Com Você",
+                    contentDescription = Strings.Home.heroTitle,
                     aspectRatio = null,
                     modifier = Modifier.fillMaxWidth().height(heroHeight),
                 )
@@ -121,13 +92,9 @@ private fun Hero(imageUrl: String?, onCatalog: () -> Unit) {
                 modifier = Modifier.padding(Vcv.spacing.lg),
                 verticalArrangement = Arrangement.spacedBy(Vcv.spacing.sm),
             ) {
-                Text("Veste Com Você", style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.primary)
-                Text(
-                    "De Gaspar, Vale do Itajaí — poucas peças, bem feitas.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Vcv.colors.muted,
-                )
-                VcvButton(text = "Ver catálogo", onClick = onCatalog)
+                Text(Strings.Home.heroTitle, style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.primary)
+                Text(Strings.Home.heroSubtitle, style = MaterialTheme.typography.bodyLarge, color = Vcv.colors.muted)
+                VcvButton(text = Strings.Home.heroCta, onClick = onCatalog)
             }
         }
     }
@@ -137,7 +104,7 @@ private fun Hero(imageUrl: String?, onCatalog: () -> Unit) {
 private fun FeaturedSection(products: List<Product>, onProduct: (String) -> Unit) {
     if (products.isEmpty()) return
     Column(verticalArrangement = Arrangement.spacedBy(Vcv.spacing.md)) {
-        SectionHeader(title = "Peças em destaque", modifier = Modifier.padding(horizontal = Vcv.spacing.lg))
+        SectionHeader(title = Strings.Home.featured, modifier = Modifier.padding(horizontal = Vcv.spacing.lg))
         LazyRow(
             contentPadding = PaddingValues(horizontal = Vcv.spacing.lg),
             horizontalArrangement = Arrangement.spacedBy(Vcv.spacing.md),
@@ -164,8 +131,8 @@ private fun AtelierTeaser(onAtelier: () -> Unit) {
         modifier = Modifier.padding(Vcv.spacing.lg),
         verticalArrangement = Arrangement.spacedBy(Vcv.spacing.sm),
     ) {
-        SectionHeader(title = "Do ateliê", subtitle = "Ateliê próprio em Gaspar · produção rolo a rolo")
-        VcvOutlinedButton(text = "Conheça o ateliê", onClick = onAtelier)
+        SectionHeader(title = Strings.Home.atelierTitle, subtitle = Strings.Home.atelierSubtitle)
+        VcvOutlinedButton(text = Strings.Home.atelierCta, onClick = onAtelier)
     }
 }
 
@@ -184,6 +151,6 @@ private fun ErrorSection(message: String, onRetry: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(Vcv.spacing.md),
     ) {
         Text(message, style = MaterialTheme.typography.bodyMedium, color = Vcv.colors.muted)
-        VcvButton(text = "Tentar de novo", onClick = onRetry)
+        VcvButton(text = Strings.Common.retry, onClick = onRetry)
     }
 }
