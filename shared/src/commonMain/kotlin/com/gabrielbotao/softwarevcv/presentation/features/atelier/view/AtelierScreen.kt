@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gabrielbotao.softwarevcv.core.ui.components.RemoteImage
 import com.gabrielbotao.softwarevcv.core.ui.components.SectionHeader
+import com.gabrielbotao.softwarevcv.core.ui.components.VcvFooter
 import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
 import com.gabrielbotao.softwarevcv.domain.model.AtelierContent
 import com.gabrielbotao.softwarevcv.domain.model.AtelierSection
@@ -54,7 +55,7 @@ private fun AtelierContentView(content: AtelierContent) {
             modifier = Modifier.padding(Vcv.spacing.lg),
         )
         content.sections.forEach { section -> AtelierSectionView(section) }
-        Spacer(Modifier.height(Vcv.spacing.md))
+        VcvFooter()
     }
 }
 

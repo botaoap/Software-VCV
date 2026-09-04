@@ -11,7 +11,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.gabrielbotao.softwarevcv.core.image.configureImageLoader
-import com.gabrielbotao.softwarevcv.core.ui.components.VcvFooter
 import com.gabrielbotao.softwarevcv.core.ui.components.VcvNavItem
 import com.gabrielbotao.softwarevcv.core.ui.components.VcvTopNav
 import com.gabrielbotao.softwarevcv.core.ui.theme.VcvTheme
@@ -20,9 +19,13 @@ import com.gabrielbotao.softwarevcv.presentation.navigation.AppRoute
 import com.gabrielbotao.softwarevcv.presentation.navigation.Navigator
 
 /**
- * Root composable: the responsive shell (top nav + footer) hosting the nav host, all inside [VcvTheme].
+ * Root composable: the responsive shell (top nav) hosting the nav host, all inside [VcvTheme].
  * The [navigator] is created here by default; the web entrypoint passes its own instance so the
  * browser-history bridge shares it (deep-link on load + URL in sync). See [[MVVM-Multiplatform]].
+ *
+ * The top bar is the single primary navigation. The footer is **not** in the shell (it used to be
+ * pinned to the viewport bottom and duplicated the top nav — VCV-17); each page renders [VcvFooter] at
+ * the end of its own scroll content, so it flows with the page and reclaims that vertical space.
  */
 @Composable
 @Preview
@@ -37,12 +40,11 @@ fun App(navigator: Navigator = remember { Navigator() }) {
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 AppNavHost(navigator)
             }
-            VcvFooter(items = mainNavItems(navigator))
         }
     }
 }
 
-/** The main navigation destinations shown in the top nav and footer. */
+/** The main navigation destinations shown in the top nav. */
 private fun mainNavItems(navigator: Navigator): List<VcvNavItem> = listOf(
     VcvNavItem("Coleções") { navigator.navigate(AppRoute.Collections) },
     VcvNavItem("Catálogo") { navigator.navigate(AppRoute.Catalog) },
