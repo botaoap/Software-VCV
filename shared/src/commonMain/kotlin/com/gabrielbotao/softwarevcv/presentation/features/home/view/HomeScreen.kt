@@ -27,6 +27,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gabrielbotao.softwarevcv.core.ui.components.ProductCard
 import com.gabrielbotao.softwarevcv.core.ui.components.RemoteImage
 import com.gabrielbotao.softwarevcv.core.ui.components.SectionHeader
+import com.gabrielbotao.softwarevcv.core.ui.components.TrustBadge
+import com.gabrielbotao.softwarevcv.core.ui.components.TrustBadges
 import com.gabrielbotao.softwarevcv.core.ui.components.VcvButton
 import com.gabrielbotao.softwarevcv.core.ui.components.VcvFooter
 import com.gabrielbotao.softwarevcv.core.ui.components.VcvOutlinedButton
@@ -46,6 +48,14 @@ private val CardWidth = 240.dp
 private val HeroHeightCompact = 360.dp
 private val HeroHeightMedium = 420.dp
 private val HeroHeightExpanded = 460.dp
+
+// Reassurance strip under the hero (VCV-19 global chrome) — true for the atelier, no commerce claims.
+private val homeTrustBadges = listOf(
+    TrustBadge("Ateliê próprio", "Produção em Gaspar, SC"),
+    TrustBadge("Ficha técnica", "Tecido e origem em cada peça"),
+    TrustBadge("Envio nacional", "Para todo o Brasil"),
+    TrustBadge("Atendimento", "Direto no WhatsApp"),
+)
 
 /** Home page — the brand's first impression. Nav is via lambdas; data via [HomeViewModel]. §1. */
 @Composable
@@ -75,6 +85,7 @@ private fun HomeContent(
 ) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Hero(imageUrl = state.bestSeller?.cover?.url, onCatalog = onCatalog)
+        TrustBadges(homeTrustBadges)
         when {
             state.isLoading -> LoadingSection()
             state.error != null -> ErrorSection(message = state.error, onRetry = onRetry)
