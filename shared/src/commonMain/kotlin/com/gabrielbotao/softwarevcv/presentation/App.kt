@@ -43,7 +43,7 @@ fun App(
     chromeViewModel: ChromeViewModel = koinViewModel(),
 ) {
     remember { configureImageLoader() } // once: Coil singleton loader (Ktor network fetcher)
-    val whatsappUrl by chromeViewModel.whatsappUrl.collectAsStateWithLifecycle()
+    val contact by chromeViewModel.contact.collectAsStateWithLifecycle()
     VcvTheme {
         Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
             PromoBar(promoMessages)
@@ -54,7 +54,7 @@ fun App(
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 AppNavHost(navigator)
                 // Persistent WhatsApp CTA, fixed over the content area (VCV-19 global chrome).
-                whatsappUrl?.let { url ->
+                contact?.whatsapp?.let { url ->
                     FloatingWhatsApp(
                         url = url,
                         modifier = Modifier.align(Alignment.BottomEnd).padding(Vcv.spacing.lg),
