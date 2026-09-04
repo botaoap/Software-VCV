@@ -5,6 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.gabrielbotao.softwarevcv.presentation.navigation.routes.atelierEntry
+import com.gabrielbotao.softwarevcv.presentation.navigation.routes.cartEntry
 import com.gabrielbotao.softwarevcv.presentation.navigation.routes.catalogEntry
 import com.gabrielbotao.softwarevcv.presentation.navigation.routes.collectionEntry
 import com.gabrielbotao.softwarevcv.presentation.navigation.routes.collectionsEntry
@@ -32,6 +33,7 @@ fun AppNavHost(navigator: Navigator, modifier: Modifier = Modifier) {
             productEntry(navigator)
             atelierEntry(navigator)
             contactEntry(navigator)
+            cartEntry(navigator)
         },
     )
 }

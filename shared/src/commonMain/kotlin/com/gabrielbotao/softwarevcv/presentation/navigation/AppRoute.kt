@@ -15,6 +15,7 @@ sealed interface AppRoute : NavKey {
     data class Product(val id: String) : AppRoute
     data object Atelier : AppRoute
     data object Contact : AppRoute
+    data object Cart : AppRoute
 }
 
 /** Human label (pt-BR) for nav links / placeholders. */
@@ -26,4 +27,5 @@ fun AppRoute.label(): String = when (this) {
     is AppRoute.Product -> "Produto ${id}"
     AppRoute.Atelier -> "Atelier"
     AppRoute.Contact -> "Contato"
+    AppRoute.Cart -> "Sacola"
 }

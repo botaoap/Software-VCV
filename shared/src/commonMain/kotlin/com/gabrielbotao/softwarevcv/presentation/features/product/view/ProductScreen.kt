@@ -35,12 +35,14 @@ import com.gabrielbotao.softwarevcv.core.ui.components.RemoteImage
 import com.gabrielbotao.softwarevcv.core.ui.components.SectionHeader
 import com.gabrielbotao.softwarevcv.core.ui.components.SizePills
 import com.gabrielbotao.softwarevcv.core.ui.components.VcvButton
+import com.gabrielbotao.softwarevcv.core.ui.components.VcvOutlinedButton
 import com.gabrielbotao.softwarevcv.presentation.chrome.AppFooter
 import com.gabrielbotao.softwarevcv.core.ui.responsive.WindowWidthClass
 import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
 import com.gabrielbotao.softwarevcv.domain.model.FabricSpec
 import com.gabrielbotao.softwarevcv.domain.model.ImageRef
 import com.gabrielbotao.softwarevcv.domain.model.Product
+import com.gabrielbotao.softwarevcv.domain.model.Size
 import com.gabrielbotao.softwarevcv.presentation.features.common.LoadingState
 import com.gabrielbotao.softwarevcv.presentation.features.product.viewmodel.ProductViewModel
 import org.koin.compose.viewmodel.koinViewModel
@@ -63,18 +65,18 @@ fun ProductScreen(
     val product = state.product
     when {
         state.isLoading -> LoadingState()
-        product != null -> ProductDetail(product)
+        product != null -> ProductDetail(product, onAddToCart = viewModel::addToCart)
         else -> NotFound(onCatalog)
     }
 }
 
 @Composable
-private fun ProductDetail(product: Product) {
+private fun ProductDetail(product: Product, onAddToCart: (Size) -> Unit) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         if (WindowWidthClass.of(maxWidth) == WindowWidthClass.COMPACT) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                 Gallery(product.images, Modifier.fillMaxWidth())
-                Info(product, Modifier.padding(Vcv.spacing.lg))
+                Info(product, onAddToCart, Modifier.padding(Vcv.spacing.lg))
                 AppFooter()
             }
         } else {
@@ -85,6 +87,7 @@ private fun ProductDetail(product: Product) {
                 Gallery(product.images, Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
                 Info(
                     product,
+                    onAddToCart,
                     Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(Vcv.spacing.lg),
                 )
             }
@@ -124,8 +127,10 @@ private fun Gallery(images: List<ImageRef>, modifier: Modifier = Modifier, fillH
 }
 
 @Composable
-private fun Info(product: Product, modifier: Modifier = Modifier) {
+private fun Info(product: Product, onAddToCart: (Size) -> Unit, modifier: Modifier = Modifier) {
     val uriHandler = LocalUriHandler.current
+    var selectedSize by remember(product.id) { mutableStateOf<Int?>(null) }
+    var added by remember(product.id) { mutableStateOf(false) }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Vcv.spacing.md)) {
         Text(product.name, style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.onBackground)
         PriceText(product.price.amountCents, style = MaterialTheme.typography.titleLarge, color = Vcv.colors.wine)
@@ -135,10 +140,29 @@ private fun Info(product: Product, modifier: Modifier = Modifier) {
         val sizes = product.variants.map { it.size.value }.distinct().sorted()
         if (sizes.isNotEmpty()) {
             Text("Tamanhos", style = MaterialTheme.typography.labelLarge, color = Vcv.colors.muted)
-            SizePills(sizes)
+            SizePills(sizes, selected = selectedSize, onSelect = { selectedSize = it; added = false })
         }
         FabricSpecBlock(product.fabric)
-        BuyButton(product.buyUrl, uriHandler)
+
+        VcvButton(
+            text = if (added) "Adicionado à sacola ✓" else "Adicionar à sacola",
+            onClick = {
+                val size = selectedSize
+                if (size != null) {
+                    onAddToCart(Size(size))
+                    added = true
+                }
+            },
+            enabled = selectedSize != null,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        if (selectedSize == null) {
+            Text("Selecione um tamanho.", style = MaterialTheme.typography.bodySmall, color = Vcv.colors.muted)
+        }
+        // Secondary external "buy" link stays available when the product has one (VCV-8).
+        product.buyUrl?.let { url ->
+            VcvOutlinedButton(text = "Comprar direto", onClick = { uriHandler.openUri(url) }, modifier = Modifier.fillMaxWidth())
+        }
     }
 }
 
@@ -158,15 +182,6 @@ private fun SpecRow(label: String, value: String) {
     Row(horizontalArrangement = Arrangement.spacedBy(Vcv.spacing.sm)) {
         Text(label, style = MaterialTheme.typography.labelMedium, color = Vcv.colors.muted, modifier = Modifier.width(SpecLabelWidth))
         Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onBackground)
-    }
-}
-
-@Composable
-private fun BuyButton(buyUrl: String?, uriHandler: UriHandler) {
-    if (buyUrl != null) {
-        VcvButton(text = "Comprar", onClick = { uriHandler.openUri(buyUrl) })
-    } else {
-        VcvButton(text = "Em breve", onClick = {}, enabled = false)
     }
 }
 

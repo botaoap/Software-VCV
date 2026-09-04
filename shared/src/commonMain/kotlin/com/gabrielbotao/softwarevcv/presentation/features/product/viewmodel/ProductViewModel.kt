@@ -2,6 +2,8 @@ package com.gabrielbotao.softwarevcv.presentation.features.product.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.gabrielbotao.softwarevcv.domain.model.Size
+import com.gabrielbotao.softwarevcv.domain.usecase.AddToCartUseCase
 import com.gabrielbotao.softwarevcv.domain.usecase.GetProductUseCase
 import com.gabrielbotao.softwarevcv.presentation.features.common.toUserMessage
 import com.gabrielbotao.softwarevcv.presentation.features.product.state.ProductUiEvent
@@ -13,7 +15,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** Loads one product by id for `/produto/{id}`. The screen calls [load] with the route id. */
-class ProductViewModel(private val getProduct: GetProductUseCase) : ViewModel() {
+class ProductViewModel(
+    private val getProduct: GetProductUseCase,
+    private val addToCartUseCase: AddToCartUseCase,
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProductUiState())
     val uiState: StateFlow<ProductUiState> = _uiState.asStateFlow()
@@ -30,6 +35,12 @@ class ProductViewModel(private val getProduct: GetProductUseCase) : ViewModel() 
 
     fun onEvent(event: ProductUiEvent) = when (event) {
         ProductUiEvent.Retry -> refresh()
+    }
+
+    /** Add the loaded product at [size] to the cart. No-op until the product has loaded. */
+    fun addToCart(size: Size) {
+        val product = _uiState.value.product ?: return
+        addToCartUseCase(product, size)
     }
 
     private fun refresh() {
