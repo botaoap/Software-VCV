@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -24,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.unit.dp
@@ -76,8 +78,11 @@ private fun ProductDetail(product: Product) {
                 VcvFooter()
             }
         } else {
-            Row(Modifier.fillMaxSize()) {
-                Gallery(product.images, Modifier.weight(1f))
+            // Expanded: gallery + info side by side, each half the width and the full viewport height.
+            // The gallery must FILL its fixed-height column (crop), not take its intrinsic aspect ratio —
+            // otherwise a portrait image is taller than the row and bleeds over the header/below (VCV-25).
+            Row(Modifier.fillMaxSize().clipToBounds()) {
+                Gallery(product.images, Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
                 Info(
                     product,
                     Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(Vcv.spacing.lg),
@@ -88,15 +93,17 @@ private fun ProductDetail(product: Product) {
 }
 
 @Composable
-private fun Gallery(images: List<ImageRef>, modifier: Modifier = Modifier) {
+private fun Gallery(images: List<ImageRef>, modifier: Modifier = Modifier, fillHeight: Boolean = false) {
     var selected by remember(images) { mutableStateOf(0) }
     Column(modifier) {
         val cover = images.getOrNull(selected)
         RemoteImage(
             url = cover?.url,
             contentDescription = cover?.alt,
-            aspectRatio = cover?.aspectRatio ?: 3f / 4f,
-            modifier = Modifier.fillMaxWidth(),
+            // fillHeight (expanded): fill the remaining column height and crop (no overflow).
+            // Otherwise (compact, whole page scrolls): keep the image's natural aspect ratio.
+            aspectRatio = if (fillHeight) null else cover?.aspectRatio ?: 3f / 4f,
+            modifier = if (fillHeight) Modifier.fillMaxWidth().weight(1f) else Modifier.fillMaxWidth(),
         )
         if (images.size > 1) {
             LazyRow(
