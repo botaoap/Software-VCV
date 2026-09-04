@@ -16,7 +16,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gabrielbotao.softwarevcv.core.ui.components.ProductGrid
 import com.gabrielbotao.softwarevcv.core.ui.components.RemoteImage
 import com.gabrielbotao.softwarevcv.core.ui.components.SectionHeader
-import com.gabrielbotao.softwarevcv.core.ui.components.VcvFooter
+import com.gabrielbotao.softwarevcv.presentation.chrome.AppFooter
 import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
 import com.gabrielbotao.softwarevcv.domain.model.Collection
 import com.gabrielbotao.softwarevcv.presentation.features.collections.state.CollectionsUiEvent
@@ -42,7 +42,7 @@ fun CollectionsScreen(
             items = state.collections,
             modifier = Modifier.fillMaxSize(),
             header = { SectionHeader(title = "Coleções", modifier = Modifier.padding(bottom = Vcv.spacing.sm)) },
-            footer = { VcvFooter() },
+            footer = { AppFooter() },
         ) { collection ->
             CollectionCover(collection = collection, onClick = { onCollection(collection.slug) })
         }

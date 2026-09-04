@@ -35,7 +35,7 @@ import com.gabrielbotao.softwarevcv.core.ui.components.RemoteImage
 import com.gabrielbotao.softwarevcv.core.ui.components.SectionHeader
 import com.gabrielbotao.softwarevcv.core.ui.components.SizePills
 import com.gabrielbotao.softwarevcv.core.ui.components.VcvButton
-import com.gabrielbotao.softwarevcv.core.ui.components.VcvFooter
+import com.gabrielbotao.softwarevcv.presentation.chrome.AppFooter
 import com.gabrielbotao.softwarevcv.core.ui.responsive.WindowWidthClass
 import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
 import com.gabrielbotao.softwarevcv.domain.model.FabricSpec
@@ -75,7 +75,7 @@ private fun ProductDetail(product: Product) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                 Gallery(product.images, Modifier.fillMaxWidth())
                 Info(product, Modifier.padding(Vcv.spacing.lg))
-                VcvFooter()
+                AppFooter()
             }
         } else {
             // Expanded: gallery + info side by side, each half the width and the full viewport height.

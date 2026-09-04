@@ -24,7 +24,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gabrielbotao.softwarevcv.core.ui.components.ProductCard
 import com.gabrielbotao.softwarevcv.core.ui.components.ProductGrid
 import com.gabrielbotao.softwarevcv.core.ui.components.SectionHeader
-import com.gabrielbotao.softwarevcv.core.ui.components.VcvFooter
+import com.gabrielbotao.softwarevcv.presentation.chrome.AppFooter
 import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
 import com.gabrielbotao.softwarevcv.domain.model.Collection
 import com.gabrielbotao.softwarevcv.presentation.features.catalog.state.CatalogSort
@@ -64,7 +64,7 @@ fun CatalogScreen(
                     onSort = { viewModel.onEvent(CatalogUiEvent.SortChanged(it)) },
                 )
             },
-            footer = { VcvFooter() },
+            footer = { AppFooter() },
         ) { product ->
             val badge = product.badges.firstOrNull()
             ProductCard(

@@ -24,7 +24,7 @@ import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gabrielbotao.softwarevcv.core.ui.components.SectionHeader
-import com.gabrielbotao.softwarevcv.core.ui.components.VcvFooter
+import com.gabrielbotao.softwarevcv.presentation.chrome.AppFooter
 import com.gabrielbotao.softwarevcv.core.ui.responsive.WindowWidthClass
 import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
 import com.gabrielbotao.softwarevcv.domain.model.ContactContent
@@ -117,7 +117,7 @@ private fun ContactContentView(content: ContactContent) {
                     }
                 }
             }
-            VcvFooter(Modifier.padding(top = Vcv.spacing.xl))
+            AppFooter(Modifier.padding(top = Vcv.spacing.xl))
         }
     }
 }
