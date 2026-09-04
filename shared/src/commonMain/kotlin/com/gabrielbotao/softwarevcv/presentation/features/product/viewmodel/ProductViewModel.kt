@@ -3,6 +3,7 @@ package com.gabrielbotao.softwarevcv.presentation.features.product.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gabrielbotao.softwarevcv.domain.usecase.GetProductUseCase
+import com.gabrielbotao.softwarevcv.presentation.features.common.toUserMessage
 import com.gabrielbotao.softwarevcv.presentation.features.product.state.ProductUiEvent
 import com.gabrielbotao.softwarevcv.presentation.features.product.state.ProductUiState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,7 +39,7 @@ class ProductViewModel(private val getProduct: GetProductUseCase) : ViewModel() 
             getProduct(id)
                 .onSuccess { product -> _uiState.update { it.copy(isLoading = false, product = product) } }
                 .onFailure { e ->
-                    _uiState.update { it.copy(isLoading = false, product = null, error = e.message ?: "Produto não encontrado") }
+                    _uiState.update { it.copy(isLoading = false, product = null, error = e.toUserMessage("Produto não encontrado.")) }
                 }
         }
     }

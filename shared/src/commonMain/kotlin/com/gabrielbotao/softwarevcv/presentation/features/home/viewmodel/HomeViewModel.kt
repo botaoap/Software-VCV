@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gabrielbotao.softwarevcv.domain.model.ProductBadge
 import com.gabrielbotao.softwarevcv.domain.usecase.GetFeaturedProductsUseCase
+import com.gabrielbotao.softwarevcv.presentation.features.common.toUserMessage
 import com.gabrielbotao.softwarevcv.presentation.features.home.state.HomeUiEvent
 import com.gabrielbotao.softwarevcv.presentation.features.home.state.HomeUiState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,7 +41,7 @@ class HomeViewModel(private val getFeatured: GetFeaturedProductsUseCase) : ViewM
                     }
                 }
                 .onFailure { e ->
-                    _uiState.update { it.copy(isLoading = false, error = e.message ?: "Erro ao carregar") }
+                    _uiState.update { it.copy(isLoading = false, error = e.toUserMessage()) }
                 }
         }
     }

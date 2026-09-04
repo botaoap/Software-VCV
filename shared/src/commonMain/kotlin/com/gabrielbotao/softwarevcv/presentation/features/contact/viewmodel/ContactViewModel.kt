@@ -3,6 +3,7 @@ package com.gabrielbotao.softwarevcv.presentation.features.contact.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gabrielbotao.softwarevcv.domain.usecase.GetContactUseCase
+import com.gabrielbotao.softwarevcv.presentation.features.common.toUserMessage
 import com.gabrielbotao.softwarevcv.presentation.features.contact.state.ContactUiEvent
 import com.gabrielbotao.softwarevcv.presentation.features.contact.state.ContactUiState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,7 +31,7 @@ class ContactViewModel(private val getContact: GetContactUseCase) : ViewModel() 
             _uiState.update { it.copy(isLoading = true, error = null) }
             getContact()
                 .onSuccess { content -> _uiState.update { it.copy(isLoading = false, content = content) } }
-                .onFailure { e -> _uiState.update { it.copy(isLoading = false, error = e.message ?: "Erro ao carregar") } }
+                .onFailure { e -> _uiState.update { it.copy(isLoading = false, error = e.toUserMessage()) } }
         }
     }
 }
