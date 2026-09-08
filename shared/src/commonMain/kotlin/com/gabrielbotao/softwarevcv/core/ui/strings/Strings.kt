@@ -38,6 +38,7 @@ object Strings {
         const val heroTitle = "Veste Com Você"
         const val heroSubtitle = "De Gaspar, Vale do Itajaí — poucas peças, bem feitas."
         const val heroCta = "Ver catálogo"
+        const val heroImageAlt = "Peças e ateliê da VCV, moda de Gaspar"
         const val featured = "Peças em destaque"
         const val atelierTitle = "Do ateliê"
         const val atelierSubtitle = "Ateliê próprio em Gaspar · produção rolo a rolo"

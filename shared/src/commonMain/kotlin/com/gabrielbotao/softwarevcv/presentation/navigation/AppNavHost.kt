@@ -27,8 +27,9 @@ import com.gabrielbotao.softwarevcv.presentation.navigation.routes.productEntry
  */
 @Composable
 fun AppNavHost(navigator: Navigator, modifier: Modifier = Modifier) {
-    // Read the token here — the transitionSpec lambdas below aren't composable scopes.
-    val routeFade = Vcv.motion.routeFadeMillis
+    // Read the tokens here — the transitionSpec lambdas below aren't composable scopes.
+    // Reduced motion → snap (duration 0) instead of crossfading.
+    val routeFade = if (Vcv.reducedMotion) 0 else Vcv.motion.routeFadeMillis
     NavDisplay(
         backStack = navigator.backStack,
         modifier = modifier,
