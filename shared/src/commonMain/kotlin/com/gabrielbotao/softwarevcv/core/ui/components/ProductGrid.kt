@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -61,6 +62,8 @@ fun <T> ProductGrid(
                 }
             }
             if (footer != null) {
+                // Fixed gap so content never butts the footer on a tall page (weighted spacer → 0 there).
+                Spacer(Modifier.height(Vcv.spacing.xl))
                 Spacer(Modifier.weight(1f))
                 footer()
             }

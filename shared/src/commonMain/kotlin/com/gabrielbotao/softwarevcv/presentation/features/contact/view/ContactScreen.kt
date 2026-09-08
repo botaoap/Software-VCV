@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
@@ -113,6 +114,8 @@ private fun ContactContentView(content: ContactContent) {
                     }
                 }
             }
+            // Keep a gap before the footer even when tall (the weighted spacer collapses to 0). VCV-31.
+            Spacer(Modifier.height(Vcv.spacing.xl))
             Spacer(Modifier.weight(1f))
             AppFooter()
         }
