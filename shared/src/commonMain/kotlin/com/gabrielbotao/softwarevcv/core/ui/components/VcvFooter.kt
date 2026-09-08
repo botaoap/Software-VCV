@@ -3,6 +3,7 @@ package com.gabrielbotao.softwarevcv.core.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import com.gabrielbotao.softwarevcv.core.ui.responsive.WindowWidthClass
 import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
 
 /**
@@ -30,11 +32,16 @@ fun VcvFooter(
     email: String? = null,
 ) {
     val uriHandler = LocalUriHandler.current
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+    // On compact widths the persistent WhatsApp FAB sits over the bottom-right; give the footer extra
+    // bottom room so its links never disappear under it (VCV-31).
+    val compact = WindowWidthClass.of(maxWidth) == WindowWidthClass.COMPACT
+    val bottomPadding = if (compact) Vcv.spacing.xxl + Vcv.spacing.xl else Vcv.spacing.xl
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface)
-            .padding(Vcv.spacing.xl),
+            .padding(start = Vcv.spacing.xl, end = Vcv.spacing.xl, top = Vcv.spacing.xl, bottom = bottomPadding),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
@@ -57,6 +64,7 @@ fun VcvFooter(
                 email?.let { FooterLink("E-mail") { uriHandler.openUri("mailto:$it") } }
             }
         }
+    }
     }
 }
 
