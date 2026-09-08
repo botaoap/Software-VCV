@@ -46,15 +46,16 @@ private val HeroHeightMedium = 480.dp
 private val HeroHeightExpanded = 560.dp
 
 /**
- * Placeholder **campaign art** for the hero band — wide (landscape) clothing/model shots so the full-width
- * band composes properly instead of hard-cropping a portrait product photo (VCV-30/VCV-31). Deterministic
- * via `?lock=`. Replace with Felipe's real campaign photography later (swap these URLs). Hero imagery is
- * chrome, not catalog content, so it lives here rather than in the product/content layer.
+ * Placeholder **campaign art** for the hero band — wide (landscape) **boutique / clothing-rack** shots so
+ * the full-width band composes properly (not a hard-cropped portrait) and clearly reads as *a clothing
+ * store*, not a random lifestyle photo (VCV-30). Curated Unsplash CDN URLs (stable per photo id, CORS-ok).
+ * Replace with Felipe's real campaign photography later (swap these URLs). Hero imagery is chrome, not
+ * catalog content, so it lives here rather than in the product/content layer.
  */
 private val heroImages = listOf(
-    "https://loremflickr.com/1200/675/fashion,model?lock=11",
-    "https://loremflickr.com/1200/675/fashion,clothing?lock=12",
-    "https://loremflickr.com/1200/675/fashion,dress?lock=13",
+    "https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=1200&h=675&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1555529771-835f59fc5efe?w=1200&h=675&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1665815844395-06f64f44b5e3?w=1200&h=675&fit=crop&q=80",
 )
 
 private val homeTrustBadges = Strings.Home.trust.map { TrustBadge(it.first, it.second) }

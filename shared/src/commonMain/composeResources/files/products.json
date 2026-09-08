@@ -5,8 +5,8 @@
     "collectionSlug": "essenciais",
     "priceCents": 18900,
     "images": [
-      { "url": "https://loremflickr.com/600/800/fashion,dress,woman?lock=101", "alt": "Vestido Curto Zebra, frente" },
-      { "url": "https://loremflickr.com/600/800/fashion,dress,woman?lock=102", "alt": "Vestido Curto Zebra, costas" }
+      { "url": "https://images.unsplash.com/photo-1682723840177-8c0dcd71f4a7?w=600&h=800&fit=crop&q=80", "alt": "Vestido Curto Zebra, frente" },
+      { "url": "https://images.unsplash.com/photo-1677537946959-9038a59d5da5?w=600&h=800&fit=crop&q=80", "alt": "Vestido Curto Zebra, costas" }
     ],
     "shortDescription": "Viscose com toque seco, cortada no Vale do Itajaí. Modelagem provada em corpo real.",
     "fabric": {
@@ -28,7 +28,7 @@
     "collectionSlug": "essenciais",
     "priceCents": 22900,
     "images": [
-      { "url": "https://loremflickr.com/600/800/fashion,pants,woman?lock=111", "alt": "Calça Pantalona Viscolinho" }
+      { "url": "https://images.unsplash.com/photo-1779406166861-ea24cd1296ce?w=600&h=800&fit=crop&q=80", "alt": "Calça Pantalona Viscolinho" }
     ],
     "shortDescription": "Cintura alta e caimento reto. A base que sustenta o guarda-roupa.",
     "fabric": {
@@ -49,7 +49,7 @@
     "collectionSlug": "verao",
     "priceCents": 14900,
     "images": [
-      { "url": "https://loremflickr.com/600/800/fashion,blouse,woman?lock=121", "alt": "Blusa Ampla Linho" }
+      { "url": "https://images.unsplash.com/photo-1578747522731-9e5a179b02f7?w=600&h=800&fit=crop&q=80", "alt": "Blusa Ampla Linho" }
     ],
     "shortDescription": "Linho leve, respirável, feito para o calor do vale.",
     "fabric": {
@@ -69,7 +69,7 @@
     "collectionSlug": "verao",
     "priceCents": 17900,
     "images": [
-      { "url": "https://loremflickr.com/600/800/fashion,skirt,woman?lock=131", "alt": "Saia Midi Viscose" }
+      { "url": "https://images.unsplash.com/photo-1764298493197-a1c1cce57800?w=600&h=800&fit=crop&q=80", "alt": "Saia Midi Viscose" }
     ],
     "shortDescription": "Comprimento midi, movimento leve. Do dia ao fim de tarde.",
     "fabric": {

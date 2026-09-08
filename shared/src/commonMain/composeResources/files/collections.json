@@ -3,7 +3,7 @@
     "slug": "essenciais",
     "title": "Essenciais",
     "subtitle": "As peças que sustentam o guarda-roupa",
-    "cover": { "url": "https://loremflickr.com/900/1200/fashion,woman,model?lock=201", "alt": "Coleção Essenciais" },
+    "cover": { "url": "https://images.unsplash.com/photo-1603400521630-9f2de124b33b?w=900&h=1200&fit=crop&q=80", "alt": "Coleção Essenciais" },
     "productIds": ["vestido-zebra", "calca-viscolinho"],
     "story": "Poucas peças, bem feitas. Tecido escolhido rolo a rolo, modelagem provada em corpo real."
   },
@@ -11,7 +11,7 @@
     "slug": "verao",
     "title": "Verão",
     "subtitle": "Leveza para o calor do vale",
-    "cover": { "url": "https://loremflickr.com/900/1200/fashion,summer,dress?lock=202", "alt": "Coleção Verão" },
+    "cover": { "url": "https://images.unsplash.com/photo-1659297949927-06fa02629af0?w=900&h=1200&fit=crop&q=80", "alt": "Coleção Verão" },
     "productIds": ["blusa-linho", "saia-midi"],
     "story": "Linho e viscose para os dias quentes do Vale do Itajaí."
   }
