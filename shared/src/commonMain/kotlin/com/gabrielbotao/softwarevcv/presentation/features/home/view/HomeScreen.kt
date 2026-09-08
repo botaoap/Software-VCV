@@ -96,7 +96,11 @@ private fun Hero(images: List<String>, onCatalog: () -> Unit) {
         }
         Column {
             if (images.isNotEmpty()) {
-                ImageCarousel(imageUrls = images, modifier = Modifier.fillMaxWidth().height(heroHeight))
+                ImageCarousel(
+                    imageUrls = images,
+                    contentDescription = Strings.Home.heroImageAlt,
+                    modifier = Modifier.fillMaxWidth().height(heroHeight),
+                )
             }
             Column(
                 modifier = Modifier.padding(Vcv.spacing.lg),

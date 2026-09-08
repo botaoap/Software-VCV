@@ -27,6 +27,10 @@ fun RevealOnAppear(
     delayMillis: Int = 0,
     content: @Composable () -> Unit,
 ) {
+    if (Vcv.reducedMotion) {
+        Box(modifier) { content() }
+        return
+    }
     val motion = Vcv.motion
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible = true }

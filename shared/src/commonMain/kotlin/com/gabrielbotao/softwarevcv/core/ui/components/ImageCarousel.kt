@@ -52,16 +52,19 @@ private const val SwipeThresholdPx = 48f
 fun ImageCarousel(
     imageUrls: List<String>,
     modifier: Modifier = Modifier,
+    contentDescription: String? = null,
     autoAdvanceMillis: Long? = null,
 ) {
     if (imageUrls.isEmpty()) return
+    val reduced = Vcv.reducedMotion
     val advanceMillis = autoAdvanceMillis ?: Vcv.motion.carouselAdvanceMillis
     val count = imageUrls.size
     var index by remember(imageUrls) { mutableIntStateOf(0) }
     fun go(delta: Int) { index = (index + delta + count) % count }
 
-    LaunchedEffect(imageUrls, index) {
-        if (count > 1) {
+    // Auto-advance only when motion is welcome; manual controls (swipe/chevrons/dots) always work.
+    LaunchedEffect(imageUrls, index, reduced) {
+        if (count > 1 && !reduced) {
             delay(advanceMillis)
             go(1)
         }
@@ -81,10 +84,14 @@ fun ImageCarousel(
     } else Modifier
 
     Box(modifier.then(swipe)) {
-        Crossfade(targetState = index, animationSpec = tween(Vcv.motion.crossfadeMillis), label = "carousel") { i ->
+        Crossfade(
+            targetState = index,
+            animationSpec = tween(if (reduced) 0 else Vcv.motion.crossfadeMillis),
+            label = "carousel",
+        ) { i ->
             RemoteImage(
                 url = imageUrls[i % count],
-                contentDescription = null,
+                contentDescription = contentDescription,
                 aspectRatio = null,
                 modifier = Modifier.fillMaxSize(),
             )

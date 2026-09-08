@@ -39,12 +39,14 @@ import kotlin.math.roundToInt
 @Composable
 fun PromoBar(messages: List<String>, modifier: Modifier = Modifier) {
     if (messages.isEmpty()) return
+    val reduced = Vcv.reducedMotion
     val pxPerSecond = Vcv.motion.marqueePxPerSecond
     val offsetX = remember { Animatable(0f) }
     var seqWidth by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(seqWidth, messages, pxPerSecond) {
-        if (seqWidth > 0) {
+    // Reduced motion: don't scroll — the phrases sit static (offset stays 0).
+    LaunchedEffect(seqWidth, messages, pxPerSecond, reduced) {
+        if (seqWidth > 0 && !reduced) {
             val durationMillis = (seqWidth / pxPerSecond * 1000f).roundToInt()
             offsetX.snapTo(0f)
             while (true) {

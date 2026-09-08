@@ -5,6 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
+import com.gabrielbotao.softwarevcv.core.platform.prefersReducedMotion
 
 /**
  * Assembles the 1C "Corpo" design system: picks the light/dark [androidx.compose.material3.ColorScheme],
@@ -22,6 +23,7 @@ fun VcvTheme(
         LocalVcvColors provides brandColors,
         LocalSpacing provides Spacing(),
         LocalMotion provides Motion(),
+        LocalReducedMotion provides prefersReducedMotion(),
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
@@ -40,4 +42,8 @@ object Vcv {
         @Composable @ReadOnlyComposable get() = LocalSpacing.current
     val motion: Motion
         @Composable @ReadOnlyComposable get() = LocalMotion.current
+
+    /** True when the user asked for reduced motion — components snap instead of animating. */
+    val reducedMotion: Boolean
+        @Composable @ReadOnlyComposable get() = LocalReducedMotion.current
 }

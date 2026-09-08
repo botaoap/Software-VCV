@@ -33,3 +33,9 @@ data class Motion(
 
 /** Provided by [VcvTheme]. */
 val LocalMotion = staticCompositionLocalOf { Motion() }
+
+/**
+ * Whether to drop non-essential motion (honors `prefers-reduced-motion`). Provided by [VcvTheme] from the
+ * platform seam; components read `Vcv.reducedMotion` to snap animations instead of playing them. See [[VCV-33]].
+ */
+val LocalReducedMotion = staticCompositionLocalOf { false }
