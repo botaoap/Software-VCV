@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import com.gabrielbotao.softwarevcv.core.ui.components.PriceText
@@ -91,7 +92,10 @@ private fun Gallery(images: List<ImageRef>, modifier: Modifier = Modifier, fillH
         RemoteImage(
             url = cover?.url,
             contentDescription = cover?.alt,
+            // Fit (not crop) so the whole garment is visible — same framing as the catalog/home, just
+            // bigger. On wide layouts the image fills the column height; on narrow it keeps its ratio.
             aspectRatio = if (fillHeight) null else cover?.aspectRatio ?: 3f / 4f,
+            contentScale = ContentScale.Fit,
             modifier = if (fillHeight) Modifier.fillMaxWidth().weight(1f) else Modifier.fillMaxWidth(),
         )
         if (images.size > 1) {
