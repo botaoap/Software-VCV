@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
@@ -56,6 +57,9 @@ fun PageScaffold(
                 verticalArrangement = Arrangement.spacedBy(spacing),
                 content = content,
             )
+            // Always keep a gap between content and footer (the weighted spacer collapses to 0 on tall
+            // pages), so the last item never butts against the footer. Matches home/atelier. See [[VCV-31]].
+            Spacer(Modifier.height(Vcv.spacing.xl))
             Spacer(Modifier.weight(1f))
             footer()
         }
