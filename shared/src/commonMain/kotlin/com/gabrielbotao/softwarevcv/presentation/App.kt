@@ -82,8 +82,10 @@ private fun mainNavItems(navigator: Navigator): List<VcvNavItem> = listOf(
     VcvNavItem("Contato") { navigator.navigate(AppRoute.Contact) },
 )
 
-/** The cart entry, with a live item-count badge in the label. */
-private fun cartNavItem(navigator: Navigator, count: Int): VcvNavItem {
-    val label = if (count > 0) "Sacola ($count)" else "Sacola"
-    return VcvNavItem(label) { navigator.navigate(AppRoute.Cart) }
-}
+/** The cart entry, with a live item-count badge that pulses on change (VCV-32). */
+private fun cartNavItem(navigator: Navigator, count: Int): VcvNavItem =
+    VcvNavItem(
+        label = "Sacola",
+        onClick = { navigator.navigate(AppRoute.Cart) },
+        badge = count.takeIf { it > 0 },
+    )
