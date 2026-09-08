@@ -40,7 +40,6 @@ private val DotSize = 8.dp
 private val ChevronSize = 40.dp
 private val ChevronGlyph = 14.dp
 private const val SwipeThresholdPx = 48f
-private const val ChevronRestAlpha = 0.12f
 
 /**
  * Image carousel with auto-advance **and** manual control: horizontal **swipe/drag**, **prev/next
@@ -53,16 +52,17 @@ private const val ChevronRestAlpha = 0.12f
 fun ImageCarousel(
     imageUrls: List<String>,
     modifier: Modifier = Modifier,
-    autoAdvanceMillis: Long = 4500,
+    autoAdvanceMillis: Long? = null,
 ) {
     if (imageUrls.isEmpty()) return
+    val advanceMillis = autoAdvanceMillis ?: Vcv.motion.carouselAdvanceMillis
     val count = imageUrls.size
     var index by remember(imageUrls) { mutableIntStateOf(0) }
     fun go(delta: Int) { index = (index + delta + count) % count }
 
     LaunchedEffect(imageUrls, index) {
         if (count > 1) {
-            delay(autoAdvanceMillis)
+            delay(advanceMillis)
             go(1)
         }
     }
@@ -81,7 +81,7 @@ fun ImageCarousel(
     } else Modifier
 
     Box(modifier.then(swipe)) {
-        Crossfade(targetState = index, animationSpec = tween(700), label = "carousel") { i ->
+        Crossfade(targetState = index, animationSpec = tween(Vcv.motion.crossfadeMillis), label = "carousel") { i ->
             RemoteImage(
                 url = imageUrls[i % count],
                 contentDescription = null,
@@ -111,8 +111,8 @@ private fun Chevron(pointingLeft: Boolean, modifier: Modifier, onClick: () -> Un
     val interaction = remember { MutableInteractionSource() }
     val hovered by interaction.collectIsHoveredAsState()
     val alpha by animateFloatAsState(
-        targetValue = if (hovered) 1f else ChevronRestAlpha,
-        animationSpec = tween(200),
+        targetValue = if (hovered) 1f else Vcv.motion.subtleControlAlpha,
+        animationSpec = tween(Vcv.motion.hoverFadeMillis),
         label = "chevron-alpha",
     )
     val glyphColor = MaterialTheme.colorScheme.onSurface

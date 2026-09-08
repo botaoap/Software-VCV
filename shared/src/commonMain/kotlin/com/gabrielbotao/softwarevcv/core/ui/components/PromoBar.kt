@@ -26,9 +26,6 @@ import androidx.compose.ui.unit.IntOffset
 import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
 import kotlin.math.roundToInt
 
-/** Marquee scroll speed (device-independent px per second) — calm, editorial pace for the atelier. */
-private const val MarqueePxPerSecond = 60f
-
 /**
  * Full-bleed promo **marquee**: the brand/service phrases scroll continuously from the end to the start
  * of the screen in one seamless loop — the classic storefront ticker (see [[VCV-19 — site structure & UX
@@ -42,12 +39,13 @@ private const val MarqueePxPerSecond = 60f
 @Composable
 fun PromoBar(messages: List<String>, modifier: Modifier = Modifier) {
     if (messages.isEmpty()) return
+    val pxPerSecond = Vcv.motion.marqueePxPerSecond
     val offsetX = remember { Animatable(0f) }
     var seqWidth by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(seqWidth, messages) {
+    LaunchedEffect(seqWidth, messages, pxPerSecond) {
         if (seqWidth > 0) {
-            val durationMillis = (seqWidth / MarqueePxPerSecond * 1000f).roundToInt()
+            val durationMillis = (seqWidth / pxPerSecond * 1000f).roundToInt()
             offsetX.snapTo(0f)
             while (true) {
                 offsetX.animateTo(

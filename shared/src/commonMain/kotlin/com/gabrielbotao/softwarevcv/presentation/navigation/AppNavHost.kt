@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
+import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
 import com.gabrielbotao.softwarevcv.presentation.navigation.routes.atelierEntry
 import com.gabrielbotao.softwarevcv.presentation.navigation.routes.cartEntry
 import com.gabrielbotao.softwarevcv.presentation.navigation.routes.catalogEntry
@@ -26,14 +27,16 @@ import com.gabrielbotao.softwarevcv.presentation.navigation.routes.productEntry
  */
 @Composable
 fun AppNavHost(navigator: Navigator, modifier: Modifier = Modifier) {
+    // Read the token here — the transitionSpec lambdas below aren't composable scopes.
+    val routeFade = Vcv.motion.routeFadeMillis
     NavDisplay(
         backStack = navigator.backStack,
         modifier = modifier,
         onBack = { navigator.pop() },
         // Gentle crossfade between destinations (replaces the default slide's overlap flash). VCV-22.
-        transitionSpec = { fadeIn(tween(280)) togetherWith fadeOut(tween(280)) },
-        popTransitionSpec = { fadeIn(tween(280)) togetherWith fadeOut(tween(280)) },
-        predictivePopTransitionSpec = { fadeIn(tween(280)) togetherWith fadeOut(tween(280)) },
+        transitionSpec = { fadeIn(tween(routeFade)) togetherWith fadeOut(tween(routeFade)) },
+        popTransitionSpec = { fadeIn(tween(routeFade)) togetherWith fadeOut(tween(routeFade)) },
+        predictivePopTransitionSpec = { fadeIn(tween(routeFade)) togetherWith fadeOut(tween(routeFade)) },
         entryProvider = entryProvider {
             homeEntry(navigator)
             collectionsEntry(navigator)

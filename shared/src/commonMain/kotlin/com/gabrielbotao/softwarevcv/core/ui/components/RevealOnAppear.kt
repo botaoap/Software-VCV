@@ -14,6 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
+import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
 
 /**
  * Fades + slides its [content] up when it first appears. In a lazy list/grid, items compose as they
@@ -26,16 +27,17 @@ fun RevealOnAppear(
     delayMillis: Int = 0,
     content: @Composable () -> Unit,
 ) {
+    val motion = Vcv.motion
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible = true }
     val alpha by animateFloatAsState(
         targetValue = if (visible) 1f else 0f,
-        animationSpec = tween(durationMillis = 450, delayMillis = delayMillis),
+        animationSpec = tween(durationMillis = motion.revealMillis, delayMillis = delayMillis),
         label = "reveal-alpha",
     )
     val offsetY by animateDpAsState(
-        targetValue = if (visible) 0.dp else 16.dp,
-        animationSpec = tween(durationMillis = 450, delayMillis = delayMillis),
+        targetValue = if (visible) 0.dp else motion.revealSlideUp,
+        animationSpec = tween(durationMillis = motion.revealMillis, delayMillis = delayMillis),
         label = "reveal-offset",
     )
     Box(modifier.offset(y = offsetY).alpha(alpha)) {
