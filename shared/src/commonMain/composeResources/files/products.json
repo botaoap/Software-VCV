@@ -5,8 +5,8 @@
     "collectionSlug": "essenciais",
     "priceCents": 18900,
     "images": [
-      { "url": "https://picsum.photos/seed/vcv-zebra-1/600/800", "alt": "Vestido Curto Zebra, frente" },
-      { "url": "https://picsum.photos/seed/vcv-zebra-2/600/800", "alt": "Vestido Curto Zebra, costas" }
+      { "url": "https://loremflickr.com/600/800/fashion,dress,woman?lock=101", "alt": "Vestido Curto Zebra, frente" },
+      { "url": "https://loremflickr.com/600/800/fashion,dress,woman?lock=102", "alt": "Vestido Curto Zebra, costas" }
     ],
     "shortDescription": "Viscose com toque seco, cortada no Vale do Itajaí. Modelagem provada em corpo real.",
     "fabric": {
@@ -28,7 +28,7 @@
     "collectionSlug": "essenciais",
     "priceCents": 22900,
     "images": [
-      { "url": "https://picsum.photos/seed/vcv-calca-1/600/800", "alt": "Calça Pantalona Viscolinho" }
+      { "url": "https://loremflickr.com/600/800/fashion,pants,woman?lock=111", "alt": "Calça Pantalona Viscolinho" }
     ],
     "shortDescription": "Cintura alta e caimento reto. A base que sustenta o guarda-roupa.",
     "fabric": {
@@ -49,7 +49,7 @@
     "collectionSlug": "verao",
     "priceCents": 14900,
     "images": [
-      { "url": "https://picsum.photos/seed/vcv-blusa-1/600/800", "alt": "Blusa Ampla Linho" }
+      { "url": "https://loremflickr.com/600/800/fashion,blouse,woman?lock=121", "alt": "Blusa Ampla Linho" }
     ],
     "shortDescription": "Linho leve, respirável, feito para o calor do vale.",
     "fabric": {
@@ -69,7 +69,7 @@
     "collectionSlug": "verao",
     "priceCents": 17900,
     "images": [
-      { "url": "https://picsum.photos/seed/vcv-saia-1/600/800", "alt": "Saia Midi Viscose" }
+      { "url": "https://loremflickr.com/600/800/fashion,skirt,woman?lock=131", "alt": "Saia Midi Viscose" }
     ],
     "shortDescription": "Comprimento midi, movimento leve. Do dia ao fim de tarde.",
     "fabric": {

@@ -5,12 +5,12 @@
       {
         "title": "Origem",
         "body": "A VCV é uma casa têxtil, não uma loja. Cada peça vem com ficha técnica: tecido nomeado e procedência declarada.",
-        "image": { "url": "https://picsum.photos/seed/vcv-atelier-1/1200/800", "alt": "Ateliê VCV em Gaspar" }
+        "image": { "url": "https://loremflickr.com/1200/800/sewing,atelier,fabric?lock=301", "alt": "Ateliê VCV em Gaspar" }
       },
       {
         "title": "Ateliê próprio",
         "body": "Produção em pequena escala, rolo a rolo. Tecido escolhido à mão, modelagem provada em corpo real.",
-        "image": { "url": "https://picsum.photos/seed/vcv-atelier-2/1200/800", "alt": "Produção rolo a rolo" }
+        "image": { "url": "https://loremflickr.com/1200/800/sewing,textile,fabric?lock=302", "alt": "Produção rolo a rolo" }
       },
       {
         "title": "Compra pouco e bem",
