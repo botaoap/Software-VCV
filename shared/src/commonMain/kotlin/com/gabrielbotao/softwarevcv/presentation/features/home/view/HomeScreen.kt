@@ -41,9 +41,21 @@ import com.gabrielbotao.softwarevcv.presentation.features.common.productBadgeLab
 import com.gabrielbotao.softwarevcv.presentation.features.home.state.HomeUiState
 
 private val CardWidth = 240.dp
-private val HeroHeightCompact = 360.dp
-private val HeroHeightMedium = 420.dp
-private val HeroHeightExpanded = 460.dp
+private val HeroHeightCompact = 420.dp
+private val HeroHeightMedium = 480.dp
+private val HeroHeightExpanded = 560.dp
+
+/**
+ * Placeholder **campaign art** for the hero band — wide (landscape) clothing/model shots so the full-width
+ * band composes properly instead of hard-cropping a portrait product photo (VCV-30/VCV-31). Deterministic
+ * via `?lock=`. Replace with Felipe's real campaign photography later (swap these URLs). Hero imagery is
+ * chrome, not catalog content, so it lives here rather than in the product/content layer.
+ */
+private val heroImages = listOf(
+    "https://loremflickr.com/1200/675/fashion,model?lock=11",
+    "https://loremflickr.com/1200/675/fashion,clothing?lock=12",
+    "https://loremflickr.com/1200/675/fashion,dress?lock=13",
+)
 
 private val homeTrustBadges = Strings.Home.trust.map { TrustBadge(it.first, it.second) }
 
@@ -59,9 +71,6 @@ fun HomeScreen(
     onCatalog: () -> Unit,
     onAtelier: () -> Unit,
 ) {
-    val heroImages = remember(state.featured, state.bestSeller) {
-        state.featured.mapNotNull { it.cover?.url }.ifEmpty { listOfNotNull(state.bestSeller?.cover?.url) }
-    }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Hero(images = heroImages, onCatalog = onCatalog)
         RevealOnAppear { TrustBadges(homeTrustBadges) }
