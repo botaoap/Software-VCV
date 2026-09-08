@@ -3,36 +3,29 @@ package com.gabrielbotao.softwarevcv.core.ui.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.layout
-import androidx.compose.ui.unit.Dp
 import com.gabrielbotao.softwarevcv.core.ui.responsive.WindowWidthClass
 import com.gabrielbotao.softwarevcv.core.ui.responsive.productGridColumns
 import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
 
 /**
- * Lets a lazy item bleed past the grid's horizontal [contentPadding] to the screen edges — it grows its
- * width by `2 * padding` and shifts left by `padding`. Used for the full-width footer so its background
- * reaches both edges (matching the un-padded page footers), instead of sitting inset like a card.
- */
-private fun Modifier.fullBleedHorizontal(padding: Dp) = layout { measurable, constraints ->
-    val extra = (padding * 2).roundToPx()
-    val widened = if (constraints.hasBoundedWidth) constraints.maxWidth + extra else constraints.maxWidth
-    val placeable = measurable.measure(constraints.copy(minWidth = widened, maxWidth = widened))
-    layout(placeable.width, placeable.height) { placeable.place(-padding.roundToPx(), 0) }
-}
-
-/**
- * Responsive product grid — columns follow the measured width (1 → 2 → 4). It is the page's scroller
- * (a `LazyVerticalGrid`), so give it the available height. Generic over the item type; pages supply the
- * `itemContent` (typically a [ProductCard]), an optional full-width [header] (e.g. a collection story),
- * and an optional full-width [footer] (e.g. [VcvFooter], so it scrolls with the page — VCV-17).
+ * Responsive product grid — columns follow the measured width (1 → 2 → 4). Generic over the item type;
+ * pages supply the `itemContent` (typically a [ProductCard]), an optional full-width [header] (e.g. a
+ * collection story), and an optional **sticky, full-bleed** [footer] (e.g. [VcvFooter]).
+ *
+ * The page scrolls as one column. The footer pins to the bottom of the viewport on a short catalog (few
+ * items) via a weighted spacer, and flows below the content and scrolls on a long one — matching the rest
+ * of the site (VCV-31). The catalog is small (an atelier's curated pieces), so a plain column of rows is
+ * used rather than a lazy grid; that's what lets the whole page share one scroller + a sticky footer.
  * See [[VCV Design-System]] §8, [[VCV Screens-and-UX]] §3.
  */
 @Composable
@@ -43,24 +36,33 @@ fun <T> ProductGrid(
     footer: (@Composable () -> Unit)? = null,
     itemContent: @Composable (T) -> Unit,
 ) {
-    val gridPadding = Vcv.spacing.md
     BoxWithConstraints(modifier) {
         val columns = WindowWidthClass.of(maxWidth).productGridColumns()
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(columns),
-            horizontalArrangement = Arrangement.spacedBy(Vcv.spacing.md),
-            verticalArrangement = Arrangement.spacedBy(Vcv.spacing.lg),
-            contentPadding = PaddingValues(gridPadding),
+        val viewportHeight = maxHeight
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .heightIn(min = viewportHeight),
         ) {
-            if (header != null) {
-                item(span = { GridItemSpan(maxLineSpan) }) { header() }
-            }
-            items(items) { item -> itemContent(item) }
-            if (footer != null) {
-                // Bleed the footer to the screen edges — its background shouldn't sit inset like a card.
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    Box(Modifier.fullBleedHorizontal(gridPadding)) { footer() }
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(Vcv.spacing.md),
+                verticalArrangement = Arrangement.spacedBy(Vcv.spacing.lg),
+            ) {
+                header?.invoke()
+                items.chunked(columns).forEach { rowItems ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(Vcv.spacing.md)) {
+                        rowItems.forEach { item ->
+                            Box(Modifier.weight(1f)) { itemContent(item) }
+                        }
+                        // Keep the last (partial) row's cells aligned to the grid columns.
+                        repeat(columns - rowItems.size) { Spacer(Modifier.weight(1f)) }
+                    }
                 }
+            }
+            if (footer != null) {
+                Spacer(Modifier.weight(1f))
+                footer()
             }
         }
     }

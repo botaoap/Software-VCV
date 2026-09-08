@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -60,7 +62,12 @@ private fun ContactContentView(content: ContactContent) {
     }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val stacked = WindowWidthClass.of(maxWidth) == WindowWidthClass.COMPACT
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .heightIn(min = maxHeight),
+        ) {
             Column(
                 modifier = Modifier
                     .widthIn(max = ContactMaxWidth)
@@ -106,7 +113,8 @@ private fun ContactContentView(content: ContactContent) {
                     }
                 }
             }
-            AppFooter(Modifier.padding(top = Vcv.spacing.xl))
+            Spacer(Modifier.weight(1f))
+            AppFooter()
         }
     }
 }
