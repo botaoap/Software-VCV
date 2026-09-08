@@ -1,5 +1,9 @@
 package com.gabrielbotao.softwarevcv.presentation.navigation
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.entryProvider
@@ -26,6 +30,10 @@ fun AppNavHost(navigator: Navigator, modifier: Modifier = Modifier) {
         backStack = navigator.backStack,
         modifier = modifier,
         onBack = { navigator.pop() },
+        // Gentle crossfade between destinations (replaces the default slide's overlap flash). VCV-22.
+        transitionSpec = { fadeIn(tween(280)) togetherWith fadeOut(tween(280)) },
+        popTransitionSpec = { fadeIn(tween(280)) togetherWith fadeOut(tween(280)) },
+        predictivePopTransitionSpec = { fadeIn(tween(280)) togetherWith fadeOut(tween(280)) },
         entryProvider = entryProvider {
             homeEntry(navigator)
             collectionsEntry(navigator)
