@@ -21,6 +21,7 @@ fun VcvTheme(
     CompositionLocalProvider(
         LocalVcvColors provides brandColors,
         LocalSpacing provides Spacing(),
+        LocalMotion provides Motion(),
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
@@ -31,10 +32,12 @@ fun VcvTheme(
     }
 }
 
-/** Ergonomic accessor for brand tokens inside composables: `Vcv.colors.wine`, `Vcv.spacing.md`. */
+/** Ergonomic accessor for brand tokens inside composables: `Vcv.colors.wine`, `Vcv.spacing.md`, `Vcv.motion`. */
 object Vcv {
     val colors: VcvColors
         @Composable @ReadOnlyComposable get() = LocalVcvColors.current
     val spacing: Spacing
         @Composable @ReadOnlyComposable get() = LocalSpacing.current
+    val motion: Motion
+        @Composable @ReadOnlyComposable get() = LocalMotion.current
 }
