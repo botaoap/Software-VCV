@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import com.gabrielbotao.softwarevcv.core.ui.theme.Vcv
 
 /**
@@ -31,7 +32,12 @@ fun ProductCard(
 ) {
     Column(modifier = modifier.clickable(onClick = onClick)) {
         Box(Modifier.fillMaxWidth()) {
-            RemoteImage(url = imageUrl, contentDescription = name, modifier = Modifier.fillMaxWidth())
+            RemoteImage(
+                url = imageUrl,
+                contentDescription = name,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxWidth(),
+            )
             if (badgeText != null) {
                 VcvBadge(
                     text = badgeText,
