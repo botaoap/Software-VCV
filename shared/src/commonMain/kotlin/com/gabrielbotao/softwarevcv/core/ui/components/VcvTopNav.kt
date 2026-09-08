@@ -48,7 +48,7 @@ fun VcvTopNav(
                 text = "VCV",
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.clickable(onClick = onLogoClick),
+                modifier = Modifier.clickable(onClick = onLogoClick).padding(vertical = Vcv.spacing.xs),
             )
             if (compact) {
                 CompactMenu(items)
@@ -62,7 +62,7 @@ fun VcvTopNav(
                             text = item.label,
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.clickable(onClick = item.onClick),
+                            modifier = Modifier.clickable(onClick = item.onClick).padding(vertical = Vcv.spacing.xs),
                         )
                     }
                 }
@@ -79,7 +79,9 @@ private fun CompactMenu(items: List<VcvNavItem>) {
             text = "Menu",
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.clickable { open = true },
+            modifier = Modifier
+                .clickable { open = true }
+                .padding(vertical = Vcv.spacing.xs, horizontal = Vcv.spacing.sm),
         )
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             items.forEach { item ->

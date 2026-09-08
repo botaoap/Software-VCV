@@ -1,9 +1,13 @@
 package com.gabrielbotao.softwarevcv.core.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -19,10 +23,14 @@ private val DefaultPageMaxWidth = 900.dp
 
 /**
  * The standard scroll-column page: a vertical scroller whose [content] is a centered, max-width column,
- * with a full-bleed footer at the end. Removes the repeated "scroll + centered maxWidth + footer"
- * boilerplate from the editorial/list pages (atelier, contato, sacola, checkout). Grid/hero pages that
- * own their own scroller (home, catálogo) don't use this. The [footer] is supplied by the caller
- * (a page passes `AppFooter`) so `core` stays free of presentation wiring. See [[VCV-28]].
+ * with a **sticky, full-bleed footer**. Removes the repeated "scroll + centered maxWidth + footer"
+ * boilerplate from the editorial/list pages (atelier, contato, sacola, checkout).
+ *
+ * **Sticky footer:** the scroll column is forced to at least the viewport height (`heightIn(min = …)`) and
+ * a weighted spacer sits before the footer — so on a short page the footer pins to the bottom of the
+ * screen, and on a tall page the spacer collapses to zero and the footer flows below the content and
+ * scrolls into view (like home/atelier). See [[VCV-31]] / [[VCV-28]]. The [footer] is caller-supplied (a
+ * page passes `AppFooter`) so `core` stays free of presentation wiring.
  */
 @Composable
 fun PageScaffold(
@@ -32,15 +40,24 @@ fun PageScaffold(
     spacing: Dp = Vcv.spacing.lg,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Column(modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+    BoxWithConstraints(modifier.fillMaxSize()) {
+        val viewportHeight = maxHeight
         Column(
-            modifier = Modifier
-                .widthIn(max = maxWidth)
-                .align(Alignment.CenterHorizontally)
-                .padding(Vcv.spacing.lg),
-            verticalArrangement = Arrangement.spacedBy(spacing),
-            content = content,
-        )
-        footer()
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .heightIn(min = viewportHeight),
+        ) {
+            Column(
+                modifier = Modifier
+                    .widthIn(max = maxWidth)
+                    .align(Alignment.CenterHorizontally)
+                    .padding(Vcv.spacing.lg),
+                verticalArrangement = Arrangement.spacedBy(spacing),
+                content = content,
+            )
+            Spacer(Modifier.weight(1f))
+            footer()
+        }
     }
 }
