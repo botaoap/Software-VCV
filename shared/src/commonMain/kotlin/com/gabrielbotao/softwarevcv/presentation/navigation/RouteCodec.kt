@@ -7,6 +7,30 @@ package com.gabrielbotao.softwarevcv.presentation.navigation
  */
 object RouteCodec {
 
+    private const val Brand = "VCV — Veste Com Você"
+
+    /**
+     * Document title for a route (`"Catálogo · VCV — Veste Com Você"`), set by the web-history bridge on
+     * every navigation so browser tabs and shared links are labelled per page. Product/collection titles
+     * humanise the URL slug (`vestido-zebra` → `Vestido Zebra`). See [[VCV-34]].
+     */
+    fun title(route: AppRoute): String = when (route) {
+        AppRoute.Home -> Brand
+        AppRoute.Collections -> "Coleções · $Brand"
+        is AppRoute.Collection -> "${route.slug.humanize()} · $Brand"
+        AppRoute.Catalog -> "Catálogo · $Brand"
+        is AppRoute.Product -> "${route.id.humanize()} · $Brand"
+        AppRoute.Atelier -> "Atelier · $Brand"
+        AppRoute.Contact -> "Contato · $Brand"
+        AppRoute.Cart -> "Sacola · $Brand"
+        AppRoute.Checkout -> "Checkout · $Brand"
+    }
+
+    private fun String.humanize(): String =
+        split('-').filter { it.isNotBlank() }.joinToString(" ") { part ->
+            part.replaceFirstChar { it.uppercaseChar() }
+        }
+
     fun toPath(route: AppRoute): String = when (route) {
         AppRoute.Home -> "/"
         AppRoute.Collections -> "/colecoes"
