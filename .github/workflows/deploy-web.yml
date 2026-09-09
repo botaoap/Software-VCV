@@ -1,19 +1,19 @@
-name: Deploy web (staged)
+name: Deploy web
 
-# STAGED, MANUAL-ONLY deploy to GitHub Pages — the zero-cost default until Felipe
-# picks hosting/domain (VCV-12 Phase 3 is blocked on that decision). It is NOT
-# wired to auto-deploy on merge on purpose.
+# Builds the Wasm web app and publishes it to GitHub Pages so Felipe always has a
+# current live link. Auto-deploys on push to `develop` (the integration branch),
+# and can be run manually from the Actions tab.
 #
-# ⚠️ Known limitation at the Pages *project* URL (https://<user>.github.io/Software-VCV/):
-# the app is served from a sub-path, but the router (RouteCodec / web-history) and
-# some asset paths assume the site lives at "/". Deep-link refresh (e.g.
-# /produto/{id}) and assets will not fully resolve under a sub-path. The 404.html
-# fallback below covers unknown paths, but a correct deployment needs either a
-# custom domain served at root, or base-path handling in the web build + router.
-# Treat this as a preview of the home/landing render, not a deep-link-correct site.
+# The Pages *project* URL is a sub-path (https://<user>.github.io/<repo>/). The build
+# is made sub-path-correct here by rewriting `<base href="/">` to `/<repo>/`; the
+# router derives its base path from that <base> at runtime (WebHistory), and 404.html
+# = index.html gives SPA deep-link refresh. A root custom domain (Felipe's, later)
+# would just drop the base rewrite.
 #
-# Trigger from the Actions tab → "Deploy web (staged)" → Run workflow.
+# One-time repo setup: Settings → Pages → Build and deployment → Source = "GitHub Actions".
 on:
+  push:
+    branches: [develop]
   workflow_dispatch:
 
 permissions:
@@ -46,9 +46,15 @@ jobs:
       - name: Build Wasm distribution
         run: ./gradlew --no-daemon --stacktrace :webApp:wasmJsBrowserDistribution
 
-      - name: SPA fallback (serve index.html for unknown paths)
+      - name: Rewrite base href for the Pages sub-path + SPA fallback
         run: |
           dist=webApp/build/dist/wasmJs/productionExecutable
+          repo="${{ github.event.repository.name }}"
+          # Project site is served under /<repo>/ — point <base> there so relative
+          # resource fetches and the router's derived base path resolve correctly.
+          sed -i "s#<base href=\"/\">#<base href=\"/${repo}/\">#" "$dist/index.html"
+          # GitHub Pages serves 404.html for unknown paths → serve the SPA so deep
+          # links (e.g. /produto/{id}) refresh into the app instead of 404ing.
           cp "$dist/index.html" "$dist/404.html"
 
       - name: Upload Pages artifact
