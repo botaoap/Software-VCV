@@ -1,5 +1,341 @@
 [
   {
+    "id": "bermuda-marisa",
+    "name": "Bermuda Marisa",
+    "collection": "verao",
+    "category": "bermudas",
+    "audience": "feminino",
+    "priceCents": 12900,
+    "colors": [
+      {
+        "id": "caqui",
+        "name": "Caqui",
+        "hex": "#907144",
+        "images": [
+          {
+            "url": "products/bermuda-marisa/caqui-frente.jpg",
+            "alt": "Bermuda Marisa caqui, vestida, de frente",
+            "width": 1200,
+            "height": 1540
+          },
+          {
+            "url": "products/bermuda-marisa/caqui-costas.jpg",
+            "alt": "Bermuda Marisa caqui, vestida, de costas",
+            "width": 1200,
+            "height": 1540
+          },
+          {
+            "url": "products/bermuda-marisa/caqui-bolso.jpg",
+            "alt": "Detalhe do cós elástico franzido e do bolso lateral",
+            "width": 1200,
+            "height": 1540
+          },
+          {
+            "url": "products/bermuda-marisa/caqui-look.jpg",
+            "alt": "Bermuda Marisa caqui com regata preta e jaqueta jeans, na rua",
+            "width": 1200,
+            "height": 1540
+          }
+        ]
+      }
+    ],
+    "shortDescription": "Cintura alta com cós elástico franzido e bolsos laterais. Caimento solto para o dia a dia.",
+    "sizes": [
+      "P",
+      "M",
+      "G",
+      "GG"
+    ],
+    "measurements": {
+      "columns": [
+        "Comprimento",
+        "Cintura",
+        "Quadril",
+        "Abertura da perna"
+      ],
+      "rows": [
+        {
+          "size": "P",
+          "values": [
+            37,
+            37,
+            53,
+            32
+          ]
+        },
+        {
+          "size": "M",
+          "values": [
+            38.5,
+            41,
+            57,
+            34
+          ]
+        },
+        {
+          "size": "G",
+          "values": [
+            40,
+            45,
+            61,
+            36
+          ]
+        },
+        {
+          "size": "GG",
+          "values": [
+            41.5,
+            48,
+            64,
+            37.5
+          ]
+        }
+      ],
+      "note": "Medidas aproximadas da peça, em centímetros; podem variar."
+    },
+    "badges": [
+      "NEW_IN"
+    ]
+  },
+  {
+    "id": "bermuda-masculina-conforto",
+    "name": "Bermuda Masculina Conforto",
+    "collection": "verao",
+    "category": "bermudas",
+    "audience": "masculino",
+    "priceCents": 8990,
+    "colors": [
+      {
+        "id": "verde-petroleo",
+        "name": "Verde petróleo",
+        "hex": "#0E5E66",
+        "images": [
+          {
+            "url": "products/bermuda-masculina/verde-petroleo-frente.jpg",
+            "alt": "Bermuda masculina verde petróleo, vestida, de frente",
+            "width": 1200,
+            "height": 1540
+          },
+          {
+            "url": "products/bermuda-masculina/verde-petroleo-costas.jpg",
+            "alt": "Bermuda masculina verde petróleo, vestida, de costas",
+            "width": 1200,
+            "height": 1540
+          },
+          {
+            "url": "products/bermuda-masculina/verde-petroleo-detalhe.jpg",
+            "alt": "Detalhe do cós com cordão e do bolso, verde petróleo",
+            "width": 1200,
+            "height": 1540
+          }
+        ]
+      },
+      {
+        "id": "coral",
+        "name": "Coral",
+        "hex": "#D9636A",
+        "images": [
+          {
+            "url": "products/bermuda-masculina/coral-frente.jpg",
+            "alt": "Bermuda masculina coral, vestida, de frente",
+            "width": 1200,
+            "height": 1540
+          },
+          {
+            "url": "products/bermuda-masculina/coral-costas.jpg",
+            "alt": "Bermuda masculina coral, vestida, de costas",
+            "width": 1200,
+            "height": 1540
+          },
+          {
+            "url": "products/bermuda-masculina/coral-detalhe.jpg",
+            "alt": "Detalhe do cós com cordão e do bolso, coral",
+            "width": 1200,
+            "height": 1540
+          }
+        ]
+      },
+      {
+        "id": "azul-royal",
+        "name": "Azul royal",
+        "hex": "#4767C4",
+        "images": [
+          {
+            "url": "products/bermuda-masculina/azul-royal-frente.jpg",
+            "alt": "Bermuda masculina azul royal, vestida, de frente",
+            "width": 1200,
+            "height": 1540
+          },
+          {
+            "url": "products/bermuda-masculina/azul-royal-costas.jpg",
+            "alt": "Bermuda masculina azul royal, vestida, de costas",
+            "width": 1200,
+            "height": 1540
+          },
+          {
+            "url": "products/bermuda-masculina/azul-royal-detalhe.jpg",
+            "alt": "Detalhe do cós com cordão, azul royal",
+            "width": 1200,
+            "height": 1540
+          }
+        ]
+      }
+    ],
+    "images": [
+      {
+        "url": "products/bermuda-masculina/todas-as-cores.jpg",
+        "alt": "As três cores lado a lado: verde petróleo, azul royal e coral",
+        "width": 1200,
+        "height": 1540
+      }
+    ],
+    "shortDescription": "Cós elástico com cordão, bolsos funcionais e tecido macio. Conforto para o dia a dia.",
+    "sizes": [
+      "P",
+      "M",
+      "G",
+      "GG"
+    ],
+    "measurements": {
+      "columns": [
+        "Comprimento",
+        "Cintura",
+        "Quadril"
+      ],
+      "rows": [
+        {
+          "size": "P",
+          "values": [
+            43,
+            33,
+            52
+          ]
+        },
+        {
+          "size": "M",
+          "values": [
+            44,
+            36,
+            55
+          ]
+        },
+        {
+          "size": "G",
+          "values": [
+            45,
+            39,
+            58
+          ]
+        },
+        {
+          "size": "GG",
+          "values": [
+            46,
+            42,
+            61
+          ]
+        }
+      ],
+      "note": "Medidas aproximadas da peça, em centímetros; podem variar."
+    },
+    "badges": [
+      "NEW_IN"
+    ]
+  },
+  {
+    "id": "camiseta-masculina-listrada",
+    "name": "Camiseta Masculina Listrada",
+    "collection": "essenciais",
+    "category": "camisetas",
+    "audience": "masculino",
+    "priceCents": 6990,
+    "colors": [
+      {
+        "id": "azul-listrado",
+        "name": "Azul listrado",
+        "hex": "#2A4A8C",
+        "images": [
+          {
+            "url": "products/camiseta-listrada/azul-listrado-frente.jpg",
+            "alt": "Camiseta listrada azul, vestida, de frente",
+            "width": 1200,
+            "height": 1540
+          },
+          {
+            "url": "products/camiseta-listrada/azul-listrado-costas.jpg",
+            "alt": "Camiseta listrada azul, vestida, de costas",
+            "width": 1200,
+            "height": 1540
+          },
+          {
+            "url": "products/camiseta-listrada/azul-listrado-gola.jpg",
+            "alt": "Detalhe da gola careca marinho e das listras",
+            "width": 1200,
+            "height": 1540
+          },
+          {
+            "url": "products/camiseta-listrada/azul-listrado-produto.jpg",
+            "alt": "Camiseta listrada azul, foto do produto",
+            "width": 1200,
+            "height": 1540
+          }
+        ]
+      }
+    ],
+    "shortDescription": "Listras finas em azul e marinho, gola careca em contraste. Malha leve para o dia a dia.",
+    "sizes": [
+      "P",
+      "M",
+      "G",
+      "GG"
+    ],
+    "measurements": {
+      "columns": [
+        "Comprimento",
+        "Busto",
+        "Barra"
+      ],
+      "rows": [
+        {
+          "size": "P",
+          "values": [
+            70,
+            51,
+            51
+          ]
+        },
+        {
+          "size": "M",
+          "values": [
+            73,
+            54,
+            54
+          ]
+        },
+        {
+          "size": "G",
+          "values": [
+            76,
+            57,
+            57
+          ]
+        },
+        {
+          "size": "GG",
+          "values": [
+            78,
+            60,
+            60
+          ]
+        }
+      ],
+      "note": "Medidas aproximadas da peça, em centímetros; podem variar."
+    },
+    "badges": [
+      "NEW_IN"
+    ]
+  },
+  {
     "id": "vestido-zebra",
     "name": "Vestido Curto Zebra",
     "collection": "essenciais",

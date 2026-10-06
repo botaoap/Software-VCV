@@ -1,24 +1,29 @@
 ---
 import type { CollectionEntry } from "astro:content";
 import ProductCard from "./ProductCard.astro";
+import { audienceLabels, sortSizes } from "../lib/catalog";
 
 // Product grid + sort/filter controls. The server renders every product in content order ("Novidades"),
 // so the page is complete without JS; the island then sorts/filters in place and mirrors the choice
-// in the URL (?ordem=&colecao=&tam=) so a filtered view can be shared.
+// in the URL (?ordem=&para=&colecao=&tam=) so a filtered view can be shared. Each filter appears only
+// when it can narrow the list (e.g. "Para" once both feminine and masculine pieces are on sale).
 interface Props {
   products: CollectionEntry<"products">[];
   collections?: CollectionEntry<"collections">[];
   label: string;
 }
 const { products, collections = [], label } = Astro.props;
-const sizes = [...new Set(products.flatMap((product) => product.data.sizes))].sort((a, b) => a - b);
+const sizes = sortSizes(products.flatMap((product) => product.data.sizes));
+const audiences = (Object.keys(audienceLabels) as (keyof typeof audienceLabels)[]).filter((audience) =>
+  products.some((product) => product.data.audience === audience),
+);
 ---
 
 <div data-catalog>
-  <div class="js-only flex flex-wrap items-end gap-x-6 gap-y-4 border-y border-border py-4">
+  <div class="js-only grid grid-cols-2 items-end gap-x-4 gap-y-4 border-y border-border py-4 sm:flex sm:flex-wrap sm:gap-x-6">
     <div>
       <label for="catalog-sort" class="text-xs font-medium tracking-[0.18em] text-text-muted uppercase">Ordenar por</label>
-      <select id="catalog-sort" class="field min-w-44 !mt-1" data-sort>
+      <select id="catalog-sort" class="field w-full sm:w-auto sm:min-w-44 !mt-1" data-sort>
         <option value="novidades">Novidades</option>
         <option value="menor-preco">Menor preço</option>
         <option value="maior-preco">Maior preço</option>
@@ -26,10 +31,21 @@ const sizes = [...new Set(products.flatMap((product) => product.data.sizes))].so
       </select>
     </div>
     {
+      audiences.length > 1 && (
+        <div>
+          <label for="catalog-audience" class="text-xs font-medium tracking-[0.18em] text-text-muted uppercase">Para</label>
+          <select id="catalog-audience" class="field w-full sm:w-auto sm:min-w-36 !mt-1" data-filter-audience>
+            <option value="">Todos</option>
+            {audiences.map((audience) => <option value={audience}>{audienceLabels[audience]}</option>)}
+          </select>
+        </div>
+      )
+    }
+    {
       collections.length > 1 && (
         <div>
           <label for="catalog-collection" class="text-xs font-medium tracking-[0.18em] text-text-muted uppercase">Coleção</label>
-          <select id="catalog-collection" class="field min-w-44 !mt-1" data-filter-collection>
+          <select id="catalog-collection" class="field w-full sm:w-auto sm:min-w-44 !mt-1" data-filter-collection>
             <option value="">Todas</option>
             {collections.map((collection) => <option value={collection.id}>{collection.data.title}</option>)}
           </select>
@@ -40,14 +56,14 @@ const sizes = [...new Set(products.flatMap((product) => product.data.sizes))].so
       sizes.length > 1 && (
         <div>
           <label for="catalog-size" class="text-xs font-medium tracking-[0.18em] text-text-muted uppercase">Tamanho</label>
-          <select id="catalog-size" class="field min-w-32 !mt-1" data-filter-size>
+          <select id="catalog-size" class="field w-full sm:w-auto sm:min-w-32 !mt-1" data-filter-size>
             <option value="">Todos</option>
-            {sizes.map((size) => <option value={String(size)}>{size}</option>)}
+            {sizes.map((size) => <option value={size}>{size}</option>)}
           </select>
         </div>
       )
     }
-    <p class="ml-auto text-sm text-text-muted" aria-live="polite" data-count></p>
+    <p class="col-span-2 text-sm text-text-muted sm:ml-auto" aria-live="polite" data-count></p>
   </div>
 
   <ul class="mt-8 grid grid-cols-2 gap-x-4 gap-y-10 md:gap-x-6 lg:grid-cols-4" aria-label={label} data-grid>
@@ -66,6 +82,7 @@ const sizes = [...new Set(products.flatMap((product) => product.data.sizes))].so
     const grid = root.querySelector<HTMLElement>("[data-grid]")!;
     const cards = [...grid.querySelectorAll<HTMLElement>("[data-product-card]")];
     const sort = root.querySelector<HTMLSelectElement>("[data-sort]")!;
+    const audience = root.querySelector<HTMLSelectElement>("[data-filter-audience]");
     const collection = root.querySelector<HTMLSelectElement>("[data-filter-collection]");
     const size = root.querySelector<HTMLSelectElement>("[data-filter-size]");
     const count = root.querySelector<HTMLElement>("[data-count]")!;
@@ -83,6 +100,7 @@ const sizes = [...new Set(products.flatMap((product) => product.data.sizes))].so
       if (select && value && [...select.options].some((o) => o.value === value)) select.value = value;
     };
     set(sort, params.get("ordem"));
+    set(audience, params.get("para"));
     set(collection, params.get("colecao"));
     set(size, params.get("tam"));
 
@@ -92,6 +110,7 @@ const sizes = [...new Set(products.flatMap((product) => product.data.sizes))].so
       let visible = 0;
       for (const card of cards) {
         const matches =
+          (!audience?.value || card.dataset.audience === audience.value) &&
           (!collection?.value || card.dataset.collection === collection.value) &&
           (!size?.value || (card.dataset.sizes ?? "").split(",").includes(size.value));
         card.hidden = !matches;
@@ -102,15 +121,17 @@ const sizes = [...new Set(products.flatMap((product) => product.data.sizes))].so
 
       const next = new URLSearchParams();
       if (sort.value !== "novidades") next.set("ordem", sort.value);
+      if (audience?.value) next.set("para", audience.value);
       if (collection?.value) next.set("colecao", collection.value);
       if (size?.value) next.set("tam", size.value);
       const query = next.toString();
       history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}`);
     };
 
-    [sort, collection, size].forEach((select) => select?.addEventListener("change", render));
+    [sort, audience, collection, size].forEach((select) => select?.addEventListener("change", render));
     root.querySelector("[data-reset]")?.addEventListener("click", () => {
       sort.value = "novidades";
+      if (audience) audience.value = "";
       if (collection) collection.value = "";
       if (size) size.value = "";
       render();

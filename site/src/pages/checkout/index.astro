@@ -50,7 +50,7 @@ import { url } from "../../lib/url";
 
 <script>
   import { formatBrl } from "../../lib/format";
-  import { itemCount, readCart, subtotalCents } from "../../scripts/cart";
+  import { itemCount, readCart, subtotalCents, variantLabel } from "../../scripts/cart";
 
   const root = document.querySelector<HTMLElement>("[data-checkout]");
   if (root) {
@@ -68,7 +68,7 @@ import { url } from "../../lib/url";
       const li = document.createElement("li");
       li.className = "flex items-baseline justify-between gap-4 py-3 text-sm";
       const text = document.createElement("span");
-      text.textContent = `${line.name} · Tamanho ${line.size} · x${line.quantity}`;
+      text.textContent = `${line.name} · ${variantLabel(line)} · x${line.quantity}`;
       const price = document.createElement("span");
       price.className = "font-medium text-wine";
       price.textContent = formatBrl(line.unitPriceCents * line.quantity);

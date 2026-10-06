@@ -68,7 +68,7 @@ import { url } from "../../lib/url";
 
 <script>
   import { formatBrl } from "../../lib/format";
-  import { itemCount, lineKey, onCartChange, readCart, removeLine, setQuantity, subtotalCents } from "../../scripts/cart";
+  import { itemCount, lineKey, onCartChange, readCart, removeLine, setQuantity, subtotalCents, variantLabel } from "../../scripts/cart";
 
   const root = document.querySelector<HTMLElement>("[data-cart]");
   if (root) {
@@ -93,7 +93,7 @@ import { url } from "../../lib/url";
         else img.remove();
         // textContent only: names come from storage, never interpreted as HTML.
         node.querySelector("[data-line-name]")!.textContent = line.name;
-        node.querySelector("[data-line-size]")!.textContent = `Tamanho ${line.size}`;
+        node.querySelector("[data-line-size]")!.textContent = variantLabel(line);
         node.querySelector("[data-line-unit]")!.textContent = formatBrl(line.unitPriceCents);
         node.querySelector("[data-line-qty]")!.textContent = String(line.quantity);
         node.querySelector("[data-line-total]")!.textContent = formatBrl(line.unitPriceCents * line.quantity);

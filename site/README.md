@@ -41,6 +41,8 @@ WhatsApp order is triggered. WhatsApp stays as a contact channel (header, footer
 ```
 content/                 products.json · categories.json · collections.json · brand.json  (zod-validated)
 src/content.config.ts    schemas; a bad collection slug fails the build
+src/assets/products/     real product photos, one folder per product (optimised at build)
+src/lib/catalog.ts       size order, cover / per-color gallery rules (shared by pages and cards)
 src/styles/global.css    design tokens (@theme, 1C "Corpo"), .btn/.card/.link-arrow, motion tokens
 src/layouts/BaseLayout   head (title/canonical/OG/JSON-LD), chrome, reveal script
 src/components/          Header, Footer, PromoBar, HeroCarousel, ProductCard, CatalogGrid, …
@@ -61,6 +63,62 @@ components), buttons for actions and arrow links for navigation, external links 
 with `rel="noopener noreferrer"`, everything animated respects `prefers-reduced-motion`, and
 nothing is hidden without JavaScript.
 
+## Adding a product (any garment type, with colors)
+
+Everything is data in `content/`; no page code changes. The schema (`src/content.config.ts`) fails
+the build on a typo'd category/collection, a missing photo, a duplicate color, or a size chart row
+for a size that is not sold.
+
+1. **Garment type**: add it to `content/categories.json` if new (`{ "id": "shorts", "title": "Shorts" }`).
+   The "Produto" menu, `/produtos/{id}/` and the catalog pick it up by themselves.
+2. **Photos**: copy them to `src/assets/products/<product-id>/<color-id>-<view>.jpg`
+   (e.g. `bermuda-masculina/coral-frente.jpg`). They are optimised to WebP at build time.
+3. **Product** in `content/products.json` (file order = "Novidades" order):
+
+```jsonc
+{
+  "id": "bermuda-masculina-conforto",          // URL: /produto/bermuda-masculina-conforto/
+  "name": "Bermuda Masculina Conforto",
+  "category": "bermudas",
+  "collection": "verao",
+  "audience": "masculino",                     // feminino (default) | masculino | unissex
+  "priceCents": 8990,
+  "colors": [                                  // optional; first color = default + card photo
+    { "id": "coral", "name": "Coral", "hex": "#D9636A",
+      "images": [ { "url": "products/bermuda-masculina/coral-frente.jpg", "alt": "…", "width": 1200, "height": 1540 } ] }
+  ],
+  "images": [ /* photos shared by every color, e.g. the all-colors shot; required if no colors */ ],
+  "sizes": ["P", "M", "G", "GG"],              // letters (PP…XGG, U) or numbers (38–52)
+  "measurements": {                            // optional "Medidas da peça", in cm
+    "columns": ["Comprimento", "Cintura", "Quadril"],
+    "rows": [ { "size": "P", "values": [43, 33, 52] } ]
+  },
+  "shortDescription": "…",
+  "fabric": { "material": "…", "origin": "…", "care": [] },   // leave unknown facts out
+  "badges": ["NEW_IN"]
+}
+```
+
+On the product page each color has its own gallery (its photos, then the shared ones); choosing a
+color swaps the gallery and sets `?cor=<id>`, so a color can be linked. The bag line is
+product + color + size. Cards show the swatches when there is more than one color. The size
+chart is an HTML table (readable and searchable), not the image from the marketplace listing.
+
+**Photo pattern** (the one the supplier's marketplace photos already follow; keep it so every
+product page looks the same):
+
+| # | Shot | Notes |
+|---|---|---|
+| 1 | Front, on the model, white background | the card photo, so the same framing for every product |
+| 2 | Back, on the model | |
+| 3–4 | Details: waistband, pocket, collar, fabric texture | |
+| (last) | Lifestyle / outfit | optional |
+| shared | All colors together | in `images`, shown after each color's photos |
+
+Portrait 1200 × 1540 (≈ 3:4), JPEG. Repeat 1–3 per color. Leave out infographics with text baked in
+("Envio rápido", feature callouts) and the measurement-table image; the page renders the table
+from `measurements`.
+
 ## Placeholders to replace (nothing here is invented, but it is not final)
 
 | What | Where | Needs |
@@ -68,6 +126,8 @@ nothing is hidden without JavaScript.
 | WhatsApp number `5547999999999`, Instagram handle, e-mail | `content/brand.json` → `contact` | Felipe's real channels |
 | Brand colours and fonts | `src/styles/global.css` (`@theme`), `public/fonts` | exact 1C hex + font files (`tests/tokens.test.mjs` re-checks contrast) |
 | Photography (hero, products, collections, atelier) | `content/*.json` (Unsplash stand-ins, optimised and self-hosted at build) | real campaign + product photos; footer says "Imagens ilustrativas" until then |
+| Prices of the 3 real-photo products (Bermuda Marisa R$ 129,00, Bermuda Masculina R$ 89,90, Camiseta Listrada R$ 69,90) | `content/products.json` | real prices |
+| Fabric, origin and care of those 3 products (left out, so the Ficha técnica is hidden) | `content/products.json` → `fabric` | confirmed material / origin / care |
 | Promo bar and trust strip copy ("Envio para todo o Brasil", …) | `src/lib/site.ts` | confirm each claim; add frete / parcelamento / PIX / troca only when they are real policies |
 | Legal pages (`/privacidade`, `/cookies`, `/termos`) | `src/pages/*/index.astro` | text written or approved by the client; they are `noindex` until then |
 | Domain | `SITE_URL` / `BASE_PATH` | custom domain at the root is best |
