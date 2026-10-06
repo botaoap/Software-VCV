@@ -1,0 +1,77 @@
+---
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import Icon from "../../components/Icon.astro";
+import PageHeader from "../../components/PageHeader.astro";
+import ProductCard from "../../components/ProductCard.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getCategoryOf, getCollectionOf, getProducts } from "../../lib/content";
+import { url } from "../../lib/url";
+
+// Search over the catalog, in the page: every product is rendered (hidden) and the island shows
+// the matches. Matches name, garment type, collection and fabric; accents and case are ignored.
+const normalize = (text: string) => text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const products = await getProducts();
+const items = await Promise.all(
+  products.map(async (product) => {
+    const [category, collection] = [await getCategoryOf(product), await getCollectionOf(product)];
+    const { fabric, name, shortDescription } = product.data;
+    return { product, search: normalize([name, category.data.title, collection.data.title, fabric.material, shortDescription].join(" ")) };
+  }),
+);
+---
+
+<BaseLayout title="Buscar" description="Busque peças da VCV por nome, tipo, coleção ou tecido." noindex>
+  <PageHeader eyebrow="Busca" title="Buscar peças">
+    <Breadcrumbs slot="breadcrumbs" items={[{ label: "Início", href: url("/") }, { label: "Buscar" }]} />
+  </PageHeader>
+
+  <section class="section-y" data-search-root>
+    <div class="container-page">
+      <form role="search" class="js-only relative max-w-xl" data-search-form>
+        <label for="search-q" class="text-xs font-medium tracking-[0.18em] text-text-muted uppercase">O que você procura?</label>
+        <div class="relative">
+          <Icon name="search" size={20} class="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-text-muted" />
+          <input id="search-q" name="q" type="search" autocomplete="off" placeholder="Vestido, linho, saia…" class="field !pl-11" data-search-input />
+        </div>
+      </form>
+      <p class="mt-4 text-sm text-text-muted" aria-live="polite" data-search-status></p>
+
+      <ul class="mt-8 grid grid-cols-2 gap-x-4 gap-y-10 md:gap-x-6 lg:grid-cols-4" data-search-grid>
+        {items.map(({ product, search }, index) => <ProductCard product={product} index={index} search={search} heading="h2" />)}
+      </ul>
+      <p class="mt-10 hidden text-center text-lg text-text-muted" data-search-empty>Nenhuma peça encontrada. Tente outra palavra.</p>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  const root = document.querySelector<HTMLElement>("[data-search-root]");
+  if (root) {
+    const input = root.querySelector<HTMLInputElement>("[data-search-input]")!;
+    const status = root.querySelector<HTMLElement>("[data-search-status]")!;
+    const empty = root.querySelector<HTMLElement>("[data-search-empty]")!;
+    const cards = [...root.querySelectorAll<HTMLElement>("[data-product-card]")];
+    const normalize = (text: string) => text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+
+    const render = () => {
+      const terms = normalize(input.value).split(/\s+/).filter(Boolean);
+      let shown = 0;
+      for (const card of cards) {
+        // Every term must match somewhere; with no query, nothing is listed yet.
+        const match = terms.length > 0 && terms.every((term) => (card.dataset.search ?? "").includes(term));
+        card.hidden = !match;
+        if (match) shown++;
+      }
+      empty.classList.toggle("hidden", terms.length === 0 || shown > 0);
+      status.textContent = terms.length === 0 ? "Digite para buscar entre as peças." : `${shown} ${shown === 1 ? "peça encontrada" : "peças encontradas"}`;
+      const query = new URLSearchParams(terms.length ? { q: input.value.trim() } : {}).toString();
+      history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}`);
+    };
+
+    input.value = new URLSearchParams(location.search).get("q") ?? "";
+    root.querySelector("[data-search-form]")?.addEventListener("submit", (event) => event.preventDefault());
+    input.addEventListener("input", render);
+    render();
+    input.focus();
+  }
+</script>

@@ -6,7 +6,7 @@ import Photo from "../../components/Photo.astro";
 import ProductCard from "../../components/ProductCard.astro";
 import SectionHeading from "../../components/SectionHeading.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { getCollectionOf, getProducts } from "../../lib/content";
+import { getCategoryOf, getCollectionOf, getProducts } from "../../lib/content";
 import { badgeLabels, formatBrl } from "../../lib/format";
 import { brand } from "../../lib/site";
 import { url } from "../../lib/url";
@@ -19,6 +19,7 @@ export async function getStaticPaths() {
 const { product } = Astro.props;
 const { data } = product;
 const collection = await getCollectionOf(product);
+const category = await getCategoryOf(product);
 const all = await getProducts();
 const related = [
   ...all.filter((p) => p.id !== product.id && p.data.collection.id === data.collection.id),
@@ -52,7 +53,8 @@ const crumbsLd = {
   "@type": "BreadcrumbList",
   itemListElement: [
     { name: "Início", item: new URL(url("/"), Astro.site!).href },
-    { name: "Catálogo", item: new URL(url("/catalogo/"), Astro.site!).href },
+    { name: "Produto", item: new URL(url("/produtos/"), Astro.site!).href },
+    { name: category.data.title, item: new URL(url(`/produtos/${category.id}/`), Astro.site!).href },
     { name: data.name, item: pageUrl },
   ].map((entry, index) => ({ "@type": "ListItem", position: index + 1, ...entry })),
 };
@@ -70,7 +72,8 @@ const crumbsLd = {
     <Breadcrumbs
       items={[
         { label: "Início", href: url("/") },
-        { label: "Catálogo", href: url("/catalogo/") },
+        { label: "Produto", href: url("/produtos/") },
+        { label: category.data.title, href: url(`/produtos/${category.id}/`) },
         { label: data.name },
       ]}
     />

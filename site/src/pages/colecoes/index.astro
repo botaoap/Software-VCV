@@ -23,7 +23,7 @@ const tiles = await Promise.all(
           <p class="text-lg text-text-muted">Em breve novas coleções.</p>
         ) : (
           <ul class="grid gap-6 md:grid-cols-2">
-            {tiles.map(({ collection, count }, index) => <li class="reveal" style={`--reveal-delay:${index * 80}ms`}><CollectionTile collection={collection} count={count} /></li>)}
+            {tiles.map(({ collection, count }, index) => <li class="reveal" style={`--reveal-delay:${index * 80}ms`}><CollectionTile collection={collection} count={count} heading="h2" /></li>)}
           </ul>
         )
       }
