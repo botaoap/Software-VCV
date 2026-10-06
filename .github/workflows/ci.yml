@@ -1,12 +1,14 @@
 name: CI
 
-# Build + test on every PR into develop/main (and on pushes to those branches).
-# Keeps the integration branches green and verifies the deployable web artifact.
+# Build + test on PRs into `main` and pushes to `main` only, to save GitHub Actions minutes on the
+# free plan. PRs into `develop` are not checked by CI: run `npm test` in site/ and the Gradle tasks
+# below locally before merging. Can also be run by hand from the Actions tab.
 on:
   pull_request:
-    branches: [develop, main]
+    branches: [main]
   push:
-    branches: [develop, main]
+    branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}

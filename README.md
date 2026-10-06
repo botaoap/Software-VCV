@@ -1,6 +1,6 @@
 # Software-VCV
 
-[![CI](https://github.com/botaoap/Software-VCV/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/botaoap/Software-VCV/actions/workflows/ci.yml)
+[![CI](https://github.com/botaoap/Software-VCV/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/botaoap/Software-VCV/actions/workflows/ci.yml)
 
 **VCV — "Veste Com Você"** — a web-first brand showcase + catalog for a women's
 clothing atelier. Built with **Kotlin Multiplatform** and **Compose Multiplatform**
@@ -45,8 +45,8 @@ cd site && npm install && npm run dev
 
 ## CI / CD
 
-- **CI** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs on every PR into
-  `develop`/`main`: the `site` job (type-check, static build, tests) and the Gradle job
+- **CI** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs on PRs into and pushes
+  to `main` only (to save Actions minutes; also runnable by hand): the `site` job (type-check, static build, tests) and the Gradle job
   (`:shared:jvmTest`, Android debug APK, desktop and `:server` build). iOS is not built in CI
   (needs a macOS runner).
 - **Deploy** ([`.github/workflows/deploy-web.yml`](.github/workflows/deploy-web.yml)) builds `site/`
