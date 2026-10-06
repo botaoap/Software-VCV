@@ -2,7 +2,7 @@
 
 Static storefront for VCV (Astro + Tailwind v4 + TypeScript). Every page is plain HTML in `dist/`
 (SEO and WhatsApp/Instagram previews work with no server); the only JavaScript is small scripts for
-the bag, the checkout hand-off, catalog filters, the hero carousel and the header.
+the bag, catalog filters, the hero carousel and the header.
 
 It replaces the Compose-for-Web build (canvas rendering: weak SEO, 4.31 MiB gzipped payload) as the public
 web front (home page code ≈ 20 KiB gzipped + ≈ 85 KiB of fonts, vs 4.31 MiB for the Wasm
@@ -32,6 +32,10 @@ Node 22 or newer.
 With nothing configured there is no banner (nothing to consent to) and the footer card links to
 Instagram / WhatsApp instead of a form that posts nowhere.
 
+**Payment is paused** until the client picks the commerce platform (Shopify, Nuvemshop, …): the bag works
+and is saved in the browser, "Finalizar compra" is disabled with "Pagamento online em breve", and no
+WhatsApp order is triggered. WhatsApp stays as a contact channel (header, footer, floating button, Contato).
+
 ## Where things live
 
 ```
@@ -41,7 +45,6 @@ src/styles/global.css    design tokens (@theme, 1C "Corpo"), .btn/.card/.link-ar
 src/layouts/BaseLayout   head (title/canonical/OG/JSON-LD), chrome, reveal script
 src/components/          Header, Footer, PromoBar, HeroCarousel, ProductCard, CatalogGrid, …
 src/scripts/cart.ts      the bag (localStorage `vcv.cart.v1`, shared across tabs)
-src/scripts/checkout.ts  the commerce seam: today a pre-filled WhatsApp order
 src/pages/               one file per route (same URLs as the app: /catalogo, /produto/{id}, …)
 tests/                   tokens.test.mjs (WCAG AA) · dist.test.mjs (built HTML)
 ```
@@ -61,7 +64,7 @@ nothing is hidden without JavaScript.
 | Promo bar and trust strip copy ("Envio para todo o Brasil", …) | `src/lib/site.ts` | confirm each claim; add frete / parcelamento / PIX / troca only when they are real policies |
 | Legal pages (`/privacidade`, `/cookies`, `/termos`) | `src/pages/*/index.astro` | text written or approved by the client; they are `noindex` until then |
 | Domain | `SITE_URL` / `BASE_PATH` | custom domain at the root is best |
-| Payment | `src/scripts/checkout.ts` | commerce decision: stay on WhatsApp, a hosted checkout, or the `:server` backend |
+| Payment | bag page CTA + `src/pages/checkout` | commerce platform decision (Shopify, Nuvemshop, own backend…); then wire checkout and re-enable the CTA |
 
 ## Deploy
 

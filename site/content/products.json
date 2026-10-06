@@ -41,8 +41,7 @@
     ],
     "badges": [
       "BEST_SELLER"
-    ],
-    "buyUrl": "https://wa.me/5547999999999?text=Tenho%20interesse%20no%20Vestido%20Curto%20Zebra"
+    ]
   },
   {
     "id": "calca-viscolinho",
@@ -78,8 +77,7 @@
     ],
     "badges": [
       "ATELIER_PICK"
-    ],
-    "buyUrl": null
+    ]
   },
   {
     "id": "blusa-linho",
@@ -113,8 +111,7 @@
     ],
     "badges": [
       "NEW_IN"
-    ],
-    "buyUrl": null
+    ]
   },
   {
     "id": "saia-midi",
@@ -147,7 +144,6 @@
       50,
       52
     ],
-    "badges": [],
-    "buyUrl": null
+    "badges": []
   }
 ]

@@ -144,3 +144,16 @@ test("no analytics or consent banner unless PUBLIC_GA_ID is configured", () => {
 test("the legal placeholders stay out of the index until the client supplies the text", () => {
   for (const page of ["privacidade", "cookies", "termos"]) assert.match(read(page, "index.html"), /content="noindex"/);
 });
+
+test("payment is paused: no WhatsApp order trigger, no checkout form, no direct-buy link", () => {
+  const checkout = read("checkout", "index.html");
+  const main = checkout.slice(checkout.indexOf("<main"), checkout.indexOf("</main>")); // WhatsApp stays as a contact link in the chrome
+  assert.ok(!/<form\b/.test(main) && !/wa\.me/.test(main), "checkout opens no order flow");
+  assert.match(checkout, /Pagamento online em breve/);
+  assert.match(read("carrinho", "index.html"), /<button[^>]*disabled[^>]*>Finalizar compra<\/button>/);
+  for (const product of products) {
+    const html = read("produto", product.id, "index.html");
+    assert.ok(!/Comprar direto/.test(html), `${product.id}: no direct-buy link`);
+    assert.ok(!/wa\.me[^"]*text=[^"]*interesse/.test(html), `${product.id}: no order message`);
+  }
+});

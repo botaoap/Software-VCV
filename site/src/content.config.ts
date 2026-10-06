@@ -43,8 +43,6 @@ const products = defineCollection({
     }),
     sizes: z.array(z.number().int().min(34).max(60)).min(1),
     badges: z.array(z.enum(badges)),
-    /** External "buy" link (WhatsApp/marketplace); null = only the bag flow is offered. */
-    buyUrl: z.url().nullable(),
   }),
 });
 
