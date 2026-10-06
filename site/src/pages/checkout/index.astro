@@ -1,16 +1,11 @@
 ---
 import Breadcrumbs from "../../components/Breadcrumbs.astro";
-import ExternalLink from "../../components/ExternalLink.astro";
-import Icon from "../../components/Icon.astro";
 import PageHeader from "../../components/PageHeader.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { getBrand } from "../../lib/content";
 import { url } from "../../lib/url";
-
-const { contact } = await getBrand();
 ---
 
-<BaseLayout title="Finalizar pedido" description="Finalize seu pedido na VCV pelo WhatsApp." noindex>
+<BaseLayout title="Finalizar pedido" description="O pagamento online da VCV estará disponível em breve." noindex>
   <PageHeader eyebrow="Compra" title="Finalizar pedido">
     <Breadcrumbs
       slot="breadcrumbs"
@@ -20,62 +15,32 @@ const { contact } = await getBrand();
 
   <section class="section-y">
     <div class="container-page max-w-3xl">
-      <noscript>
-        <p class="rounded-lg border border-border bg-paper p-6 text-lg text-text-muted">
-          O pedido precisa de JavaScript. Fale com a gente pelo <a class="text-link" href={url("/contato/")}>WhatsApp</a>.
+      <!-- Payment is paused until the client picks the commerce platform (Shopify, Nuvemshop, …).
+           The bag keeps working; this page shows the order and says so. -->
+      <div class="rounded-lg border border-border bg-paper p-6 md:p-8" role="status">
+        <p class="eyebrow">Em breve</p>
+        <h2 class="mt-3 text-3xl">Pagamento online em breve</h2>
+        <p class="mt-4 text-lg leading-relaxed text-text-muted">
+          Estamos finalizando a forma de pagamento da loja. Sua sacola fica salva neste navegador até lá.
         </p>
-      </noscript>
+      </div>
 
-      <div class="js-only" data-checkout data-whatsapp={contact.whatsapp}>
+      <div class="js-only mt-10" data-checkout>
         <div class="hidden" data-checkout-empty>
           <p class="text-xl text-text-muted">Sua sacola está vazia.</p>
-          <a href={url("/carrinho/")} class="btn btn-outline mt-6">Voltar à sacola</a>
+          <a href={url("/produtos/")} class="btn btn-primary mt-6">Ver produtos</a>
         </div>
 
-        <div class="hidden" data-checkout-form-wrap>
+        <div class="hidden" data-checkout-summary>
           <h2 class="text-2xl">Seu pedido</h2>
           <ul class="mt-5 divide-y divide-border border-y border-border" data-checkout-lines></ul>
           <p class="mt-4 flex items-baseline justify-between">
             <span class="text-lg font-medium">Subtotal</span>
             <strong class="text-xl font-medium text-wine" data-checkout-subtotal></strong>
           </p>
-
-          <form class="mt-10 space-y-6" data-checkout-form novalidate>
-            <div>
-              <label for="co-name" class="text-sm font-medium">Nome <span aria-hidden="true">*</span></label>
-              <input id="co-name" name="name" type="text" autocomplete="name" required class="field" aria-describedby="co-name-error" />
-              <p id="co-name-error" class="mt-1 min-h-5 text-sm text-error" data-error="name"></p>
-            </div>
-            <div>
-              <label for="co-phone" class="text-sm font-medium">WhatsApp / telefone <span class="font-normal text-text-muted">(opcional)</span></label>
-              <input id="co-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" class="field" />
-            </div>
-            <div>
-              <label for="co-note" class="text-sm font-medium">Observação <span class="font-normal text-text-muted">(opcional)</span></label>
-              <textarea id="co-note" name="note" rows="3" class="field"></textarea>
-            </div>
-            <p class="min-h-5 text-sm text-error" role="alert" data-error="form"></p>
-            <button type="submit" class="btn btn-primary btn-lg w-full">
-              <Icon name="message" size={18} /> Finalizar pelo WhatsApp
-            </button>
-            <p class="text-sm text-text-muted">
-              Ao finalizar, abrimos o WhatsApp da VCV com o seu pedido pronto. Pagamento e entrega são combinados no
-              atendimento. Seus dados ficam apenas nessa mensagem — veja a
-              <a class="text-link" href={url("/privacidade/")}>Política de Privacidade</a>.
-            </p>
-          </form>
-        </div>
-
-        <div class="hidden" data-checkout-done role="status">
-          <h2 class="text-3xl">Pedido pronto para enviar!</h2>
-          <p class="mt-4 text-lg text-text-muted">
-            Abrimos o WhatsApp da VCV com o seu pedido. Conclua a conversa por lá para combinar pagamento e entrega.
-          </p>
           <div class="mt-8 flex flex-wrap gap-3">
-            <ExternalLink href={contact.whatsapp} class="btn btn-primary btn-lg" data-reopen>
-              <Icon name="message" size={18} /> Abrir o WhatsApp de novo
-            </ExternalLink>
-            <a href={url("/")} class="btn btn-outline btn-lg">Voltar à loja</a>
+            <a href={url("/carrinho/")} class="btn btn-outline btn-lg">Voltar à sacola</a>
+            <a href={url("/produtos/")} class="link-arrow">Continuar comprando <span class="arrow" aria-hidden="true">→</span></a>
           </div>
         </div>
       </div>
@@ -85,79 +50,31 @@ const { contact } = await getBrand();
 
 <script>
   import { formatBrl } from "../../lib/format";
-  import { checkout } from "../../scripts/checkout";
-  import { clearCart, itemCount, readCart, subtotalCents } from "../../scripts/cart";
+  import { itemCount, readCart, subtotalCents } from "../../scripts/cart";
 
   const root = document.querySelector<HTMLElement>("[data-checkout]");
   if (root) {
     const part = (name: string) => root.querySelector<HTMLElement>(`[data-checkout-${name}]`)!;
     const empty = part("empty");
-    const formWrap = part("form-wrap");
-    const done = part("done");
+    const summary = part("summary");
     const list = part("lines");
     const subtotal = part("subtotal");
-    const form = root.querySelector<HTMLFormElement>("[data-checkout-form]")!;
-    const error = (name: string) => root.querySelector<HTMLElement>(`[data-error=${name}]`)!;
-    let finished = false;
 
-    const render = () => {
-      if (finished) return;
-      const lines = readCart();
-      const isEmpty = itemCount(lines) === 0;
-      empty.classList.toggle("hidden", !isEmpty);
-      formWrap.classList.toggle("hidden", isEmpty);
-      list.replaceChildren();
-      for (const line of lines) {
-        const li = document.createElement("li");
-        li.className = "flex items-baseline justify-between gap-4 py-3 text-sm";
-        const text = document.createElement("span");
-        text.textContent = `${line.name} · Tamanho ${line.size} · x${line.quantity}`;
-        const price = document.createElement("span");
-        price.className = "font-medium text-wine";
-        price.textContent = formatBrl(line.unitPriceCents * line.quantity);
-        li.append(text, price);
-        list.append(li);
-      }
-      subtotal.textContent = formatBrl(subtotalCents(lines));
-    };
-
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
-      const data = new FormData(form);
-      const name = String(data.get("name") ?? "").trim();
-      const nameField = form.elements.namedItem("name") as HTMLInputElement;
-      error("form").textContent = "";
-      if (!name) {
-        error("name").textContent = "Informe seu nome.";
-        nameField.setAttribute("aria-invalid", "true");
-        nameField.focus();
-        return;
-      }
-      error("name").textContent = "";
-      nameField.removeAttribute("aria-invalid");
-
-      const outcome = checkout(
-        readCart(),
-        { name, phone: String(data.get("phone") ?? "").trim() || undefined, note: String(data.get("note") ?? "").trim() || undefined },
-        root.dataset.whatsapp ?? "",
-      );
-      if (outcome.kind === "failed") {
-        error("form").textContent = outcome.message;
-        return;
-      }
-      if (outcome.kind === "handoff" || outcome.kind === "redirect") {
-        window.open(outcome.url, "_blank", "noopener,noreferrer");
-        const reopen = root.querySelector<HTMLAnchorElement>("[data-reopen]");
-        if (reopen) reopen.href = outcome.url;
-      }
-      finished = true;
-      clearCart();
-      formWrap.classList.add("hidden");
-      done.classList.remove("hidden");
-      done.querySelector("h2")?.setAttribute("tabindex", "-1");
-      done.querySelector<HTMLElement>("h2")?.focus();
-    });
-
-    render();
+    const lines = readCart();
+    const isEmpty = itemCount(lines) === 0;
+    empty.classList.toggle("hidden", !isEmpty);
+    summary.classList.toggle("hidden", isEmpty);
+    for (const line of lines) {
+      const li = document.createElement("li");
+      li.className = "flex items-baseline justify-between gap-4 py-3 text-sm";
+      const text = document.createElement("span");
+      text.textContent = `${line.name} · Tamanho ${line.size} · x${line.quantity}`;
+      const price = document.createElement("span");
+      price.className = "font-medium text-wine";
+      price.textContent = formatBrl(line.unitPriceCents * line.quantity);
+      li.append(text, price);
+      list.append(li);
+    }
+    subtotal.textContent = formatBrl(subtotalCents(lines));
   }
 </script>

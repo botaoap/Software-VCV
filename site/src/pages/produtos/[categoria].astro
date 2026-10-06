@@ -1,0 +1,41 @@
+---
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import CatalogGrid from "../../components/CatalogGrid.astro";
+import PageHeader from "../../components/PageHeader.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getCategories, getCollections, getProductsOfCategory } from "../../lib/content";
+import { url } from "../../lib/url";
+
+// One page per garment type of the "Produto" menu (Vestidos, Calças, …).
+export async function getStaticPaths() {
+  const categories = await getCategories();
+  return categories.map((category) => ({ params: { categoria: category.id }, props: { category } }));
+}
+
+const { category } = Astro.props;
+const products = await getProductsOfCategory(category.id);
+const collections = await getCollections();
+---
+
+<BaseLayout
+  title={category.data.title}
+  description={`${category.data.title} da VCV — feitos rolo a rolo no ateliê de Gaspar, com ficha técnica em cada peça.`}
+>
+  <PageHeader eyebrow="Produto" title={category.data.title}>
+    <Breadcrumbs
+      slot="breadcrumbs"
+      items={[{ label: "Início", href: url("/") }, { label: "Produto", href: url("/produtos/") }, { label: category.data.title }]}
+    />
+  </PageHeader>
+  <section class="section-y">
+    <div class="container-page">
+      {
+        products.length === 0 ? (
+          <p class="text-lg text-text-muted">Em breve novas peças.</p>
+        ) : (
+          <CatalogGrid products={products} collections={collections} label={category.data.title} />
+        )
+      }
+    </div>
+  </section>
+</BaseLayout>

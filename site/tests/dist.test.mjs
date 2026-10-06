@@ -109,7 +109,7 @@ test("every collection has a page listing exactly its products", () => {
 });
 
 test("catalog lists every product, in content order (Novidades)", () => {
-  const html = read("catalogo", "index.html");
+  const html = read("produtos", "index.html");
   const names = [...html.matchAll(/data-product-card[^>]*data-name="([^"]+)"/g)].map((m) => m[1]);
   assert.deepEqual(
     names,
@@ -123,17 +123,17 @@ test("home shows the badged products as highlights, with a link to the whole cat
   const section = html.split('id="featured-title"')[1].split("</section>")[0];
   const shown = [...section.matchAll(/data-product-card[^>]*data-name="([^"]+)"/g)].map((m) => m[1]);
   assert.deepEqual(shown.toSorted(), badged.toSorted());
-  assert.match(section, /href="[^"]*\/catalogo\/"/);
+  assert.match(section, /href="[^"]*\/produtos\/"/);
 });
 
-test("cart and checkout are per-visitor steps: noindex and out of the sitemap", () => {
-  for (const flow of ["carrinho", "checkout"]) assert.match(read(flow, "index.html"), /content="noindex"/);
+test("cart, checkout and search are per-visitor steps: noindex and out of the sitemap", () => {
+  for (const flow of ["carrinho", "checkout", "busca"]) assert.match(read(flow, "index.html"), /content="noindex"/);
   const sitemap = readdirSync(dist)
     .filter((name) => /^sitemap-\d+\.xml$/.test(name))
     .map((name) => read(name))
     .join("\n");
   assert.ok(sitemap.includes("/produto/"), "products are in the sitemap");
-  assert.ok(!/\/(carrinho|checkout)\//.test(sitemap), "flow pages are not");
+  assert.ok(!/\/(carrinho|checkout|busca)\//.test(sitemap), "flow pages are not");
 });
 
 test("no analytics or consent banner unless PUBLIC_GA_ID is configured", () => {
@@ -143,4 +143,58 @@ test("no analytics or consent banner unless PUBLIC_GA_ID is configured", () => {
 
 test("the legal placeholders stay out of the index until the client supplies the text", () => {
   for (const page of ["privacidade", "cookies", "termos"]) assert.match(read(page, "index.html"), /content="noindex"/);
+});
+
+test("payment is paused: no WhatsApp order trigger, no checkout form, no direct-buy link", () => {
+  const checkout = read("checkout", "index.html");
+  const main = checkout.slice(checkout.indexOf("<main"), checkout.indexOf("</main>")); // WhatsApp stays as a contact link in the chrome
+  assert.ok(!/<form\b/.test(main) && !/wa\.me/.test(main), "checkout opens no order flow");
+  assert.match(checkout, /Pagamento online em breve/);
+  assert.match(read("carrinho", "index.html"), /<button[^>]*disabled[^>]*>Finalizar compra<\/button>/);
+  for (const product of products) {
+    const html = read("produto", product.id, "index.html");
+    assert.ok(!/Comprar direto/.test(html), `${product.id}: no direct-buy link`);
+    assert.ok(!/wa\.me[^"]*text=[^"]*interesse/.test(html), `${product.id}: no order message`);
+  }
+});
+
+const categories = JSON.parse(readFileSync(new URL("../content/categories.json", import.meta.url), "utf8"));
+const cardNames = (html) => [...html.matchAll(/data-product-card[^>]*data-name="([^"]+)"/g)].map((m) => m[1]);
+
+// The menu follows the storefront pattern (Les Cloches): garment-type and collection dropdowns, built
+// from the content. "Catálogo" is now "Produto" (Felipe); accessories and sale are not offered.
+test("menu: Produto and Coleções dropdowns come from the content; no Catálogo, Acessórios or Sale", () => {
+  const home = read("index.html");
+  const header = home.slice(home.indexOf("<header"), home.indexOf("</header>"));
+  const desktop = header.slice(header.indexOf('aria-label="Principal"'), header.indexOf('aria-label="Principal (celular)"'));
+  for (const category of categories) assert.ok(desktop.includes(`>${category.title}</a>`), `Produto menu lacks ${category.title}`);
+  for (const collection of collections) assert.ok(desktop.includes(`>${collection.title}</a>`), `Coleções menu lacks ${collection.title}`);
+  assert.match(desktop, /aria-controls="nav-panel-\d+"/);
+  assert.match(header, /aria-label="Buscar peças"/);
+  for (const file of pages) {
+    const text = readFileSync(file, "utf8").replace(/<script[\s\S]*?<\/script>/g, "");
+    assert.ok(!/catálogo|catalogo|acessórios|acessorios|>\s*sale\s*</i.test(text), `${rel(file)} mentions a section VCV does not have`);
+  }
+});
+
+test("every garment type has a page listing exactly its products", () => {
+  for (const category of categories) {
+    const names = cardNames(read("produtos", category.id, "index.html"));
+    assert.deepEqual(names, products.filter((p) => p.category === category.id).map((p) => p.name.toLowerCase()), category.id);
+  }
+  assert.ok(products.every((p) => categories.some((c) => c.id === p.category)));
+});
+
+test("Novidades lists the products marked as new, and the menu entry exists only then", () => {
+  const isNew = products.filter((p) => p.badges.includes("NEW_IN")).map((p) => p.name.toLowerCase());
+  assert.deepEqual(cardNames(read("novidades", "index.html")), isNew);
+  assert.equal(read("index.html").includes('href="' + BASE + '/novidades/"'), isNew.length > 0);
+});
+
+test("search page carries every product with accent-free search text, and is noindex", () => {
+  const html = read("busca", "index.html");
+  assert.equal(cardNames(html).length, products.length);
+  assert.match(html, /content="noindex"/);
+  assert.match(html, /data-search="[^"]*vestido curto zebra[^"]*"/);
+  assert.match(html, /data-search="[^"]*calcas[^"]*"/); // "Calças" without the cedilla
 });

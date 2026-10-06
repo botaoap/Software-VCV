@@ -25,11 +25,18 @@ const collectionsCol = defineCollection({
   }),
 });
 
+/** Garment types shown in the "Produto" menu (Vestidos, Calças, …). Only the types VCV sells. */
+const categories = defineCollection({
+  loader: file("content/categories.json"),
+  schema: z.object({ title: z.string().min(1) }),
+});
+
 const products = defineCollection({
   loader: file("content/products.json"),
   schema: z.object({
     name: z.string().min(1),
     collection: reference("collections"),
+    category: reference("categories"),
     /** Money is never floating point: integer cents. */
     priceCents: z.number().int().positive(),
     images: z.array(photo).min(1),
@@ -43,8 +50,6 @@ const products = defineCollection({
     }),
     sizes: z.array(z.number().int().min(34).max(60)).min(1),
     badges: z.array(z.enum(badges)),
-    /** External "buy" link (WhatsApp/marketplace); null = only the bag flow is offered. */
-    buyUrl: z.url().nullable(),
   }),
 });
 
@@ -68,4 +73,4 @@ const brand = defineCollection({
 });
 
 
-export const collections = { collections: collectionsCol, products, brand };
+export const collections = { collections: collectionsCol, categories, products, brand };

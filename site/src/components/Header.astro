@@ -3,10 +3,11 @@ import ExternalLink from "./ExternalLink.astro";
 import Icon from "./Icon.astro";
 import { getBrand } from "../lib/content";
 import { whatsappHref } from "../lib/format";
-import { isActive, primaryNav } from "../lib/nav";
+import { getNav, isActive } from "../lib/nav";
 import { url } from "../lib/url";
 
 const { contact } = await getBrand();
+const nav = await getNav();
 const pathname = Astro.url.pathname;
 const cartActive = isActive(["/carrinho", "/checkout"], pathname);
 const whatsapp = whatsappHref(contact.whatsapp, "Olá! Vim pelo site da VCV.");
@@ -22,22 +23,40 @@ const whatsapp = whatsappHref(contact.whatsapp, "Olá! Vim pelo site da VCV.");
     <nav aria-label="Principal" class="hidden lg:block">
       <ul class="flex items-center gap-7">
         {
-          primaryNav.map((item) => {
+          nav.map((item, index) => {
             const active = isActive(item.match, pathname);
-            return (
+            const link = [
+              "inline-flex min-h-11 items-center border-b-2 text-sm transition-colors duration-200",
+              active ? "border-rose font-medium text-wine" : "border-transparent text-text hover:border-rose/60 hover:text-wine",
+            ];
+            return item.children ? (
+              <li class="nav-group relative" data-nav-group>
+                <div class="inline-flex items-center">
+                  <a href={item.href} aria-current={active ? "page" : undefined} class:list={link}>{item.label}</a>
+                  <button
+                    type="button"
+                    class="-ml-2.5 inline-flex size-11 cursor-pointer items-center justify-center rounded-md text-text-muted transition-colors hover:text-wine"
+                    aria-expanded="false"
+                    aria-controls={`nav-panel-${index}`}
+                    aria-label={`Abrir submenu de ${item.label}`}
+                    data-nav-toggle
+                  >
+                    <Icon name="chevron-down" size={16} class="nav-chevron" />
+                  </button>
+                </div>
+                <div id={`nav-panel-${index}`} class="nav-panel absolute top-full left-0 z-50 pt-3" data-nav-panel>
+                  <ul class="min-w-56 rounded-lg border border-border bg-cream py-2 shadow-[var(--shadow-card)]">
+                    {item.children.map((child) => (
+                      <li>
+                        <a href={child.href} class="flex min-h-11 items-center px-5 text-sm text-text transition-colors hover:bg-nude hover:text-wine">{child.label}</a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </li>
+            ) : (
               <li>
-                <a
-                  href={item.href}
-                  aria-current={active ? "page" : undefined}
-                  class:list={[
-                    "inline-flex min-h-11 items-center border-b-2 text-sm transition-colors duration-200",
-                    active
-                      ? "border-rose font-medium text-wine"
-                      : "border-transparent text-text hover:border-rose/60 hover:text-wine",
-                  ]}
-                >
-                  {item.label}
-                </a>
+                <a href={item.href} aria-current={active ? "page" : undefined} class:list={link}>{item.label}</a>
               </li>
             );
           })
@@ -45,7 +64,15 @@ const whatsapp = whatsappHref(contact.whatsapp, "Olá! Vim pelo site da VCV.");
       </ul>
     </nav>
 
-    <div class="flex items-center gap-2 sm:gap-3">
+    <div class="flex items-center gap-1 sm:gap-2">
+      <a
+        href={url("/busca/")}
+        class="inline-flex size-11 items-center justify-center rounded-md text-text transition-colors duration-200 hover:text-wine"
+        aria-label="Buscar peças"
+        aria-current={isActive(["/busca"], pathname) ? "page" : undefined}
+      >
+        <Icon name="search" size={21} />
+      </a>
       <a
         href={url("/carrinho/")}
         class:list={[
@@ -86,18 +113,40 @@ const whatsapp = whatsappHref(contact.whatsapp, "Olá! Vim pelo site da VCV.");
       <nav aria-label="Principal (celular)" class="container-page pb-6">
         <ul class="border-t border-border">
           {
-            primaryNav.map((item) => {
+            nav.map((item, index) => {
               const active = isActive(item.match, pathname);
+              const row = ["flex min-h-12 flex-1 items-center justify-between text-base", active ? "font-medium text-wine" : "text-text"];
               return (
                 <li class="border-b border-border">
-                  <a
-                    href={item.href}
-                    aria-current={active ? "page" : undefined}
-                    class:list={["flex min-h-12 items-center justify-between text-base", active ? "font-medium text-wine" : "text-text"]}
-                  >
-                    {item.label}
-                    <Icon name="arrow-right" size={16} class="text-rose-ink" />
-                  </a>
+                  <div class="flex items-center">
+                    <a href={item.href} aria-current={active ? "page" : undefined} class:list={row}>
+                      {item.label}
+                      {!item.children && <Icon name="arrow-right" size={16} class="text-rose-ink" />}
+                    </a>
+                    {item.children && (
+                      <button
+                        type="button"
+                        class="inline-flex size-12 cursor-pointer items-center justify-center text-text-muted"
+                        aria-expanded="false"
+                        aria-controls={`sub-${index}`}
+                        aria-label={`Abrir submenu de ${item.label}`}
+                        data-sub-toggle
+                      >
+                        <Icon name="chevron-down" size={18} class="nav-chevron" />
+                      </button>
+                    )}
+                  </div>
+                  {item.children && (
+                    <div id={`sub-${index}`} class="expandable" data-open="false" data-sub-panel>
+                      <ul class="pb-2 pl-4">
+                        {item.children.map((child) => (
+                          <li>
+                            <a href={child.href} class="flex min-h-11 items-center text-[0.9375rem] text-text-muted hover:text-wine">{child.label}</a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </li>
               );
             })
@@ -125,6 +174,42 @@ const whatsapp = whatsappHref(contact.whatsapp, "Olá! Vim pelo site da VCV.");
   }
   .site-header:global(.is-condensed) .header-bar {
     padding-block: 0.5rem;
+  }
+
+  /* Desktop dropdowns: open on hover, on keyboard focus inside, or via the chevron button. Hidden
+     panels are visibility:hidden so their links stay out of the tab order. */
+  .nav-panel {
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(6px);
+    transition:
+      opacity 200ms var(--ease-soft),
+      transform 200ms var(--ease-soft),
+      visibility 0s linear 200ms;
+  }
+  .nav-group:hover > .nav-panel,
+  .nav-group:focus-within > .nav-panel,
+  .nav-group[data-open="true"] > .nav-panel {
+    visibility: visible;
+    opacity: 1;
+    transform: none;
+    transition-delay: 0s;
+  }
+  /* Escape closes a dropdown even while the pointer or focus is still inside it. */
+  .nav-group[data-dismissed="true"]:not([data-open="true"]) > .nav-panel {
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  /* The chevron is an <Icon> (another component), so reach it with :global. */
+  :global(.nav-chevron) {
+    transition: transform 200ms var(--ease-soft);
+  }
+  .nav-group:hover :global(.nav-chevron),
+  .nav-group[data-open="true"] :global(.nav-chevron),
+  [aria-expanded="true"] > :global(.nav-chevron) {
+    transform: rotate(180deg);
   }
 
   /* Hamburger → X */
@@ -215,6 +300,57 @@ const whatsapp = whatsappHref(contact.whatsapp, "Olá! Vim pelo site da VCV.");
       if (event.matches) setOpen(false);
     });
   }
+
+  // Desktop dropdowns: the chevron toggles (keyboard / touch); Escape or an outside click closes.
+  const groups = [...document.querySelectorAll<HTMLElement>("[data-nav-group]")];
+  const closeGroups = (except?: HTMLElement) =>
+    groups.forEach((group) => {
+      if (group === except) return;
+      group.dataset.open = "false";
+      group.querySelector("[data-nav-toggle]")?.setAttribute("aria-expanded", "false");
+    });
+  groups.forEach((group) => {
+    const toggle = group.querySelector<HTMLButtonElement>("[data-nav-toggle]")!;
+    toggle.addEventListener("click", () => {
+      const open = group.dataset.open !== "true";
+      closeGroups(group);
+      group.dataset.open = String(open);
+      toggle.setAttribute("aria-expanded", String(open));
+    });
+  });
+  document.addEventListener("click", (event) => {
+    if (!(event.target as HTMLElement).closest("[data-nav-group]")) closeGroups();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    const openGroup = groups.find((group) => group.dataset.open === "true" || group.matches(":hover, :focus-within"));
+    if (openGroup) {
+      closeGroups();
+      openGroup.dataset.dismissed = "true";
+      openGroup.querySelector<HTMLElement>("[data-nav-toggle]")?.focus();
+    }
+  });
+  // A dismissed dropdown works again once the pointer or focus has left it.
+  groups.forEach((group) => {
+    const reset = () => delete group.dataset.dismissed;
+    group.addEventListener("mouseleave", reset);
+    group.addEventListener("focusout", (event) => {
+      if (!group.contains(event.relatedTarget as Node | null)) reset();
+    });
+    group.querySelector("[data-nav-toggle]")?.addEventListener("click", reset);
+  });
+
+  // Mobile menu: each group expands like an accordion (animated, closed panels are inert).
+  document.querySelectorAll<HTMLButtonElement>("[data-sub-toggle]").forEach((button) => {
+    const panel = document.getElementById(button.getAttribute("aria-controls")!)!;
+    panel.inert = true;
+    button.addEventListener("click", () => {
+      const open = button.getAttribute("aria-expanded") !== "true";
+      button.setAttribute("aria-expanded", String(open));
+      panel.dataset.open = String(open);
+      panel.inert = !open;
+    });
+  });
 
   const badge = document.querySelector<HTMLElement>("[data-cart-count]");
   const cartLabel = document.querySelector<HTMLElement>("[data-cart-label]");

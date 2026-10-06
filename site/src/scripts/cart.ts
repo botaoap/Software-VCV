@@ -1,7 +1,7 @@
 /**
  * The bag. Persisted in localStorage (the app's VCV-29 behaviour) so it survives reloads and is
  * shared across tabs; a custom event keeps same-page widgets (header badge, cart page) in sync.
- * Prices are integer cents. Checkout hands off through `checkout.ts` (the commerce seam).
+ * Prices are integer cents. Payment is paused until the commerce platform is chosen.
  */
 export type CartLine = {
   productId: string;

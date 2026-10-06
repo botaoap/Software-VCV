@@ -2,7 +2,7 @@
 
 Static storefront for VCV (Astro + Tailwind v4 + TypeScript). Every page is plain HTML in `dist/`
 (SEO and WhatsApp/Instagram previews work with no server); the only JavaScript is small scripts for
-the bag, the checkout hand-off, catalog filters, the hero carousel and the header.
+the bag, catalog filters, the hero carousel and the header.
 
 It replaces the Compose-for-Web build (canvas rendering: weak SEO, 4.31 MiB gzipped payload) as the public
 web front (home page code ≈ 20 KiB gzipped + ≈ 85 KiB of fonts, vs 4.31 MiB for the Wasm
@@ -32,19 +32,29 @@ Node 22 or newer.
 With nothing configured there is no banner (nothing to consent to) and the footer card links to
 Instagram / WhatsApp instead of a form that posts nowhere.
 
+**Payment is paused** until the client picks the commerce platform (Shopify, Nuvemshop, …): the bag works
+and is saved in the browser, "Finalizar compra" is disabled with "Pagamento online em breve", and no
+WhatsApp order is triggered. WhatsApp stays as a contact channel (header, footer, floating button, Contato).
+
 ## Where things live
 
 ```
-content/                 products.json · collections.json · brand.json  (the catalog; zod-validated)
+content/                 products.json · categories.json · collections.json · brand.json  (zod-validated)
 src/content.config.ts    schemas; a bad collection slug fails the build
 src/styles/global.css    design tokens (@theme, 1C "Corpo"), .btn/.card/.link-arrow, motion tokens
 src/layouts/BaseLayout   head (title/canonical/OG/JSON-LD), chrome, reveal script
 src/components/          Header, Footer, PromoBar, HeroCarousel, ProductCard, CatalogGrid, …
 src/scripts/cart.ts      the bag (localStorage `vcv.cart.v1`, shared across tabs)
-src/scripts/checkout.ts  the commerce seam: today a pre-filled WhatsApp order
-src/pages/               one file per route (same URLs as the app: /catalogo, /produto/{id}, …)
+src/pages/               one file per route: /produtos, /produtos/{categoria}, /produto/{id}, /colecao/{slug}, /novidades, /busca, …
 tests/                   tokens.test.mjs (WCAG AA) · dist.test.mjs (built HTML)
 ```
+
+Menu (pattern of the references, e.g. Les Cloches): **Novidades** (products marked "Novo"; shown only
+while there is one), **Produto** (dropdown by garment type, from `content/categories.json`),
+**Coleções** (dropdown from `content/collections.json`), **Atelier**, **Contato**, plus search, bag and
+WhatsApp. It is built from the content (`src/lib/nav.ts`), so a new category or collection appears by
+itself. Accessories, sale, cashback and accounts are intentionally not offered: VCV does not sell or
+run them. To rename "Produto" (e.g. to "Produtos") change the label in `src/lib/nav.ts`.
 
 Design rules (see the vault's Design-System and `premium-web-ui`): tokens only (no raw hex/px in
 components), buttons for actions and arrow links for navigation, external links open in a new tab
@@ -61,7 +71,7 @@ nothing is hidden without JavaScript.
 | Promo bar and trust strip copy ("Envio para todo o Brasil", …) | `src/lib/site.ts` | confirm each claim; add frete / parcelamento / PIX / troca only when they are real policies |
 | Legal pages (`/privacidade`, `/cookies`, `/termos`) | `src/pages/*/index.astro` | text written or approved by the client; they are `noindex` until then |
 | Domain | `SITE_URL` / `BASE_PATH` | custom domain at the root is best |
-| Payment | `src/scripts/checkout.ts` | commerce decision: stay on WhatsApp, a hosted checkout, or the `:server` backend |
+| Payment | bag page CTA + `src/pages/checkout` | commerce platform decision (Shopify, Nuvemshop, own backend…); then wire checkout and re-enable the CTA |
 
 ## Deploy
 

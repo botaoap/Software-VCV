@@ -13,9 +13,11 @@ interface Props {
   priority?: boolean;
   /** Heading level for the product name: h3 under a section title, h2 on listing pages. */
   heading?: "h2" | "h3";
+  /** Lower-cased, accent-free text the search page matches against. */
+  search?: string;
   class?: string;
 }
-const { product, index = 0, priority = false, heading: Heading = "h3", class: className } = Astro.props;
+const { product, index = 0, priority = false, heading: Heading = "h3", search, class: className } = Astro.props;
 const { data } = product;
 const cover = data.images[0];
 const badge = data.badges[0];
@@ -26,6 +28,7 @@ const badge = data.badges[0];
   data-product-card
   data-index={index}
   data-name={data.name.toLowerCase()}
+  data-search={search}
   data-price={data.priceCents}
   data-collection={data.collection.id}
   data-sizes={data.sizes.join(",")}

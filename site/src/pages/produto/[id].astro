@@ -1,17 +1,15 @@
 ---
 import { getImage } from "astro:assets";
 import Breadcrumbs from "../../components/Breadcrumbs.astro";
-import ExternalLink from "../../components/ExternalLink.astro";
 import Icon from "../../components/Icon.astro";
 import Photo from "../../components/Photo.astro";
 import ProductCard from "../../components/ProductCard.astro";
 import SectionHeading from "../../components/SectionHeading.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { getCollectionOf, getProducts } from "../../lib/content";
-import { badgeLabels, formatBrl, whatsappHref } from "../../lib/format";
+import { getCategoryOf, getCollectionOf, getProducts } from "../../lib/content";
+import { badgeLabels, formatBrl } from "../../lib/format";
 import { brand } from "../../lib/site";
 import { url } from "../../lib/url";
-import { getBrand } from "../../lib/content";
 
 export async function getStaticPaths() {
   const products = await getProducts();
@@ -21,7 +19,7 @@ export async function getStaticPaths() {
 const { product } = Astro.props;
 const { data } = product;
 const collection = await getCollectionOf(product);
-const { contact } = await getBrand();
+const category = await getCategoryOf(product);
 const all = await getProducts();
 const related = [
   ...all.filter((p) => p.id !== product.id && p.data.collection.id === data.collection.id),
@@ -55,13 +53,12 @@ const crumbsLd = {
   "@type": "BreadcrumbList",
   itemListElement: [
     { name: "Início", item: new URL(url("/"), Astro.site!).href },
-    { name: "Catálogo", item: new URL(url("/catalogo/"), Astro.site!).href },
+    { name: "Produto", item: new URL(url("/produtos/"), Astro.site!).href },
+    { name: category.data.title, item: new URL(url(`/produtos/${category.id}/`), Astro.site!).href },
     { name: data.name, item: pageUrl },
   ].map((entry, index) => ({ "@type": "ListItem", position: index + 1, ...entry })),
 };
 
-const buyHref = data.buyUrl;
-const askHref = whatsappHref(contact.whatsapp, `Olá! Tenho interesse na peça ${data.name}.`);
 ---
 
 <BaseLayout
@@ -75,7 +72,8 @@ const askHref = whatsappHref(contact.whatsapp, `Olá! Tenho interesse na peça $
     <Breadcrumbs
       items={[
         { label: "Início", href: url("/") },
-        { label: "Catálogo", href: url("/catalogo/") },
+        { label: "Produto", href: url("/produtos/") },
+        { label: category.data.title, href: url(`/produtos/${category.id}/`) },
         { label: data.name },
       ]}
     />
@@ -163,18 +161,9 @@ const askHref = whatsappHref(contact.whatsapp, `Olá! Tenho interesse na peça $
       </form>
 
       <noscript>
-        <p class="mt-8 rounded-lg border border-border bg-paper p-4 text-sm text-text-muted">
-          A sacola precisa de JavaScript. Para comprar agora, <a class="text-link" href={askHref} target="_blank" rel="noopener noreferrer">peça pelo WhatsApp<span class="sr-only"> (abre em nova aba)</span></a>.
-        </p>
+        <p class="mt-8 rounded-lg border border-border bg-paper p-4 text-sm text-text-muted">A sacola precisa de JavaScript para funcionar.</p>
       </noscript>
 
-      {
-        buyHref && (
-          <ExternalLink href={buyHref} class="btn btn-outline btn-lg mt-3 w-full">
-            Comprar direto
-          </ExternalLink>
-        )
-      }
 
       <section class="mt-10 border-t border-border pt-8" aria-labelledby="spec-title">
         <h2 id="spec-title" class="text-2xl">Ficha técnica</h2>

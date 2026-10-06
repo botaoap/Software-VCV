@@ -3,6 +3,7 @@
     "id": "vestido-zebra",
     "name": "Vestido Curto Zebra",
     "collection": "essenciais",
+    "category": "vestidos",
     "priceCents": 18900,
     "images": [
       {
@@ -41,13 +42,13 @@
     ],
     "badges": [
       "BEST_SELLER"
-    ],
-    "buyUrl": "https://wa.me/5547999999999?text=Tenho%20interesse%20no%20Vestido%20Curto%20Zebra"
+    ]
   },
   {
     "id": "calca-viscolinho",
     "name": "Calça Pantalona Viscolinho",
     "collection": "essenciais",
+    "category": "calcas",
     "priceCents": 22900,
     "images": [
       {
@@ -78,13 +79,13 @@
     ],
     "badges": [
       "ATELIER_PICK"
-    ],
-    "buyUrl": null
+    ]
   },
   {
     "id": "blusa-linho",
     "name": "Blusa Ampla Linho",
     "collection": "verao",
+    "category": "blusas",
     "priceCents": 14900,
     "images": [
       {
@@ -113,13 +114,13 @@
     ],
     "badges": [
       "NEW_IN"
-    ],
-    "buyUrl": null
+    ]
   },
   {
     "id": "saia-midi",
     "name": "Saia Midi Viscose",
     "collection": "verao",
+    "category": "saias",
     "priceCents": 17900,
     "images": [
       {
@@ -147,7 +148,6 @@
       50,
       52
     ],
-    "badges": [],
-    "buyUrl": null
+    "badges": []
   }
 ]

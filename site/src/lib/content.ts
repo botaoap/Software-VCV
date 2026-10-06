@@ -1,4 +1,5 @@
 import { getCollection, getEntries, getEntry } from "astro:content";
+import categoriesFile from "../../content/categories.json";
 import collectionsFile from "../../content/collections.json";
 import productsFile from "../../content/products.json";
 
@@ -28,6 +29,21 @@ export async function getCollections() {
   return (await getCollection("collections")).sort(byFileOrder(collectionsFile));
 }
 
+export async function getCategories() {
+  return (await getCollection("categories")).sort(byFileOrder(categoriesFile));
+}
+
+export async function getProductsOfCategory(categoryId: string) {
+  const products = await getProducts();
+  return products.filter((product) => product.data.category.id === categoryId);
+}
+
+/** "Novidades": the products the client marked as new (badge NEW_IN). */
+export async function getNewIn() {
+  const products = await getProducts();
+  return products.filter((product) => product.data.badges.includes("NEW_IN"));
+}
+
 export async function getProductsOf(collectionId: string) {
   const products = await getProducts();
   return products.filter((product) => product.data.collection.id === collectionId);
@@ -38,6 +54,11 @@ export async function getFeatured() {
   const products = await getProducts();
   const badged = products.filter((product) => product.data.badges.length > 0);
   return badged.length > 0 ? badged : products.slice(0, 4);
+}
+
+export async function getCategoryOf(product: Awaited<ReturnType<typeof getProducts>>[number]) {
+  const [category] = await getEntries([product.data.category]);
+  return category;
 }
 
 export async function getCollectionOf(product: Awaited<ReturnType<typeof getProducts>>[number]) {

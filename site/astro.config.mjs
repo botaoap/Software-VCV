@@ -23,8 +23,8 @@ export default defineConfig({
   image: { domains: ["images.unsplash.com"] },
   integrations: [
     sitemap({
-      // Cart and checkout are per-visitor flow steps, not pages worth indexing.
-      filter: (page) => !/\/(carrinho|checkout)\/?$/.test(page),
+      // Cart, checkout and search are per-visitor steps, not pages worth indexing.
+      filter: (page) => !/\/(carrinho|checkout|busca)\/?$/.test(page),
     }),
   ],
   vite: { plugins: [tailwindcss()] },
