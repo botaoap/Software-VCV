@@ -3,18 +3,14 @@ import ExternalLink from "./ExternalLink.astro";
 import Icon from "./Icon.astro";
 import { getBrand } from "../lib/content";
 import { whatsappHref } from "../lib/format";
+import { getNav } from "../lib/nav";
 import { brand } from "../lib/site";
 import { consentEnabled, newsletterEnabled, services } from "../lib/services";
 import { url } from "../lib/url";
 
 const { contact } = await getBrand();
 const year = new Date().getFullYear();
-const shop = [
-  { label: "Coleções", href: url("/colecoes/") },
-  { label: "Catálogo", href: url("/catalogo/") },
-  { label: "Atelier", href: url("/atelier/") },
-  { label: "Contato", href: url("/contato/") },
-];
+const shop = (await getNav()).map(({ label, href }) => ({ label, href }));
 const legal = [
   { label: "Política de Privacidade", href: url("/privacidade/") },
   { label: "Política de Cookies", href: url("/cookies/") },

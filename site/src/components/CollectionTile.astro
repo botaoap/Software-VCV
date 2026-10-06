@@ -6,8 +6,10 @@ import { url } from "../lib/url";
 interface Props {
   collection: CollectionEntry<"collections">;
   count: number;
+  /** h3 under a section title (home), h2 on the listing page. */
+  heading?: "h2" | "h3";
 }
-const { collection, count } = Astro.props;
+const { collection, count, heading: Heading = "h3" } = Astro.props;
 const { data } = collection;
 ---
 
@@ -24,7 +26,7 @@ const { data } = collection;
   </div>
   <div class="flex flex-1 flex-col p-6">
     <p class="eyebrow">{count} {count === 1 ? "peça" : "peças"}</p>
-    <h3 class="mt-2 text-2xl">{data.title}</h3>
+    <Heading class="mt-2 text-2xl">{data.title}</Heading>
     <p class="mt-2 text-text-muted">{data.subtitle}</p>
     <span class="link-arrow mt-auto pt-4">Ver coleção <span class="arrow" aria-hidden="true">→</span></span>
   </div>

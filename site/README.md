@@ -39,15 +39,22 @@ WhatsApp order is triggered. WhatsApp stays as a contact channel (header, footer
 ## Where things live
 
 ```
-content/                 products.json · collections.json · brand.json  (the catalog; zod-validated)
+content/                 products.json · categories.json · collections.json · brand.json  (zod-validated)
 src/content.config.ts    schemas; a bad collection slug fails the build
 src/styles/global.css    design tokens (@theme, 1C "Corpo"), .btn/.card/.link-arrow, motion tokens
 src/layouts/BaseLayout   head (title/canonical/OG/JSON-LD), chrome, reveal script
 src/components/          Header, Footer, PromoBar, HeroCarousel, ProductCard, CatalogGrid, …
 src/scripts/cart.ts      the bag (localStorage `vcv.cart.v1`, shared across tabs)
-src/pages/               one file per route (same URLs as the app: /catalogo, /produto/{id}, …)
+src/pages/               one file per route: /produtos, /produtos/{categoria}, /produto/{id}, /colecao/{slug}, /novidades, /busca, …
 tests/                   tokens.test.mjs (WCAG AA) · dist.test.mjs (built HTML)
 ```
+
+Menu (pattern of the references, e.g. Les Cloches): **Novidades** (products marked "Novo"; shown only
+while there is one), **Produto** (dropdown by garment type, from `content/categories.json`),
+**Coleções** (dropdown from `content/collections.json`), **Atelier**, **Contato**, plus search, bag and
+WhatsApp. It is built from the content (`src/lib/nav.ts`), so a new category or collection appears by
+itself. Accessories, sale, cashback and accounts are intentionally not offered: VCV does not sell or
+run them. To rename "Produto" (e.g. to "Produtos") change the label in `src/lib/nav.ts`.
 
 Design rules (see the vault's Design-System and `premium-web-ui`): tokens only (no raw hex/px in
 components), buttons for actions and arrow links for navigation, external links open in a new tab

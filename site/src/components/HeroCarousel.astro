@@ -45,16 +45,16 @@ const { hero } = await getBrand();
         ))
       }
     </ul>
-    <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-wine-deep/90 via-wine-deep/45 to-wine-deep/10 lg:bg-gradient-to-r lg:from-wine-deep/90 lg:via-wine-deep/50 lg:to-transparent"></div>
+    <div class="pointer-events-none absolute inset-0 z-[15] bg-gradient-to-t from-wine-deep/90 via-wine-deep/45 to-wine-deep/10 lg:bg-gradient-to-r lg:from-wine-deep/90 lg:via-wine-deep/50 lg:to-transparent"></div>
 
-    <div class="container-page relative z-10 flex h-full flex-col justify-end pb-16 sm:pb-20 lg:justify-center lg:pb-0">
+    <div class="container-page relative z-20 flex h-full flex-col justify-end pb-16 sm:pb-20 lg:justify-center lg:pb-0">
       <p class="text-xs font-medium tracking-[0.2em] text-rose-soft uppercase sm:tracking-[0.3em]">{brand.tagline} · {brand.location}</p>
       <h1 class="hero-type mt-5 max-w-3xl text-cream">Poucas peças, bem feitas.</h1>
       <p class="mt-5 max-w-xl text-lg leading-relaxed text-cream/85">
         Moda feminina de ateliê próprio: tecido escolhido rolo a rolo, modelagem provada em corpo real.
       </p>
       <div class="mt-8 flex flex-wrap gap-3">
-        <a href={url("/catalogo/")} class="btn btn-light btn-lg">Ver catálogo</a>
+        <a href={url("/produtos/")} class="btn btn-light btn-lg">Ver produtos</a>
         <a href={url("/atelier/")} class="btn btn-ghost-light btn-lg">Conheça o ateliê</a>
       </div>
     </div>

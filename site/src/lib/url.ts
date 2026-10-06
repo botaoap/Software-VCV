@@ -1,7 +1,7 @@
 /**
  * Site-internal URLs. The build can be served at the domain root or at a sub-path (GitHub Pages
- * project site), so every internal link goes through here: `url("/catalogo/")` → `/catalogo/` or
- * `/Software-VCV/catalogo/`.
+ * project site), so every internal link goes through here: `url("/produtos/")` → `/produtos/` or
+ * `/Software-VCV/produtos/`.
  */
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 

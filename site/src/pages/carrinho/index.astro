@@ -22,7 +22,7 @@ import { url } from "../../lib/url";
       <div class="js-only" data-cart>
         <div class="hidden text-center" data-cart-empty>
           <p class="text-xl text-text-muted">Sua sacola está vazia.</p>
-          <a href={url("/catalogo/")} class="btn btn-primary btn-lg mt-6">Ver catálogo</a>
+          <a href={url("/produtos/")} class="btn btn-primary btn-lg mt-6">Ver produtos</a>
         </div>
 
         <div class="hidden gap-10 lg:grid-cols-[1fr_22rem]" data-cart-filled>
@@ -36,7 +36,7 @@ import { url } from "../../lib/url";
             </p>
             <button type="button" class="btn btn-primary btn-lg mt-6 w-full" disabled aria-describedby="pay-soon">Finalizar compra</button>
             <p id="pay-soon" class="mt-3 text-sm text-text-muted">Pagamento online em breve. Sua sacola fica salva neste navegador.</p>
-            <a href={url("/catalogo/")} class="link-arrow mt-2">Continuar comprando <span class="arrow" aria-hidden="true">→</span></a>
+            <a href={url("/produtos/")} class="link-arrow mt-2">Continuar comprando <span class="arrow" aria-hidden="true">→</span></a>
           </aside>
         </div>
       </div>

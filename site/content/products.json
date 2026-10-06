@@ -3,6 +3,7 @@
     "id": "vestido-zebra",
     "name": "Vestido Curto Zebra",
     "collection": "essenciais",
+    "category": "vestidos",
     "priceCents": 18900,
     "images": [
       {
@@ -47,6 +48,7 @@
     "id": "calca-viscolinho",
     "name": "Calça Pantalona Viscolinho",
     "collection": "essenciais",
+    "category": "calcas",
     "priceCents": 22900,
     "images": [
       {
@@ -83,6 +85,7 @@
     "id": "blusa-linho",
     "name": "Blusa Ampla Linho",
     "collection": "verao",
+    "category": "blusas",
     "priceCents": 14900,
     "images": [
       {
@@ -117,6 +120,7 @@
     "id": "saia-midi",
     "name": "Saia Midi Viscose",
     "collection": "verao",
+    "category": "saias",
     "priceCents": 17900,
     "images": [
       {

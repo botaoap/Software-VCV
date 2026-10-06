@@ -1,0 +1,29 @@
+---
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import CatalogGrid from "../../components/CatalogGrid.astro";
+import PageHeader from "../../components/PageHeader.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getCollections, getNewIn } from "../../lib/content";
+import { url } from "../../lib/url";
+
+// The pieces the client marked as new (badge "Novo"). The menu entry only exists while there is one.
+const products = await getNewIn();
+const collections = await getCollections();
+---
+
+<BaseLayout title="Novidades" description="As novidades da VCV: peças recém-chegadas do ateliê de Gaspar, Vale do Itajaí.">
+  <PageHeader eyebrow="Novidades" title="Recém-chegadas" lede="As peças mais novas do ateliê.">
+    <Breadcrumbs slot="breadcrumbs" items={[{ label: "Início", href: url("/") }, { label: "Novidades" }]} />
+  </PageHeader>
+  <section class="section-y">
+    <div class="container-page">
+      {
+        products.length === 0 ? (
+          <p class="text-lg text-text-muted">Em breve novas peças.</p>
+        ) : (
+          <CatalogGrid products={products} collections={collections} label="Novidades" />
+        )
+      }
+    </div>
+  </section>
+</BaseLayout>
