@@ -6,6 +6,17 @@
 clothing atelier. Built with **Kotlin Multiplatform** and **Compose Multiplatform**
 (web · desktop · Android · iOS), sharing one UI and domain across every target.
 
+## Web site
+
+The public web front is a static **Astro** site in [`site/`](site/README.md) (SEO-friendly HTML,
+self-hosted fonts and photos; the home page's HTML+CSS+JS is ≈ 20 KiB gzipped vs 4.31 MiB for the
+Compose-for-Web bundle). The Kotlin
+Multiplatform apps below share their domain/UI with each other, not with the site.
+
+```bash
+cd site && npm install && npm run dev   # http://localhost:4321
+```
+
 ## Modules
 
 | Module        | Target                                   |

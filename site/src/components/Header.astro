@@ -1,0 +1,238 @@
+---
+import ExternalLink from "./ExternalLink.astro";
+import Icon from "./Icon.astro";
+import { getBrand } from "../lib/content";
+import { whatsappHref } from "../lib/format";
+import { isActive, primaryNav } from "../lib/nav";
+import { url } from "../lib/url";
+
+const { contact } = await getBrand();
+const pathname = Astro.url.pathname;
+const cartActive = isActive(["/carrinho", "/checkout"], pathname);
+const whatsapp = whatsappHref(contact.whatsapp, "Olá! Vim pelo site da VCV.");
+---
+
+<header class="site-header sticky top-0 z-50 border-b border-border bg-cream/90 backdrop-blur-md" data-header>
+  <div class="header-bar container-page flex items-center justify-between gap-6 py-4">
+    <a href={url("/")} class="flex flex-col leading-none" aria-label="VCV — Veste Com Você, página inicial">
+      <span class="font-serif text-3xl tracking-tight text-wine">VCV</span>
+      <span class="mt-1 text-[0.6rem] tracking-[0.32em] text-text-muted uppercase">Veste Com Você</span>
+    </a>
+
+    <nav aria-label="Principal" class="hidden lg:block">
+      <ul class="flex items-center gap-7">
+        {
+          primaryNav.map((item) => {
+            const active = isActive(item.match, pathname);
+            return (
+              <li>
+                <a
+                  href={item.href}
+                  aria-current={active ? "page" : undefined}
+                  class:list={[
+                    "inline-flex min-h-11 items-center border-b-2 text-sm transition-colors duration-200",
+                    active
+                      ? "border-rose font-medium text-wine"
+                      : "border-transparent text-text hover:border-rose/60 hover:text-wine",
+                  ]}
+                >
+                  {item.label}
+                </a>
+              </li>
+            );
+          })
+        }
+      </ul>
+    </nav>
+
+    <div class="flex items-center gap-2 sm:gap-3">
+      <a
+        href={url("/carrinho/")}
+        class:list={[
+          "relative inline-flex min-h-11 items-center gap-2 rounded-md px-3 text-sm transition-colors duration-200 hover:text-wine",
+          cartActive ? "font-medium text-wine" : "text-text",
+        ]}
+        aria-current={cartActive ? "page" : undefined}
+        data-cart-link
+      >
+        <Icon name="bag" size={22} />
+        <span class="hidden sm:inline">Sacola</span>
+        <span
+          class="inline-flex min-w-5 items-center justify-center rounded-full bg-wine px-1.5 text-[0.6875rem] leading-5 font-semibold text-cream"
+          data-cart-count
+          hidden>0</span
+        >
+        <span class="sr-only" data-cart-label>(vazia)</span>
+      </a>
+      <ExternalLink href={whatsapp} class="btn btn-outline hidden md:inline-flex">
+        <Icon name="message" size={18} />
+        WhatsApp
+      </ExternalLink>
+      <button
+        type="button"
+        class="menu-toggle inline-flex size-11 items-center justify-center rounded-md border border-border text-wine transition-colors hover:border-wine lg:hidden"
+        aria-expanded="false"
+        aria-controls="mobile-menu"
+        data-menu-toggle
+      >
+        <span class="menu-icon" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span class="sr-only" data-menu-label>Abrir menu</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="mobile-menu" class="expandable lg:hidden" data-open="false" data-mobile-menu>
+    <div>
+      <nav aria-label="Principal (celular)" class="container-page pb-6">
+        <ul class="border-t border-border">
+          {
+            primaryNav.map((item) => {
+              const active = isActive(item.match, pathname);
+              return (
+                <li class="border-b border-border">
+                  <a
+                    href={item.href}
+                    aria-current={active ? "page" : undefined}
+                    class:list={["flex min-h-12 items-center justify-between text-base", active ? "font-medium text-wine" : "text-text"]}
+                  >
+                    {item.label}
+                    <Icon name="arrow-right" size={16} class="text-rose-ink" />
+                  </a>
+                </li>
+              );
+            })
+          }
+        </ul>
+        <ExternalLink href={whatsapp} class="btn btn-primary btn-lg mt-6 w-full">
+          <Icon name="message" size={18} />
+          Falar no WhatsApp
+        </ExternalLink>
+      </nav>
+    </div>
+  </div>
+  <noscript><style>#mobile-menu { grid-template-rows: 1fr; opacity: 1; }</style></noscript>
+</header>
+
+<style>
+  .header-bar {
+    transition: padding-block 300ms var(--ease-soft);
+  }
+  .site-header {
+    transition: box-shadow 300ms var(--ease-soft);
+  }
+  .site-header:global(.is-condensed) {
+    box-shadow: 0 8px 24px -18px rgb(33 26 24 / 0.5);
+  }
+  .site-header:global(.is-condensed) .header-bar {
+    padding-block: 0.5rem;
+  }
+
+  /* Hamburger → X */
+  .menu-icon {
+    position: relative;
+    display: block;
+    width: 18px;
+    height: 12px;
+  }
+  .menu-icon span {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 1.5px;
+    border-radius: 1px;
+    background: currentColor;
+    transition:
+      transform 300ms var(--ease-soft),
+      opacity 200ms ease,
+      top 300ms var(--ease-soft);
+  }
+  .menu-icon span:nth-child(1) {
+    top: 0;
+  }
+  .menu-icon span:nth-child(2) {
+    top: 5.25px;
+  }
+  .menu-icon span:nth-child(3) {
+    top: 10.5px;
+  }
+  [aria-expanded="true"] .menu-icon span:nth-child(1) {
+    top: 5.25px;
+    transform: rotate(45deg);
+  }
+  [aria-expanded="true"] .menu-icon span:nth-child(2) {
+    opacity: 0;
+  }
+  [aria-expanded="true"] .menu-icon span:nth-child(3) {
+    top: 5.25px;
+    transform: rotate(-45deg);
+  }
+</style>
+
+<script>
+  import { itemCount, onCartChange, readCart } from "../scripts/cart";
+
+  // Header island: condense on scroll, animated mobile menu, live bag count. The page is fully
+  // navigable without this script (see the <noscript> rule above).
+  const header = document.querySelector<HTMLElement>("[data-header]");
+  const toggle = document.querySelector<HTMLButtonElement>("[data-menu-toggle]");
+  const menu = document.querySelector<HTMLElement>("[data-mobile-menu]");
+  const label = document.querySelector<HTMLElement>("[data-menu-label]");
+
+  if (header) {
+    let condensed = false;
+    const onScroll = () => {
+      const next = window.scrollY > 24;
+      if (next !== condensed) {
+        condensed = next;
+        header.classList.toggle("is-condensed", condensed);
+      }
+    };
+    document.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+  }
+
+  if (toggle && menu) {
+    const setOpen = (open: boolean) => {
+      toggle.setAttribute("aria-expanded", String(open));
+      menu.dataset.open = String(open);
+      menu.inert = !open; // closed menu links are out of the tab order
+      if (label) label.textContent = open ? "Fechar menu" : "Abrir menu";
+    };
+    setOpen(false);
+
+    toggle.addEventListener("click", () => setOpen(toggle.getAttribute("aria-expanded") !== "true"));
+    menu.addEventListener("click", (event) => {
+      if ((event.target as HTMLElement).closest("a")) setOpen(false);
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && toggle.getAttribute("aria-expanded") === "true") {
+        setOpen(false);
+        toggle.focus();
+      }
+    });
+    // Leaving the mobile layout (rotate / resize) closes the menu.
+    window.matchMedia("(min-width: 64rem)").addEventListener("change", (event) => {
+      if (event.matches) setOpen(false);
+    });
+  }
+
+  const badge = document.querySelector<HTMLElement>("[data-cart-count]");
+  const cartLabel = document.querySelector<HTMLElement>("[data-cart-label]");
+  if (badge) {
+    let last = itemCount(readCart());
+    const render = () => {
+      const count = itemCount(readCart());
+      badge.hidden = count === 0;
+      badge.textContent = String(count);
+      if (cartLabel) cartLabel.textContent = count === 0 ? "(vazia)" : `(${count} ${count === 1 ? "item" : "itens"})`;
+      if (count > last) {
+        badge.classList.remove("is-bumped");
+        void badge.offsetWidth; // restart the animation
+        badge.classList.add("is-bumped");
+      }
+      last = count;
+    };
+    render();
+    onCartChange(render);
+  }
+</script>

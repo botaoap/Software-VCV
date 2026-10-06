@@ -1,0 +1,37 @@
+---
+import { Image } from "astro:assets";
+
+// Every photo goes through astro:assets: optimised at build time (WebP + srcset) and self-hosted,
+// so there is no third-party request at runtime. Intrinsic width/height reserve the box, so
+// layout never jumps.
+interface Props {
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+  /** Rendered widths to generate (px). */
+  widths?: number[];
+  sizes?: string;
+  /** The hero (LCP) is "eager" + fetchpriority high; everything else lazy. */
+  priority?: boolean;
+  class?: string;
+}
+
+const { src, alt, width, height, widths = [400, 640, 960, 1280], sizes, priority = false, class: className } = Astro.props;
+const usable = widths.filter((w) => w <= width);
+---
+
+<Image
+  src={src}
+  alt={alt}
+  width={width}
+  height={height}
+  widths={usable.length > 0 ? usable : [width]}
+  sizes={sizes}
+  format="webp"
+  quality={78}
+  loading={priority ? "eager" : "lazy"}
+  fetchpriority={priority ? "high" : undefined}
+  decoding={priority ? "sync" : "async"}
+  class={className}
+/>

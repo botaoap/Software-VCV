@@ -1,0 +1,94 @@
+/**
+ * The bag. Persisted in localStorage (the app's VCV-29 behaviour) so it survives reloads and is
+ * shared across tabs; a custom event keeps same-page widgets (header badge, cart page) in sync.
+ * Prices are integer cents. Checkout hands off through `checkout.ts` (the commerce seam).
+ */
+export type CartLine = {
+  productId: string;
+  name: string;
+  /** Built (optimised, self-hosted) thumbnail URL, or null. */
+  image: string | null;
+  unitPriceCents: number;
+  size: number;
+  quantity: number;
+};
+
+const KEY = "vcv.cart.v1";
+const EVENT = "vcv:cart";
+const MAX_QTY = 99;
+
+let memory: CartLine[] = []; // fallback when storage is blocked (private mode)
+
+export const lineKey = (line: Pick<CartLine, "productId" | "size">) => `${line.productId}:${line.size}`;
+
+const isLine = (v: unknown): v is CartLine => {
+  const l = v as Partial<CartLine> | null;
+  return (
+    !!l &&
+    typeof l.productId === "string" &&
+    typeof l.name === "string" &&
+    typeof l.unitPriceCents === "number" &&
+    typeof l.size === "number" &&
+    typeof l.quantity === "number" &&
+    l.quantity > 0
+  );
+};
+
+export function readCart(): CartLine[] {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(KEY) ?? "[]");
+    return Array.isArray(parsed) ? parsed.filter(isLine) : [];
+  } catch {
+    return memory;
+  }
+}
+
+function write(lines: CartLine[]) {
+  memory = lines;
+  try {
+    localStorage.setItem(KEY, JSON.stringify(lines));
+  } catch {
+    // Storage blocked: the bag lives for this page only.
+  }
+  window.dispatchEvent(new CustomEvent(EVENT));
+}
+
+/** Adding the same product + size again bumps the quantity (line identity = product + size). */
+export function addToCart(line: Omit<CartLine, "quantity">, quantity = 1) {
+  const lines = readCart();
+  const existing = lines.find((l) => lineKey(l) === lineKey(line));
+  if (existing) existing.quantity = Math.min(MAX_QTY, existing.quantity + quantity);
+  else lines.push({ ...line, quantity });
+  write(lines);
+}
+
+export function setQuantity(key: string, quantity: number) {
+  const lines = readCart()
+    .map((l) => (lineKey(l) === key ? { ...l, quantity: Math.min(MAX_QTY, quantity) } : l))
+    .filter((l) => l.quantity > 0);
+  write(lines);
+}
+
+export function removeLine(key: string) {
+  write(readCart().filter((l) => lineKey(l) !== key));
+}
+
+export function clearCart() {
+  write([]);
+}
+
+export const itemCount = (lines: CartLine[]) => lines.reduce((sum, l) => sum + l.quantity, 0);
+export const subtotalCents = (lines: CartLine[]) => lines.reduce((sum, l) => sum + l.unitPriceCents * l.quantity, 0);
+
+/** Subscribe to changes made on this page or in another tab. Returns an unsubscribe function. */
+export function onCartChange(listener: () => void): () => void {
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === KEY || event.key === null) listener();
+  };
+  window.addEventListener(EVENT, listener);
+  window.addEventListener("storage", onStorage);
+  return () => {
+    window.removeEventListener(EVENT, listener);
+    window.removeEventListener("storage", onStorage);
+  };
+}

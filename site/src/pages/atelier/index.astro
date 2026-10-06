@@ -1,0 +1,50 @@
+---
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import Photo from "../../components/Photo.astro";
+import PageHeader from "../../components/PageHeader.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getBrand } from "../../lib/content";
+import { url } from "../../lib/url";
+
+const { atelier } = await getBrand();
+---
+
+<BaseLayout title="Atelier" description={`${atelier.headline}. Ateliê próprio, produção em pequena escala, rolo a rolo.`}>
+  <PageHeader eyebrow="Atelier" title={atelier.headline}>
+    <Breadcrumbs slot="breadcrumbs" items={[{ label: "Início", href: url("/") }, { label: "Atelier" }]} />
+  </PageHeader>
+
+  {
+    atelier.sections.map((section, index) => (
+      <section class:list={["section-y", index % 2 === 1 && "bg-paper"]} aria-labelledby={`atelier-${index}`}>
+        <div class:list={["container-page grid items-center gap-10 lg:gap-16", section.image && "lg:grid-cols-2"]}>
+          {section.image && (
+            <div class:list={["reveal media aspect-[3/2] rounded-lg", index % 2 === 1 && "lg:order-2"]}>
+              <Photo
+                src={section.image.url}
+                alt={section.image.alt}
+                width={section.image.width}
+                height={section.image.height}
+                widths={[480, 720, 960, 1280]}
+                sizes="(min-width: 1024px) 48vw, 92vw"
+              />
+            </div>
+          )}
+          <div class:list={["reveal", !section.image && "mx-auto max-w-2xl text-center"]} style="--reveal-delay:80ms">
+            <p class="eyebrow">0{index + 1}</p>
+            <h2 id={`atelier-${index}`} class="mt-3 text-3xl md:text-4xl">{section.title}</h2>
+            <p class="mt-5 text-lg leading-relaxed text-text-muted">{section.body}</p>
+          </div>
+        </div>
+      </section>
+    ))
+  }
+
+  <section class="bg-wine-deep section-y text-center text-cream">
+    <div class="container-page">
+      <h2 class="text-3xl text-cream md:text-4xl">Conheça as peças</h2>
+      <p class="mx-auto mt-4 max-w-xl text-lg text-cream/80">Cada peça vem com ficha técnica: tecido nomeado e procedência declarada.</p>
+      <a href={url("/catalogo/")} class="btn btn-light btn-lg mt-8">Ver catálogo</a>
+    </div>
+  </section>
+</BaseLayout>

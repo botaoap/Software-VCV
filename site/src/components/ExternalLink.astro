@@ -1,0 +1,19 @@
+---
+import type { HTMLAttributes } from "astro/types";
+
+// Every link that leaves the site (WhatsApp, maps, social profiles, share intents) goes through
+// here: it opens in a new tab so the visitor never loses the site, with rel="noopener noreferrer"
+// and a screen-reader hint. tests/dist.test.mjs fails the build output if one slips through.
+type Props = HTMLAttributes<"a"> & { href: string };
+
+const { href, "aria-label": ariaLabel, ...rest } = Astro.props;
+const hint = "(abre em nova aba)";
+---
+
+<a
+  href={href}
+  target="_blank"
+  rel="noopener noreferrer"
+  aria-label={ariaLabel ? `${ariaLabel} ${hint}` : undefined}
+  {...rest}
+><slot />{!ariaLabel && <span class="sr-only"> {hint}</span>}</a>

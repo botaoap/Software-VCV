@@ -1,0 +1,46 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { url } from "../lib/url";
+
+// Built to dist/404.html. GitHub Pages / Netlify and `astro preview` serve it for any unknown URL,
+// inside the normal header/footer.
+const shortcuts = [
+  { href: url("/catalogo/"), label: "Catálogo" },
+  { href: url("/colecoes/"), label: "Coleções" },
+  { href: url("/contato/"), label: "Contato" },
+];
+---
+
+<BaseLayout title="Página não encontrada" description="A página que você procura não existe ou foi movida." noindex>
+  <section class="relative overflow-hidden">
+    <span
+      aria-hidden="true"
+      class="pointer-events-none absolute -top-10 right-0 font-serif text-[16rem] leading-none text-nude select-none md:text-[22rem]"
+      >404</span
+    >
+    <div class="container-page relative flex min-h-[65vh] items-center py-20">
+      <div class="max-w-xl">
+        <p class="eyebrow">Erro 404</p>
+        <h1 class="mt-4 text-4xl md:text-5xl">Página não encontrada</h1>
+        <p class="mt-5 text-lg leading-relaxed text-text-muted">
+          O endereço acessado não existe ou foi movido. Volte ao início ou siga por um dos caminhos abaixo.
+        </p>
+        <div class="mt-10 flex flex-wrap gap-3">
+          <a href={url("/")} class="btn btn-primary btn-lg">Voltar ao início</a>
+          <a href={url("/contato/")} class="btn btn-outline btn-lg">Falar com a VCV</a>
+        </div>
+        <ul class="mt-10 flex flex-wrap gap-x-8 border-t border-border pt-6">
+          {
+            shortcuts.map((item) => (
+              <li>
+                <a href={item.href} class="link-arrow">
+                  {item.label} <span class="arrow" aria-hidden="true">→</span>
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

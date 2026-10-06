@@ -1,0 +1,233 @@
+---
+import Icon from "./Icon.astro";
+import Photo from "./Photo.astro";
+import { getBrand } from "../lib/content";
+import { brand } from "../lib/site";
+import { url } from "../lib/url";
+
+// Full-bleed hero: crossfading campaign photos under a wine gradient, eyebrow + promise headline +
+// two CTAs. Works without JS (first slide shows). With JS: auto-advance every 4.5 s unless the
+// visitor asked for reduced motion; pause button, hover/focus pause, swipe, arrows, dots.
+const { hero } = await getBrand();
+---
+
+<section
+  class="relative isolate overflow-hidden bg-wine-deep text-cream"
+  aria-roledescription="carousel"
+  aria-label="Destaques da VCV"
+  data-carousel
+  data-interval="4500"
+>
+  <div class="relative h-[34rem] sm:h-[36rem] lg:h-[40rem]">
+    <ul class="absolute inset-0" aria-live="off" data-carousel-slides>
+      {
+        hero.map((photo, index) => (
+          <li
+            class="slide absolute inset-0"
+            data-active={index === 0 ? "true" : "false"}
+            role="group"
+            aria-roledescription="slide"
+            aria-label={`${index + 1} de ${hero.length}`}
+            data-slide
+            aria-hidden={index === 0 ? undefined : "true"}
+          >
+            <Photo
+              src={photo.url}
+              alt={photo.alt}
+              width={photo.width}
+              height={photo.height}
+              widths={[640, 960, 1280, 1600, 2000]}
+              sizes="100vw"
+              priority={index === 0}
+              class="size-full object-cover"
+            />
+          </li>
+        ))
+      }
+    </ul>
+    <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-wine-deep/90 via-wine-deep/45 to-wine-deep/10 lg:bg-gradient-to-r lg:from-wine-deep/90 lg:via-wine-deep/50 lg:to-transparent"></div>
+
+    <div class="container-page relative z-10 flex h-full flex-col justify-end pb-16 sm:pb-20 lg:justify-center lg:pb-0">
+      <p class="text-xs font-medium tracking-[0.2em] text-rose-soft uppercase sm:tracking-[0.3em]">{brand.tagline} · {brand.location}</p>
+      <h1 class="hero-type mt-5 max-w-3xl text-cream">Poucas peças, bem feitas.</h1>
+      <p class="mt-5 max-w-xl text-lg leading-relaxed text-cream/85">
+        Moda feminina de ateliê próprio: tecido escolhido rolo a rolo, modelagem provada em corpo real.
+      </p>
+      <div class="mt-8 flex flex-wrap gap-3">
+        <a href={url("/catalogo/")} class="btn btn-light btn-lg">Ver catálogo</a>
+        <a href={url("/atelier/")} class="btn btn-ghost-light btn-lg">Conheça o ateliê</a>
+      </div>
+    </div>
+
+    {
+      hero.length > 1 && (
+        <>
+          <button type="button" class="carousel-nav left-3 sm:left-5" aria-label="Slide anterior" data-carousel-prev>
+            <Icon name="chevron-left" size={22} />
+          </button>
+          <button type="button" class="carousel-nav right-3 sm:right-5" aria-label="Próximo slide" data-carousel-next>
+            <Icon name="chevron-right" size={22} />
+          </button>
+          <div class="absolute right-4 bottom-4 z-20 flex items-center gap-1 sm:right-8 sm:bottom-6 lg:right-auto lg:bottom-6 lg:left-1/2 lg:-translate-x-1/2">
+            <button type="button" class="js-only inline-flex size-11 items-center justify-center rounded-full text-cream/90 hover:text-cream" aria-label="Pausar rotação dos slides" data-carousel-toggle>
+              <span data-icon-pause><Icon name="pause" size={16} /></span>
+              <span data-icon-play hidden><Icon name="play" size={16} /></span>
+            </button>
+            {hero.map((_, index) => (
+              <button type="button" class="carousel-dot js-only" aria-label={`Ir para o slide ${index + 1}`} aria-current={index === 0 ? "true" : undefined} data-carousel-dot={index}>
+                <span></span>
+              </button>
+            ))}
+          </div>
+        </>
+      )
+    }
+  </div>
+</section>
+
+<style>
+  /* True crossfade: the incoming slide fades in on top of the outgoing one, which only fades out
+     afterwards (the delay equals the fade), so the hero never dips to the background colour. */
+  .slide {
+    z-index: 0;
+    opacity: 0;
+    transition: opacity var(--motion-crossfade) ease-out var(--motion-crossfade);
+  }
+  .slide[data-active="true"] {
+    z-index: 10;
+    opacity: 1;
+    transition-delay: 0s;
+  }
+
+  /* Pointer-only chevrons stay faint until hover/focus (the app's subtleControlAlpha, 0.12). */
+  .carousel-nav {
+    position: absolute;
+    top: 50%;
+    z-index: 20;
+    display: none;
+    width: 2.75rem;
+    height: 2.75rem;
+    transform: translateY(-50%);
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    background: rgb(246 240 234 / 0.9);
+    color: var(--color-wine-deep);
+    opacity: 0.12;
+    cursor: pointer;
+    transition: opacity var(--motion-hover) var(--ease-soft);
+  }
+  /* Phones swipe (and have dots); the chevrons would sit over the headline. */
+  @media (min-width: 48rem) {
+    :global(.js) .carousel-nav {
+      display: inline-flex;
+    }
+  }
+  section:hover .carousel-nav,
+  .carousel-nav:focus-visible {
+    opacity: 1;
+  }
+  @media (hover: none) {
+    .carousel-nav {
+      opacity: 0.85;
+    }
+  }
+  .carousel-dot {
+    display: inline-flex;
+    width: 2.25rem;
+    height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .carousel-dot span {
+    display: block;
+    width: 1.5rem;
+    height: 3px;
+    border-radius: 2px;
+    background: rgb(246 240 234 / 0.45);
+    transition:
+      background-color var(--motion-hover) var(--ease-soft),
+      width var(--motion-hover) var(--ease-soft);
+  }
+  .carousel-dot[aria-current="true"] span {
+    width: 2.25rem;
+    background: var(--color-cream);
+  }
+</style>
+
+<script>
+  const root = document.querySelector<HTMLElement>("[data-carousel]");
+  if (root) {
+    const slides = [...root.querySelectorAll<HTMLElement>("[data-slide]")];
+    const dots = [...root.querySelectorAll<HTMLButtonElement>("[data-carousel-dot]")];
+    const toggle = root.querySelector<HTMLButtonElement>("[data-carousel-toggle]");
+    const live = root.querySelector<HTMLElement>("[data-carousel-slides]");
+    const interval = Number(root.dataset.interval ?? 4500);
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let index = 0;
+    let timer: number | undefined;
+    // Autoplay is opt-out, and never starts for people who asked for reduced motion.
+    let playing = !reduced;
+    let hovering = false;
+
+    const show = (next: number) => {
+      index = (next + slides.length) % slides.length;
+      slides.forEach((slide, i) => {
+        slide.dataset.active = String(i === index);
+        if (i === index) slide.removeAttribute("aria-hidden");
+        else slide.setAttribute("aria-hidden", "true");
+      });
+      dots.forEach((dot, i) => (i === index ? dot.setAttribute("aria-current", "true") : dot.removeAttribute("aria-current")));
+    };
+
+    const stop = () => window.clearInterval(timer);
+    const start = () => {
+      stop();
+      if (playing && !hovering && slides.length > 1) timer = window.setInterval(() => show(index + 1), interval);
+    };
+    const syncToggle = () => {
+      if (!toggle) return;
+      toggle.setAttribute("aria-label", playing ? "Pausar rotação dos slides" : "Retomar rotação dos slides");
+      toggle.querySelector<HTMLElement>("[data-icon-pause]")!.hidden = !playing;
+      toggle.querySelector<HTMLElement>("[data-icon-play]")!.hidden = playing;
+      // While rotating, don't announce each change; when paused, a manual change should be read.
+      live?.setAttribute("aria-live", playing ? "off" : "polite");
+    };
+
+    root.querySelector("[data-carousel-prev]")?.addEventListener("click", () => (show(index - 1), start()));
+    root.querySelector("[data-carousel-next]")?.addEventListener("click", () => (show(index + 1), start()));
+    dots.forEach((dot, i) => dot.addEventListener("click", () => (show(i), start())));
+    toggle?.addEventListener("click", () => {
+      playing = !playing;
+      syncToggle();
+      start();
+    });
+
+    root.addEventListener("pointerenter", (e) => {
+      if (e.pointerType === "mouse") (hovering = true, stop());
+    });
+    root.addEventListener("pointerleave", () => (hovering = false, start()));
+    root.addEventListener("focusin", stop);
+    root.addEventListener("focusout", start);
+    root.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft") (show(index - 1), start());
+      if (e.key === "ArrowRight") (show(index + 1), start());
+    });
+
+    // Swipe (touch / pen): a horizontal drag of more than 40px changes slide.
+    let startX: number | null = null;
+    root.addEventListener("pointerdown", (e) => {
+      if (e.pointerType !== "mouse") startX = e.clientX;
+    });
+    root.addEventListener("pointerup", (e) => {
+      if (startX === null) return;
+      const delta = e.clientX - startX;
+      startX = null;
+      if (Math.abs(delta) > 40) (show(index + (delta < 0 ? 1 : -1)), start());
+    });
+
+    syncToggle();
+    start();
+  }
+</script>

@@ -1,0 +1,14 @@
+Self-hosted web fonts — VCV site
+================================
+
+Both files are the Latin-subset WOFF2 builds distributed by Google Fonts, self-hosted here
+(real @font-face, not a third-party CDN: no visitor IP is sent to Google — LGPD).
+Each is licensed under the SIL Open Font License, Version 1.1 (OFL-1.1).
+
+1. playfair-display-latin.woff2 — Playfair Display (variable, weight axis). Headings.
+   Designer: Claus Eggers Sørensen · https://fonts.google.com/specimen/Playfair+Display
+2. inter-latin.woff2 — Inter (variable, weight axis). Body / UI.
+   Designer: Rasmus Andersson · https://fonts.google.com/specimen/Inter
+
+Licence text: https://openfontlicense.org/ (travels with each font from its upstream source).
+These are best-effort stand-ins for the brand faces still to be confirmed by the client.

@@ -1,0 +1,61 @@
+{
+  "hero": [
+    {
+      "url": "https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=2000&h=900&fit=crop&q=80",
+      "alt": "Araras de roupas em uma boutique (imagem ilustrativa)",
+      "width": 2000,
+      "height": 900
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1555529771-835f59fc5efe?w=2000&h=900&fit=crop&q=80",
+      "alt": "Vitrine de moda feminina (imagem ilustrativa)",
+      "width": 2000,
+      "height": 900
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1665815844395-06f64f44b5e3?w=2000&h=900&fit=crop&q=80",
+      "alt": "Peças em cabides em uma loja de roupas (imagem ilustrativa)",
+      "width": 2000,
+      "height": 900
+    }
+  ],
+  "atelier": {
+    "headline": "Veste Com Você — de Gaspar, Vale do Itajaí",
+    "sections": [
+      {
+        "title": "Origem",
+        "body": "A VCV é uma casa têxtil, não uma loja. Cada peça vem com ficha técnica: tecido nomeado e procedência declarada.",
+        "image": {
+          "url": "https://images.unsplash.com/photo-1604882767135-b41fac508fff?w=1800&h=1200&fit=crop&q=80",
+          "alt": "Ateliê VCV em Gaspar",
+          "width": 1800,
+          "height": 1200
+        }
+      },
+      {
+        "title": "Ateliê próprio",
+        "body": "Produção em pequena escala, rolo a rolo. Tecido escolhido à mão, modelagem provada em corpo real.",
+        "image": {
+          "url": "https://images.unsplash.com/photo-1578932750355-5eb30ece487a?w=1800&h=1200&fit=crop&q=80",
+          "alt": "Produção rolo a rolo",
+          "width": 1800,
+          "height": 1200
+        }
+      },
+      {
+        "title": "Compra pouco e bem",
+        "body": "Peças pensadas para durar — a durabilidade é a resposta, não a promoção.",
+        "image": null
+      }
+    ]
+  },
+  "contact": {
+    "whatsapp": "https://wa.me/5547999999999",
+    "instagram": "https://instagram.com/vestecomvoce",
+    "email": "contato@vestecomvoce.com.br",
+    "whereToBuy": [
+      "Ateliê em Gaspar, SC (com hora marcada)",
+      "Envio para todo o Brasil"
+    ]
+  }
+}

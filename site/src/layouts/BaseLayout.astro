@@ -1,0 +1,109 @@
+---
+import { getImage } from "astro:assets";
+import ConsentBanner from "../components/ConsentBanner.astro";
+import FloatingWhatsApp from "../components/FloatingWhatsApp.astro";
+import Footer from "../components/Footer.astro";
+import Header from "../components/Header.astro";
+import PromoBar from "../components/PromoBar.astro";
+import { getBrand } from "../lib/content";
+import { brand } from "../lib/site";
+import { consentEnabled } from "../lib/services";
+import { url } from "../lib/url";
+import "../styles/global.css";
+
+interface Props {
+  /** Page title without the brand suffix, or the full title when `rawTitle` is set. */
+  title: string;
+  description: string;
+  rawTitle?: boolean;
+  /** Absolute URL for the link-preview image (1200×630). Defaults to the first hero photo. */
+  ogImage?: string;
+  ogType?: "website" | "product";
+  noindex?: boolean;
+  /** JSON-LD objects for this page. */
+  structuredData?: Record<string, unknown>[];
+}
+
+const { title, description, rawTitle = false, ogType = "website", noindex = false, structuredData = [] } = Astro.props;
+const site = Astro.site!;
+const fullTitle = rawTitle ? title : `${title} | ${brand.name}`;
+const canonical = new URL(Astro.url.pathname, site).href;
+
+// Default link-preview image (WhatsApp, Instagram…): the first hero photo cropped to 1200×630.
+const { hero } = await getBrand();
+const defaultOg = await getImage({ src: hero[0].url, width: 1200, height: 630, fit: "cover", format: "jpg", inferSize: false });
+const ogImage = new URL(Astro.props.ogImage ?? defaultOg.src, site).href;
+---
+
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
+
+    <meta property="og:site_name" content={brand.name} />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="preload" href={url("/fonts/inter-latin.woff2")} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={url("/fonts/playfair-display-latin.woff2")} as="font" type="font/woff2" crossorigin />
+    <link rel="icon" href={url("/favicon.svg")} type="image/svg+xml" />
+    <link rel="sitemap" href={url("/sitemap-index.xml")} />
+    <meta name="theme-color" content="#F6F0EA" />
+    <script is:inline>
+      document.documentElement.classList.add("js");
+    </script>
+    <slot name="head" />
+    {structuredData.map((data) => <script type="application/ld+json" set:html={JSON.stringify(data)} />)}
+  </head>
+  <body class="flex min-h-dvh flex-col" data-base={url("/")} data-whatsapp={(await getBrand()).contact.whatsapp}>
+    <a
+      href="#conteudo"
+      class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[70] focus:rounded-md focus:bg-wine focus:px-4 focus:py-3 focus:text-sm focus:text-cream"
+    >
+      Pular para o conteúdo
+    </a>
+    <PromoBar />
+    <Header />
+    <main id="conteudo" class="flex-1">
+      <slot />
+    </main>
+    <Footer />
+    <FloatingWhatsApp />
+    {consentEnabled && <ConsentBanner />}
+
+    <script>
+      // Scroll reveal: fade + lift on first view, staggered via --reveal-delay. Content is
+      // visible by default; only after confirming motion is allowed do we add .js-motion,
+      // which enables the hidden start state (see global.css).
+      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches && "IntersectionObserver" in window) {
+        const elements = document.querySelectorAll<HTMLElement>(".reveal");
+        if (elements.length > 0) {
+          const observer = new IntersectionObserver(
+            (entries) => {
+              for (const entry of entries) {
+                if (entry.isIntersecting) {
+                  entry.target.classList.add("is-revealed");
+                  observer.unobserve(entry.target);
+                }
+              }
+            },
+            { threshold: 0.12, rootMargin: "0px 0px -8% 0px" },
+          );
+          document.documentElement.classList.add("js-motion");
+          elements.forEach((el) => observer.observe(el));
+        }
+      }
+    </script>
+  </body>
+</html>
