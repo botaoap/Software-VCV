@@ -260,7 +260,10 @@
     font-size: 0.875rem;
     font-weight: 500;
     color: var(--color-wine);
-    background: linear-gradient(var(--color-rose), var(--color-rose)) no-repeat left calc(100% - 0.6rem) / 100% 1px;
+    /* The underline is placed from the text's centre line (content box), not the box bottom, so
+       padding or a taller box (e.g. pt-4 on a card) never puts it through the text. */
+    background: linear-gradient(var(--color-rose), var(--color-rose)) no-repeat left calc(50% + 0.8em) / 100% 1px;
+    background-origin: content-box;
     transition: background-size 250ms var(--ease-soft);
   }
   .link-arrow:hover,
