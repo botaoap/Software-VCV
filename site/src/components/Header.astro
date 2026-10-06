@@ -31,11 +31,13 @@ const whatsapp = whatsappHref(contact.whatsapp, "Olá! Vim pelo site da VCV.");
             ];
             return item.children ? (
               <li class="nav-group relative" data-nav-group>
+                {/* The chevron keeps a 44px touch target; its negative margins cancel the invisible
+                    padding so the visible gap after it equals the nav gap (28px). */}
                 <div class="inline-flex items-center">
                   <a href={item.href} aria-current={active ? "page" : undefined} class:list={link}>{item.label}</a>
                   <button
                     type="button"
-                    class="-ml-2.5 inline-flex size-11 cursor-pointer items-center justify-center rounded-md text-text-muted transition-colors hover:text-wine"
+                    class="-mr-3.5 -ml-2.5 inline-flex size-11 cursor-pointer items-center justify-center rounded-md text-text-muted transition-colors hover:text-wine"
                     aria-expanded="false"
                     aria-controls={`nav-panel-${index}`}
                     aria-label={`Abrir submenu de ${item.label}`}
