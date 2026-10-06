@@ -21,20 +21,20 @@ cd site && npm install && npm run dev   # http://localhost:4321
 
 | Module        | Target                                   |
 |---------------|------------------------------------------|
-| `:shared`     | Domain, data, and Compose UI (all platforms) |
-| `:webApp`     | Web app — Wasm (primary) + JS (fallback) |
+| `site/`       | Public web site — static Astro (Node, not Gradle) |
+| `:shared`     | Domain, data, and Compose UI (Android, iOS, desktop) |
 | `:desktopApp` | JVM desktop app                          |
 | `:androidApp` | Android app                              |
 | `:server`     | Ktor/Netty backend (scaffold)            |
 
+The Compose-for-Web targets (`:webApp`, `js`/`wasmJs` in `:shared`) were removed in VCV-36: the web
+is served by `site/`.
+
 ## Build & run
 
 ```bash
-# Web (Wasm) dev server with hot reload
-./gradlew :webApp:wasmJsBrowserDevelopmentRun
-
-# Deployable web distribution (Wasm primary, JS fallback)
-./gradlew :webApp:wasmJsBrowserDistribution :webApp:jsBrowserDistribution
+# Web site
+cd site && npm install && npm run dev
 
 # Desktop
 ./gradlew :desktopApp:run
@@ -46,21 +46,10 @@ cd site && npm install && npm run dev   # http://localhost:4321
 ## CI / CD
 
 - **CI** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs on every PR into
-  `develop`/`main`: builds all non-Apple targets, runs `:shared:jvmTest` and
-  `:server` tests, builds the Wasm distribution, and enforces a gzipped
-  **bundle-size budget** ([`scripts/check-web-budget.sh`](scripts/check-web-budget.sh)).
-  iOS is not built in CI (needs a macOS runner; web-first MVP).
-- **Deploy** ([`.github/workflows/deploy-web.yml`](.github/workflows/deploy-web.yml))
-  is a **staged, manual** GitHub Pages deploy (the zero-cost default). ⚠️ At the Pages
-  *project* sub-path, deep-link refresh and some asset paths don't fully resolve — a
-  correct deployment needs a custom domain served at root, or base-path handling in
-  the web build + router. Final hosting/domain is pending the client's decision.
-
-## Bundle-size budget
-
-```bash
-./scripts/check-web-budget.sh   # after building the Wasm distribution
-```
-
-Measures the served payload (`.wasm` + JS, gzipped; source maps excluded). The
-Compose-for-Web canvas build is heavy by nature — the budget catches regressions.
+  `develop`/`main`: the `site` job (type-check, static build, tests) and the Gradle job
+  (`:shared:jvmTest`, Android debug APK, desktop and `:server` build). iOS is not built in CI
+  (needs a macOS runner).
+- **Deploy** ([`.github/workflows/deploy-web.yml`](.github/workflows/deploy-web.yml)) builds `site/`
+  and publishes it to GitHub Pages on every push to `develop` (sub-path build via `SITE_URL` /
+  `BASE_PATH`; a custom domain at the root just drops `BASE_PATH`). Final hosting/domain is pending
+  the client's decision.

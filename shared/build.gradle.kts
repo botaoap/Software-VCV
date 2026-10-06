@@ -1,4 +1,3 @@
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -21,15 +20,6 @@ kotlin {
     }
     
     jvm()
-    
-    js {
-        browser()
-    }
-    
-    @OptIn(ExperimentalWasmDsl::class)
-    wasmJs {
-        browser()
-    }
     
     android {
        namespace = "com.gabrielbotao.softwarevcv.shared"
@@ -87,18 +77,11 @@ kotlin {
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.turbine)
         }
-        jsMain.dependencies {
-            implementation(libs.wrappers.browser)
-            implementation(libs.ktor.client.js) // VCV-6: Coil network engine
-        }
         jvmMain.dependencies {
             implementation(libs.ktor.client.okhttp) // VCV-6: Coil network engine (Desktop)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin) // VCV-6: Coil network engine
-        }
-        wasmJsMain.dependencies {
-            implementation(libs.ktor.client.js) // VCV-6: Coil network engine (primary web target)
         }
     }
 }
