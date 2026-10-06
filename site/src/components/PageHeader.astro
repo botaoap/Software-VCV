@@ -1,0 +1,17 @@
+---
+import SectionHeading from "./SectionHeading.astro";
+// Top of every inner page: breadcrumb slot, then eyebrow → H1 → lede on a cream band.
+interface Props {
+  eyebrow?: string;
+  title: string;
+  lede?: string;
+}
+const { eyebrow, title, lede } = Astro.props;
+---
+
+<header class="border-b border-border bg-cream pt-6 pb-10 md:pb-14">
+  <div class="container-page">
+    <slot name="breadcrumbs" />
+    <SectionHeading eyebrow={eyebrow} title={title} lede={lede} level={1} class="mt-6" />
+  </div>
+</header>

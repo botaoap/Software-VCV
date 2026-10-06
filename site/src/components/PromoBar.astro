@@ -1,0 +1,21 @@
+---
+import { brand } from "../lib/site";
+
+// Full-bleed ticker with the brand/service phrases. Two identical copies move left by exactly one
+// copy, so the loop is seamless. Static under prefers-reduced-motion (see global.css).
+const messages = brand.promo;
+---
+
+<div class="marquee overflow-hidden bg-wine py-2 text-cream" role="region" aria-label="Avisos da loja">
+  <div class="marquee-track">
+    {
+      [0, 1].map((copy) => (
+        <ul class="flex shrink-0" aria-hidden={copy === 1 ? "true" : undefined} data-marquee-copy={copy === 1 ? "" : undefined}>
+          {messages.map((message) => (
+            <li class="px-8 text-xs tracking-wide whitespace-nowrap">{message}</li>
+          ))}
+        </ul>
+      ))
+    }
+  </div>
+</div>

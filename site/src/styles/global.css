@@ -1,0 +1,622 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   VCV — Veste Com Você · design system (direction 1C "Corpo")
+   Tokens are defined once here (@theme) and used through Tailwind utilities
+   (bg-wine, text-rose-ink, rounded-md…) or var(--color-*). Components never
+   hardcode hex or px values. tests/tokens.test.mjs checks the contrast pairs.
+
+   The hex values are best-effort from the Claude Design artifact (see the vault
+   Design-System note): swapping them here re-themes the whole site.
+   ========================================================================== */
+
+/* Self-hosted, Latin subset (covers every Portuguese accent). See public/fonts/NOTICE.txt. */
+@font-face {
+  font-family: "Playfair Display";
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url("/fonts/playfair-display-latin.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/inter-latin.woff2") format("woff2");
+}
+
+@theme {
+  /* Brand palette. Rose is an accent: borders, rules, icons, large text and text on wine.
+     For small rose text on light backgrounds use rose-ink (≥ 4.5:1). */
+  --color-wine: #6e2b39;
+  --color-wine-deep: #4a1b26;
+  --color-rose: #c98a8a;
+  --color-rose-soft: #e7cfc8;
+  --color-rose-ink: #8f4552;
+  --color-nude: #efe0d8;
+  --color-cream: #f6f0ea;
+  --color-paper: #ffffff;
+  --color-ink: #211a18;
+  --color-text: #211a18;
+  --color-text-muted: #6b5f5a;
+  --color-border: #ddcfc5;
+  --color-error: #b23a48;
+
+  --font-serif: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  /* Slightly rounded: never square (reads dated), never pill (reads playful). */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 14px;
+
+  /* Breakpoints 480 / 768 / 1024 / 1440 */
+  --breakpoint-sm: 30rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 64rem;
+  --breakpoint-xl: 90rem;
+
+  --shadow-card: 0 1px 2px rgb(33 26 24 / 0.05), 0 16px 34px -14px rgb(74 27 38 / 0.28);
+  --shadow-button: 0 6px 16px -6px rgb(74 27 38 / 0.45);
+  --shadow-modal: 0 24px 64px -16px rgb(33 26 24 / 0.5);
+
+  --ease-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* Motion tokens — the same feel as the app's `Vcv.motion` (durations in ms). */
+:root {
+  --motion-hover: 200ms;
+  --motion-route: 280ms;
+  --motion-reveal: 450ms;
+  --motion-crossfade: 700ms;
+  --motion-reveal-lift: 16px;
+  --motion-card-zoom: 1.04;
+  /* Marquee: one pass of the promo phrases; the app scrolls at 60 px/s. */
+  --motion-marquee: 48s;
+}
+
+/* ----- Base ----- */
+@layer base {
+  :root {
+    color-scheme: light;
+    /* Lets height/block-size transition to `auto` (disclosure animations). */
+    interpolate-size: allow-keywords;
+  }
+
+  body {
+    background-color: var(--color-cream);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    color: var(--color-wine);
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-wine);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background: var(--color-rose-soft);
+    color: var(--color-ink);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+}
+
+/* ----- Layout helpers ----- */
+@utility container-page {
+  width: 100%;
+  max-width: 82rem;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+  @media (width >= 48rem) {
+    padding-inline: 2rem;
+  }
+}
+
+@utility measure {
+  max-width: 70ch;
+}
+
+@utility hero-type {
+  font-size: clamp(2.5rem, 1.5rem + 4vw, 4.5rem);
+  line-height: 1.04;
+}
+
+@utility section-y {
+  padding-block: 3.5rem;
+  @media (width >= 48rem) {
+    padding-block: 5rem;
+  }
+}
+
+/* Small tracked caps above every section title. */
+@utility eyebrow {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--color-rose-ink);
+}
+
+/* ----- Buttons: actions and conversions only (navigation uses .link-arrow) ----- */
+@layer components {
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding-inline: 1.5rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.2;
+    text-align: center;
+    cursor: pointer;
+    transition:
+      background-color var(--motion-hover) var(--ease-soft),
+      color var(--motion-hover) var(--ease-soft),
+      border-color var(--motion-hover) var(--ease-soft),
+      box-shadow var(--motion-hover) var(--ease-soft),
+      transform var(--motion-hover) var(--ease-soft);
+  }
+
+  .btn-lg {
+    min-height: 3rem;
+    padding-inline: 1.75rem;
+  }
+
+  .btn:disabled,
+  .btn[aria-disabled="true"] {
+    cursor: not-allowed;
+    opacity: 0.5;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .btn-primary {
+    background: var(--color-wine);
+    color: var(--color-cream);
+  }
+  .btn-primary:not(:disabled):hover {
+    background: var(--color-wine-deep);
+    box-shadow: var(--shadow-button);
+  }
+
+  /* Primary on dark surfaces (hero overlay, wine bands). */
+  .btn-light {
+    background: var(--color-cream);
+    color: var(--color-wine-deep);
+  }
+  .btn-light:hover {
+    background: var(--color-rose-soft);
+    box-shadow: var(--shadow-button);
+  }
+
+  .btn-outline {
+    border-color: var(--color-wine);
+    color: var(--color-wine);
+  }
+  .btn-outline:hover {
+    background: var(--color-wine);
+    color: var(--color-cream);
+  }
+
+  /* Secondary on dark surfaces. */
+  .btn-ghost-light {
+    border-color: rgb(246 240 234 / 0.55);
+    color: var(--color-cream);
+  }
+  .btn-ghost-light:hover {
+    border-color: var(--color-cream);
+    background: rgb(246 240 234 / 0.12);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .btn-primary:not(:disabled):hover,
+    .btn-light:hover {
+      transform: translateY(-1px);
+    }
+    .btn:not(:disabled):active {
+      transform: translateY(0) scale(0.98);
+    }
+  }
+
+  /* ----- Arrow link: "ver todas", "conheça o ateliê", "voltar" ----- */
+  .link-arrow {
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-wine);
+    background: linear-gradient(var(--color-rose), var(--color-rose)) no-repeat left calc(100% - 0.6rem) / 100% 1px;
+    transition: background-size 250ms var(--ease-soft);
+  }
+  .link-arrow:hover,
+  .link-arrow:focus-visible {
+    background-size: 100% 2px;
+  }
+  .link-arrow.on-dark {
+    color: var(--color-rose-soft);
+  }
+
+  .arrow {
+    display: inline-block;
+    transition: transform 250ms var(--ease-soft);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .link-arrow:hover .arrow,
+    .link-arrow:focus-visible .arrow,
+    .card:hover .arrow,
+    .card:focus-visible .arrow {
+      transform: translateX(4px);
+    }
+  }
+
+  /* Links inside running text: wine text (AA), rose underline. */
+  .text-link {
+    color: var(--color-wine);
+    text-decoration: underline;
+    text-decoration-color: var(--color-rose);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 4px;
+    transition: text-decoration-thickness 150ms ease;
+  }
+  .text-link:hover {
+    text-decoration-thickness: 2px;
+  }
+
+  /* ----- Cards: the whole card is one link, lifts on hover/focus ----- */
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--color-paper);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    transition:
+      transform 250ms var(--ease-soft),
+      box-shadow 250ms var(--ease-soft),
+      border-color 250ms var(--ease-soft);
+  }
+  a.card:hover,
+  a.card:focus-visible {
+    border-color: var(--color-rose);
+    box-shadow: var(--shadow-card);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    a.card:hover,
+    a.card:focus-visible {
+      transform: translateY(-4px);
+    }
+  }
+
+  /* Image frame shared by product / collection / atelier tiles: fixed aspect ratio, so grids never
+     reflow, and a subtle zoom of the photo on hover (the storefront micro-interaction). */
+  .media {
+    position: relative;
+    overflow: hidden;
+    background: var(--color-nude);
+  }
+  .media img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .media img {
+      transition: transform var(--motion-hover) var(--ease-soft);
+    }
+    a:hover .media img,
+    a:focus-visible .media img {
+      transform: scale(var(--motion-card-zoom));
+    }
+  }
+
+  /* Marketing badge over a product photo. */
+  .badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    background: var(--color-wine);
+    color: var(--color-cream);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    line-height: 1.2;
+  }
+  .badge-alert {
+    background: var(--color-error);
+    color: var(--color-paper);
+  }
+
+  /* ----- Size selector (PDP) ----- */
+  .size-pill {
+    display: inline-flex;
+    min-width: 3rem;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    padding-inline: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-paper);
+    color: var(--color-text);
+    font-size: 0.9375rem;
+    cursor: pointer;
+    transition:
+      background-color var(--motion-hover) var(--ease-soft),
+      border-color var(--motion-hover) var(--ease-soft),
+      color var(--motion-hover) var(--ease-soft);
+  }
+  .size-pill:hover {
+    border-color: var(--color-wine);
+  }
+  input:checked + .size-pill {
+    border-color: var(--color-wine);
+    background: var(--color-wine);
+    color: var(--color-cream);
+  }
+  input:focus-visible + .size-pill {
+    outline: 2px solid var(--color-wine);
+    outline-offset: 3px;
+  }
+
+  /* ----- Long-form Markdown-ish text (atelier, legal) ----- */
+  .prose-vcv {
+    max-width: 70ch;
+    font-size: 1.0625rem;
+    line-height: 1.75;
+    color: var(--color-text);
+  }
+  .prose-vcv > * + * {
+    margin-top: 1.25em;
+  }
+  .prose-vcv h2 {
+    margin-top: 2em;
+    font-size: 1.625rem;
+  }
+  .prose-vcv ul {
+    padding-left: 1.4em;
+    list-style: disc;
+  }
+  .prose-vcv li::marker {
+    color: var(--color-rose);
+  }
+  .prose-vcv a {
+    color: var(--color-wine);
+    text-decoration: underline;
+    text-decoration-color: var(--color-rose);
+    text-underline-offset: 4px;
+    overflow-wrap: anywhere;
+  }
+
+  /* ----- Form fields ----- */
+  .field {
+    width: 100%;
+    min-height: 2.75rem;
+    margin-top: 0.5rem;
+    padding: 0.625rem 0.875rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-paper);
+    color: var(--color-text);
+    font-size: 0.9375rem;
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease;
+  }
+  .field:hover {
+    border-color: var(--color-text-muted);
+  }
+  .field:focus-visible {
+    outline: none;
+    border-color: var(--color-wine);
+    box-shadow: 0 0 0 3px rgb(110 43 57 / 0.2);
+  }
+  .field[aria-invalid="true"] {
+    border-color: var(--color-error);
+  }
+
+  /* Quantity stepper (cart). */
+  .qty {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-paper);
+  }
+  .qty button {
+    display: inline-flex;
+    width: 2.75rem;
+    height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-wine);
+    font-size: 1.125rem;
+    cursor: pointer;
+    transition: background-color var(--motion-hover) var(--ease-soft);
+  }
+  .qty button:hover {
+    background: var(--color-nude);
+  }
+  .qty output {
+    min-width: 2rem;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ==========================================================================
+   Motion. All of it is optional: content is visible without JS, and
+   prefers-reduced-motion turns every transition off.
+   ========================================================================== */
+
+/* Scroll reveal. .reveal is visible by default; only when the reveal script has confirmed motion
+   is allowed does <html> get .js-motion, which enables the hidden start state. */
+.js-motion .reveal {
+  opacity: 0;
+  transform: translateY(var(--motion-reveal-lift));
+  transition:
+    opacity var(--motion-crossfade) var(--ease-soft),
+    transform var(--motion-crossfade) var(--ease-soft);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.js-motion .reveal.is-revealed {
+  opacity: 1;
+  transform: none;
+}
+
+/* Grid-rows collapse for custom disclosures (mobile menu, cookie customization). */
+.expandable {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 350ms var(--ease-soft),
+    opacity 300ms var(--ease-soft);
+}
+.expandable[data-open="true"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.expandable > * {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Native <details> disclosure (ficha técnica). Browsers without ::details-content support still
+   open and close instantly, which is the accessible fallback. */
+details.disclosure::details-content {
+  block-size: 0;
+  overflow: clip;
+  opacity: 0;
+  transition:
+    block-size 350ms var(--ease-soft),
+    opacity 350ms var(--ease-soft),
+    content-visibility 350ms allow-discrete;
+}
+details.disclosure[open]::details-content {
+  block-size: auto;
+  opacity: 1;
+}
+details.disclosure > summary {
+  list-style: none;
+  cursor: pointer;
+}
+details.disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+details.disclosure .disclosure-icon {
+  transition: transform 300ms var(--ease-soft);
+}
+details.disclosure[open] .disclosure-icon {
+  transform: rotate(45deg);
+}
+
+/* Promo marquee: one seamless loop. The track holds two identical copies of the phrases and moves
+   left by exactly one copy. Pauses on hover/focus; reduced motion shows the phrases static. */
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee var(--motion-marquee) linear infinite;
+}
+.marquee:hover .marquee-track,
+.marquee:focus-within .marquee-track {
+  animation-play-state: paused;
+}
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Cart badge "bump" when an item is added. */
+@keyframes bump {
+  35% {
+    transform: scale(1.35);
+  }
+}
+.is-bumped {
+  animation: bump 380ms var(--ease-soft);
+}
+
+/* Cross-document page transitions (zero JS). The header keeps its own name so it stays put
+   while the page content cross-fades underneath. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: var(--motion-route);
+    animation-timing-function: var(--ease-soft);
+  }
+}
+.site-header {
+  view-transition-name: site-header;
+}
+
+/* Global kill switch: nothing moves for people who asked for reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .marquee-track {
+    width: auto;
+    flex-wrap: wrap;
+    justify-content: center;
+    animation: none;
+  }
+  .marquee-track [data-marquee-copy] {
+    display: none;
+  }
+}
+
+/* Progressive enhancement: controls that only work with JS stay hidden without it. */
+html:not(.js) .js-only {
+  display: none !important;
+}

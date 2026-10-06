@@ -1,0 +1,18 @@
+---
+import { brand } from "../lib/site";
+// Reassurance strip right after the hero: only claims the brand actually makes (ateliê próprio,
+// ficha técnica, envio, atendimento). No invented numbers.
+---
+
+<section class="border-b border-border bg-paper" aria-label="Por que a VCV">
+  <ul class="container-page grid grid-cols-2 gap-y-px lg:grid-cols-4">
+    {
+      brand.trust.map((item, index) => (
+        <li class="reveal px-2 py-8 text-center md:px-6" style={`--reveal-delay:${index * 80}ms`}>
+          <p class="font-serif text-xl text-wine">{item.title}</p>
+          <p class="mt-1 text-sm text-text-muted">{item.text}</p>
+        </li>
+      ))
+    }
+  </ul>
+</section>

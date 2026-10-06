@@ -1,0 +1,153 @@
+[
+  {
+    "id": "vestido-zebra",
+    "name": "Vestido Curto Zebra",
+    "collection": "essenciais",
+    "priceCents": 18900,
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1682723840177-8c0dcd71f4a7?w=1200&h=1600&fit=crop&q=80",
+        "alt": "Vestido Curto Zebra, frente",
+        "width": 1200,
+        "height": 1600
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1677537946959-9038a59d5da5?w=1200&h=1600&fit=crop&q=80",
+        "alt": "Vestido Curto Zebra, costas",
+        "width": 1200,
+        "height": 1600
+      }
+    ],
+    "shortDescription": "Viscose com toque seco, cortada no Vale do Itajaí. Modelagem provada em corpo real.",
+    "fabric": {
+      "material": "Viscolinho",
+      "origin": "Gaspar, SC",
+      "care": [
+        "Lavar à mão",
+        "Não usar alvejante",
+        "Passar em temperatura média"
+      ],
+      "notes": "Toque seco, caimento fluido."
+    },
+    "sizes": [
+      38,
+      40,
+      42,
+      44,
+      46,
+      48,
+      50,
+      52
+    ],
+    "badges": [
+      "BEST_SELLER"
+    ],
+    "buyUrl": "https://wa.me/5547999999999?text=Tenho%20interesse%20no%20Vestido%20Curto%20Zebra"
+  },
+  {
+    "id": "calca-viscolinho",
+    "name": "Calça Pantalona Viscolinho",
+    "collection": "essenciais",
+    "priceCents": 22900,
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1779406166861-ea24cd1296ce?w=1200&h=1600&fit=crop&q=80",
+        "alt": "Calça Pantalona Viscolinho",
+        "width": 1200,
+        "height": 1600
+      }
+    ],
+    "shortDescription": "Cintura alta e caimento reto. A base que sustenta o guarda-roupa.",
+    "fabric": {
+      "material": "Viscolinho",
+      "origin": "Gaspar, SC",
+      "care": [
+        "Lavar à mão",
+        "Passar em temperatura média"
+      ]
+    },
+    "sizes": [
+      38,
+      40,
+      42,
+      44,
+      46,
+      48,
+      50,
+      52
+    ],
+    "badges": [
+      "ATELIER_PICK"
+    ],
+    "buyUrl": null
+  },
+  {
+    "id": "blusa-linho",
+    "name": "Blusa Ampla Linho",
+    "collection": "verao",
+    "priceCents": 14900,
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1578747522731-9e5a179b02f7?w=1200&h=1600&fit=crop&q=80",
+        "alt": "Blusa Ampla Linho",
+        "width": 1200,
+        "height": 1600
+      }
+    ],
+    "shortDescription": "Linho leve, respirável, feito para o calor do vale.",
+    "fabric": {
+      "material": "Linho",
+      "origin": "Gaspar, SC",
+      "care": [
+        "Lavar à mão",
+        "Secar à sombra"
+      ]
+    },
+    "sizes": [
+      38,
+      40,
+      42,
+      44,
+      46,
+      48
+    ],
+    "badges": [
+      "NEW_IN"
+    ],
+    "buyUrl": null
+  },
+  {
+    "id": "saia-midi",
+    "name": "Saia Midi Viscose",
+    "collection": "verao",
+    "priceCents": 17900,
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1764298493197-a1c1cce57800?w=1200&h=1600&fit=crop&q=80",
+        "alt": "Saia Midi Viscose",
+        "width": 1200,
+        "height": 1600
+      }
+    ],
+    "shortDescription": "Comprimento midi, movimento leve. Do dia ao fim de tarde.",
+    "fabric": {
+      "material": "Viscose",
+      "origin": "Gaspar, SC",
+      "care": [
+        "Lavar à mão"
+      ]
+    },
+    "sizes": [
+      38,
+      40,
+      42,
+      44,
+      46,
+      48,
+      50,
+      52
+    ],
+    "badges": [],
+    "buyUrl": null
+  }
+]

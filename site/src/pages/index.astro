@@ -1,0 +1,107 @@
+---
+import CollectionTile from "../components/CollectionTile.astro";
+import ExternalLink from "../components/ExternalLink.astro";
+import HeroCarousel from "../components/HeroCarousel.astro";
+import Icon from "../components/Icon.astro";
+import Photo from "../components/Photo.astro";
+import ProductCard from "../components/ProductCard.astro";
+import SectionHeading from "../components/SectionHeading.astro";
+import TrustStrip from "../components/TrustStrip.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getBrand, getCollections, getFeatured, getProducts, getProductsOf } from "../lib/content";
+import { whatsappHref } from "../lib/format";
+import { brand } from "../lib/site";
+import { url } from "../lib/url";
+
+const { atelier, contact } = await getBrand();
+const featured = await getFeatured();
+const collections = await getCollections();
+const all = await getProducts();
+const tiles = await Promise.all(
+  collections.map(async (collection) => ({ collection, count: (await getProductsOf(collection.id)).length })),
+);
+const teaser = atelier.sections.find((section) => section.image);
+
+const siteUrl = Astro.site!.href;
+const organization = {
+  "@context": "https://schema.org",
+  "@type": "ClothingStore",
+  name: brand.name,
+  description: brand.description,
+  url: siteUrl,
+  address: { "@type": "PostalAddress", addressLocality: "Gaspar", addressRegion: "SC", addressCountry: "BR" },
+  sameAs: [contact.instagram],
+};
+---
+
+<BaseLayout
+  title="VCV — Veste Com Você | Moda feminina de ateliê em Gaspar, SC"
+  rawTitle
+  description={brand.description}
+  structuredData={[organization]}
+>
+  <HeroCarousel />
+  <TrustStrip />
+
+  <section class="section-y" aria-labelledby="featured-title">
+    <div class="container-page">
+      <SectionHeading eyebrow="Do ateliê para você" title="Peças em destaque" id="featured-title">
+        <a href={url("/catalogo/")} class="link-arrow">Ver todas as {all.length} peças <span class="arrow" aria-hidden="true">→</span></a>
+      </SectionHeading>
+      <ul class="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 md:gap-x-6 lg:grid-cols-4">
+        {featured.map((product, index) => <ProductCard product={product} index={index} class="reveal" />)}
+      </ul>
+    </div>
+  </section>
+
+  <section class="bg-paper section-y" aria-labelledby="collections-title">
+    <div class="container-page">
+      <SectionHeading eyebrow="Coleções" title="Escolha por estilo" id="collections-title" lede="Cada coleção reúne peças pensadas para combinar entre si.">
+        <a href={url("/colecoes/")} class="link-arrow">Todas as coleções <span class="arrow" aria-hidden="true">→</span></a>
+      </SectionHeading>
+      <ul class="mt-10 grid gap-6 md:grid-cols-2">
+        {tiles.map(({ collection, count }, index) => <li class="reveal" style={`--reveal-delay:${index * 80}ms`}><CollectionTile collection={collection} count={count} /></li>)}
+      </ul>
+    </div>
+  </section>
+
+  {
+    teaser?.image && (
+      <section class="section-y" aria-labelledby="atelier-title">
+        <div class="container-page grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+          <div class="reveal media aspect-[4/3] rounded-lg">
+            <Photo
+              src={teaser.image.url}
+              alt={teaser.image.alt}
+              width={teaser.image.width}
+              height={teaser.image.height}
+              widths={[480, 720, 960, 1280]}
+              sizes="(min-width: 1024px) 48vw, 92vw"
+            />
+          </div>
+          <div class="reveal" style="--reveal-delay:80ms">
+            <p class="eyebrow">Do ateliê</p>
+            <h2 id="atelier-title" class="mt-3 text-3xl md:text-4xl">Produção em Gaspar, rolo a rolo</h2>
+            <p class="mt-5 text-lg leading-relaxed text-text-muted">
+              {teaser.body}
+            </p>
+            <a href={url("/atelier/")} class="link-arrow mt-4">Conheça o ateliê <span class="arrow" aria-hidden="true">→</span></a>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <section class="bg-wine section-y text-cream" aria-labelledby="contact-band-title">
+    <div class="container-page flex flex-col items-start justify-between gap-8 md:flex-row md:items-center">
+      <div class="max-w-xl">
+        <p class="text-xs font-medium tracking-[0.28em] text-rose-soft uppercase">Atendimento direto</p>
+        <h2 id="contact-band-title" class="mt-3 text-3xl text-cream md:text-4xl">Dúvida sobre tamanho ou tecido?</h2>
+        <p class="mt-4 text-lg text-cream/80">Chame a gente no WhatsApp: atendimento direto, de Gaspar pra você.</p>
+      </div>
+      <ExternalLink href={whatsappHref(contact.whatsapp, "Olá! Vim pelo site da VCV e tenho uma dúvida.")} class="btn btn-light btn-lg">
+        <Icon name="message" size={18} /> Falar no WhatsApp
+      </ExternalLink>
+    </div>
+  </section>
+</BaseLayout>

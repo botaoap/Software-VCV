@@ -1,0 +1,30 @@
+---
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import CatalogGrid from "../../components/CatalogGrid.astro";
+import PageHeader from "../../components/PageHeader.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getCollections, getProductsOf } from "../../lib/content";
+import { url } from "../../lib/url";
+
+export async function getStaticPaths() {
+  const collections = await getCollections();
+  return collections.map((collection) => ({ params: { slug: collection.id }, props: { collection } }));
+}
+
+const { collection } = Astro.props;
+const products = await getProductsOf(collection.id);
+---
+
+<BaseLayout title={collection.data.title} description={`${collection.data.subtitle}. ${collection.data.story}`}>
+  <PageHeader eyebrow="Coleção" title={collection.data.title} lede={`${collection.data.subtitle}. ${collection.data.story}`}>
+    <Breadcrumbs
+      slot="breadcrumbs"
+      items={[{ label: "Início", href: url("/") }, { label: "Coleções", href: url("/colecoes/") }, { label: collection.data.title }]}
+    />
+  </PageHeader>
+  <section class="section-y">
+    <div class="container-page">
+      <CatalogGrid products={products} label={`Peças da coleção ${collection.data.title}`} />
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,26 @@
+---
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import PageHeader from "../../components/PageHeader.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { url } from "../../lib/url";
+---
+
+<!-- PLACEHOLDER: the legal text must come from (or be approved by) the client. Not indexed until it does. -->
+<BaseLayout title="Política de Privacidade" description="Como a VCV trata os seus dados." noindex>
+  <PageHeader eyebrow="Institucional" title="Política de Privacidade">
+    <Breadcrumbs slot="breadcrumbs" items={[{ label: "Início", href: url("/") }, { label: "Política de Privacidade" }]} />
+  </PageHeader>
+  <section class="section-y">
+    <div class="container-page">
+      <div class="prose-vcv">
+        <p>
+          <strong>[PLACEHOLDER]</strong> O texto desta página será fornecido e aprovado pela VCV antes da publicação.
+        </p>
+        <p>
+          Enquanto isso: o site guarda no seu navegador apenas a sua sacola de compras (armazenamento local, estritamente
+          necessário) e, se você finalizar um pedido, o nome e a mensagem que você envia ao WhatsApp da VCV.
+        </p>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

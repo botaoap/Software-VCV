@@ -1,0 +1,28 @@
+---
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import CatalogGrid from "../../components/CatalogGrid.astro";
+import PageHeader from "../../components/PageHeader.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getCollections, getProducts } from "../../lib/content";
+import { url } from "../../lib/url";
+
+const products = await getProducts();
+const collections = await getCollections();
+---
+
+<BaseLayout title="Catálogo" description="Todas as peças da VCV — viscose e linho, com ficha técnica em cada peça. Tamanhos 38 ao 52.">
+  <PageHeader eyebrow="Catálogo" title="Todas as peças" lede="Tecido nomeado e procedência declarada em cada peça.">
+    <Breadcrumbs slot="breadcrumbs" items={[{ label: "Início", href: url("/") }, { label: "Catálogo" }]} />
+  </PageHeader>
+  <section class="section-y">
+    <div class="container-page">
+      {
+        products.length === 0 ? (
+          <p class="text-lg text-text-muted">Em breve novas peças.</p>
+        ) : (
+          <CatalogGrid products={products} collections={collections} label="Todas as peças" />
+        )
+      }
+    </div>
+  </section>
+</BaseLayout>

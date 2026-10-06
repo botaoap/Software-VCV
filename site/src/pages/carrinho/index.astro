@@ -1,0 +1,113 @@
+---
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import Icon from "../../components/Icon.astro";
+import PageHeader from "../../components/PageHeader.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { url } from "../../lib/url";
+---
+
+<BaseLayout title="Sacola" description="Sua sacola de compras na VCV." noindex>
+  <PageHeader eyebrow="Compra" title="Sua sacola">
+    <Breadcrumbs slot="breadcrumbs" items={[{ label: "Início", href: url("/") }, { label: "Sacola" }]} />
+  </PageHeader>
+
+  <section class="section-y" aria-live="polite">
+    <div class="container-page">
+      <noscript>
+        <p class="rounded-lg border border-border bg-paper p-6 text-lg text-text-muted">
+          A sacola precisa de JavaScript. Você pode pedir direto pelo <a class="text-link" href={url("/contato/")}>WhatsApp</a>.
+        </p>
+      </noscript>
+
+      <div class="js-only" data-cart>
+        <div class="hidden text-center" data-cart-empty>
+          <p class="text-xl text-text-muted">Sua sacola está vazia.</p>
+          <a href={url("/catalogo/")} class="btn btn-primary btn-lg mt-6">Ver catálogo</a>
+        </div>
+
+        <div class="hidden gap-10 lg:grid-cols-[1fr_22rem]" data-cart-filled>
+          <ul class="divide-y divide-border border-y border-border" data-cart-lines></ul>
+
+          <aside class="h-fit rounded-lg border border-border bg-paper p-6 lg:sticky lg:top-28" aria-labelledby="summary-title">
+            <h2 id="summary-title" class="text-2xl">Resumo</h2>
+            <p class="mt-5 flex items-baseline justify-between">
+              <span class="text-text-muted">Subtotal</span>
+              <strong class="text-xl font-medium text-wine" data-cart-subtotal></strong>
+            </p>
+            <p class="mt-2 text-sm text-text-muted">Frete e pagamento são combinados no atendimento.</p>
+            <a href={url("/checkout/")} class="btn btn-primary btn-lg mt-6 w-full">Finalizar compra</a>
+            <a href={url("/catalogo/")} class="link-arrow mt-2">Continuar comprando <span class="arrow" aria-hidden="true">→</span></a>
+          </aside>
+        </div>
+      </div>
+
+      <template data-cart-line-template>
+        <li class="grid grid-cols-[5.5rem_1fr] gap-x-4 gap-y-3 py-6 sm:grid-cols-[6.5rem_1fr_auto]">
+          <div class="media aspect-[3/4] w-full rounded-md"><img alt="" width="160" height="213" loading="lazy" data-line-image /></div>
+          <div>
+            <p class="font-sans text-base font-medium" data-line-name></p>
+            <p class="mt-1 text-sm text-text-muted" data-line-size></p>
+            <p class="mt-1 text-sm text-text-muted" data-line-unit></p>
+            <button type="button" class="mt-2 inline-flex min-h-11 cursor-pointer items-center gap-1.5 text-sm text-text-muted underline underline-offset-4 hover:text-wine" data-line-remove>
+              <Icon name="trash" size={15} /> Remover
+            </button>
+          </div>
+          <div class="col-span-2 flex items-center justify-between gap-4 sm:col-span-1 sm:flex-col sm:items-end sm:justify-between">
+            <div class="qty" role="group">
+              <button type="button" data-line-dec><Icon name="minus" size={16} /></button>
+              <output aria-live="polite" data-line-qty></output>
+              <button type="button" data-line-inc><Icon name="plus" size={16} /></button>
+            </div>
+            <p class="font-medium text-wine" data-line-total></p>
+          </div>
+        </li>
+      </template>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { formatBrl } from "../../lib/format";
+  import { itemCount, lineKey, onCartChange, readCart, removeLine, setQuantity, subtotalCents } from "../../scripts/cart";
+
+  const root = document.querySelector<HTMLElement>("[data-cart]");
+  if (root) {
+    const empty = root.querySelector<HTMLElement>("[data-cart-empty]")!;
+    const filled = root.querySelector<HTMLElement>("[data-cart-filled]")!;
+    const list = root.querySelector<HTMLElement>("[data-cart-lines]")!;
+    const subtotal = root.querySelector<HTMLElement>("[data-cart-subtotal]")!;
+    const template = document.querySelector<HTMLTemplateElement>("[data-cart-line-template]")!;
+
+    const render = () => {
+      const lines = readCart();
+      const isEmpty = itemCount(lines) === 0;
+      empty.classList.toggle("hidden", !isEmpty);
+      filled.classList.toggle("hidden", isEmpty);
+      filled.classList.toggle("grid", !isEmpty);
+      list.replaceChildren();
+      for (const line of lines) {
+        const node = template.content.firstElementChild!.cloneNode(true) as HTMLElement;
+        const key = lineKey(line);
+        const img = node.querySelector<HTMLImageElement>("[data-line-image]")!;
+        if (line.image) img.src = line.image;
+        else img.remove();
+        // textContent only: names come from storage, never interpreted as HTML.
+        node.querySelector("[data-line-name]")!.textContent = line.name;
+        node.querySelector("[data-line-size]")!.textContent = `Tamanho ${line.size}`;
+        node.querySelector("[data-line-unit]")!.textContent = formatBrl(line.unitPriceCents);
+        node.querySelector("[data-line-qty]")!.textContent = String(line.quantity);
+        node.querySelector("[data-line-total]")!.textContent = formatBrl(line.unitPriceCents * line.quantity);
+        node.querySelector<HTMLElement>("[data-line-dec]")!.setAttribute("aria-label", `Diminuir a quantidade de ${line.name}`);
+        node.querySelector<HTMLElement>("[data-line-inc]")!.setAttribute("aria-label", `Aumentar a quantidade de ${line.name}`);
+        node.querySelector("[data-line-dec]")!.addEventListener("click", () => setQuantity(key, line.quantity - 1));
+        node.querySelector("[data-line-inc]")!.addEventListener("click", () => setQuantity(key, line.quantity + 1));
+        node.querySelector("[data-line-remove]")!.addEventListener("click", () => removeLine(key));
+        list.append(node);
+      }
+      subtotal.textContent = formatBrl(subtotalCents(lines));
+    };
+
+    render();
+    onCartChange(render);
+  }
+</script>

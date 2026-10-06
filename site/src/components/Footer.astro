@@ -1,0 +1,104 @@
+---
+import ExternalLink from "./ExternalLink.astro";
+import Icon from "./Icon.astro";
+import { getBrand } from "../lib/content";
+import { whatsappHref } from "../lib/format";
+import { brand } from "../lib/site";
+import { consentEnabled, newsletterEnabled, services } from "../lib/services";
+import { url } from "../lib/url";
+
+const { contact } = await getBrand();
+const year = new Date().getFullYear();
+const shop = [
+  { label: "Coleções", href: url("/colecoes/") },
+  { label: "Catálogo", href: url("/catalogo/") },
+  { label: "Atelier", href: url("/atelier/") },
+  { label: "Contato", href: url("/contato/") },
+];
+const legal = [
+  { label: "Política de Privacidade", href: url("/privacidade/") },
+  { label: "Política de Cookies", href: url("/cookies/") },
+  { label: "Termos de Uso", href: url("/termos/") },
+];
+---
+
+<footer class="mt-auto bg-wine-deep text-cream">
+  <div class="container-page grid gap-12 pt-16 pb-10 md:grid-cols-2 lg:grid-cols-4">
+    <div>
+      <p class="font-serif text-3xl text-cream">VCV</p>
+      <p class="mt-1 text-[0.65rem] tracking-[0.32em] text-rose-soft uppercase">Veste Com Você</p>
+      <p class="mt-5 max-w-xs text-sm leading-relaxed text-cream/80">
+        Ateliê próprio em {brand.location}. Poucas peças, bem feitas — feitas rolo a rolo.
+      </p>
+      <ul class="mt-5 space-y-1 text-sm">
+        <li>
+          <ExternalLink href={whatsappHref(contact.whatsapp)} class="inline-flex min-h-11 items-center gap-2 text-cream hover:underline">
+            <Icon name="message" size={16} /> WhatsApp
+          </ExternalLink>
+        </li>
+        <li>
+          <a href={`mailto:${contact.email}`} class="inline-flex min-h-11 items-center gap-2 break-all text-cream hover:underline">
+            <Icon name="mail" size={16} /> {contact.email}
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <nav aria-label="Loja">
+      <h2 class="font-sans text-xs font-medium tracking-[0.24em] text-rose-soft uppercase">Loja</h2>
+      <ul class="mt-4 space-y-1 text-sm">
+        {shop.map((item) => <li><a href={item.href} class="inline-flex min-h-11 items-center text-cream/90 hover:text-cream hover:underline">{item.label}</a></li>)}
+      </ul>
+    </nav>
+
+    <nav aria-label="Institucional">
+      <h2 class="font-sans text-xs font-medium tracking-[0.24em] text-rose-soft uppercase">Institucional</h2>
+      <ul class="mt-4 space-y-1 text-sm">
+        {legal.map((item) => <li><a href={item.href} class="inline-flex min-h-11 items-center text-cream/90 hover:text-cream hover:underline">{item.label}</a></li>)}
+        {
+          consentEnabled && (
+            <li>
+              <button type="button" class="inline-flex min-h-11 cursor-pointer items-center text-cream/90 hover:text-cream hover:underline" data-open-consent>
+                Preferências de cookies
+              </button>
+            </li>
+          )
+        }
+      </ul>
+    </nav>
+
+    <section aria-labelledby="footer-news-title" class="rounded-lg border border-cream/15 bg-cream/5 p-6">
+      <h2 id="footer-news-title" class="font-serif text-xl text-cream">Novidades</h2>
+      {
+        newsletterEnabled ? (
+          <>
+            <p class="mt-2 text-sm text-cream/80">Receba as novas peças do ateliê por e-mail.</p>
+            <form action={services.newsletterAction} method="post" class="mt-4 flex flex-col gap-3">
+              <label class="sr-only" for="footer-news-email">Seu e-mail</label>
+              <input id="footer-news-email" name="EMAIL" type="email" required autocomplete="email" placeholder="Seu e-mail" class="field !mt-0 border-cream/30 bg-cream/10 text-cream placeholder:text-cream/60" />
+              <button type="submit" class="btn btn-light">Quero receber</button>
+            </form>
+          </>
+        ) : (
+          <>
+            <p class="mt-2 text-sm text-cream/80">Veja as novas peças primeiro: siga o ateliê ou chame no WhatsApp.</p>
+            <div class="mt-4 flex flex-col gap-3">
+              <ExternalLink href={contact.instagram} class="btn btn-light">
+                <Icon name="instagram" size={18} /> Instagram
+              </ExternalLink>
+              <ExternalLink href={whatsappHref(contact.whatsapp, "Olá! Quero receber as novidades da VCV.")} class="btn btn-ghost-light">
+                <Icon name="message" size={18} /> Avisar no WhatsApp
+              </ExternalLink>
+            </div>
+          </>
+        )
+      }
+    </section>
+  </div>
+
+  <div class="border-t border-cream/15">
+    <div class="container-page flex flex-col gap-2 py-6 pb-24 text-xs text-cream/70 sm:flex-row sm:items-center sm:justify-between sm:pb-6">
+      <p>© {year} {brand.name} · {brand.location} · Imagens ilustrativas.</p>
+    </div>
+  </div>
+</footer>

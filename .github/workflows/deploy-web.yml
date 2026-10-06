@@ -1,14 +1,13 @@
 name: Deploy web
 
-# Builds the Wasm web app and publishes it to GitHub Pages so Felipe always has a
-# current live link. Auto-deploys on push to `develop` (the integration branch),
-# and can be run manually from the Actions tab.
+# Builds the static Astro site (`site/`) and publishes it to GitHub Pages so Felipe always has a
+# current live link. Auto-deploys on push to `develop` (the integration branch), and can be run
+# manually from the Actions tab.
 #
-# The Pages *project* URL is a sub-path (https://<user>.github.io/<repo>/). The build
-# is made sub-path-correct here by rewriting `<base href="/">` to `/<repo>/`; the
-# router derives its base path from that <base> at runtime (WebHistory), and 404.html
-# = index.html gives SPA deep-link refresh. A root custom domain (Felipe's, later)
-# would just drop the base rewrite.
+# The Pages *project* URL is a sub-path (https://<user>.github.io/<repo>/), so the build gets
+# SITE_URL + BASE_PATH (astro.config.mjs): every internal link, canonical and OG URL is
+# sub-path-correct, and `404.html` is served by Pages for any unknown URL. A custom domain served
+# at the root (Felipe's, later) just drops BASE_PATH and sets SITE_URL.
 #
 # One-time repo setup: Settings → Pages → Build and deployment → Source = "GitHub Actions".
 on:
@@ -31,36 +30,33 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    env:
+      SITE_URL: https://${{ github.repository_owner }}.github.io
+      BASE_PATH: /${{ github.event.repository.name }}
+    defaults:
+      run:
+        working-directory: site
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      - uses: actions/setup-node@v4
         with:
-          distribution: temurin
-          java-version: '17'
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: site/package-lock.json
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+      - run: npm ci
 
-      - name: Build Wasm distribution
-        run: ./gradlew --no-daemon --stacktrace :webApp:wasmJsBrowserDistribution
+      - name: Build (type-check + static pages)
+        run: npm run build
 
-      - name: Rewrite base href for the Pages sub-path + SPA fallback
-        run: |
-          dist=webApp/build/dist/wasmJs/productionExecutable
-          repo="${{ github.event.repository.name }}"
-          # Project site is served under /<repo>/ — point <base> there so relative
-          # resource fetches and the router's derived base path resolve correctly.
-          sed -i "s#<base href=\"/\">#<base href=\"/${repo}/\">#" "$dist/index.html"
-          # GitHub Pages serves 404.html for unknown paths → serve the SPA so deep
-          # links (e.g. /produto/{id}) refresh into the app instead of 404ing.
-          cp "$dist/index.html" "$dist/404.html"
+      - name: Test the built site
+        run: npm test
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: webApp/build/dist/wasmJs/productionExecutable
+          path: site/dist
 
       - name: Deploy to GitHub Pages
         id: deployment

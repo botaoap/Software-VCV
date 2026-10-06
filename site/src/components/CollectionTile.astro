@@ -1,0 +1,31 @@
+---
+import type { CollectionEntry } from "astro:content";
+import Photo from "./Photo.astro";
+import { url } from "../lib/url";
+
+interface Props {
+  collection: CollectionEntry<"collections">;
+  count: number;
+}
+const { collection, count } = Astro.props;
+const { data } = collection;
+---
+
+<a href={url(`/colecao/${collection.id}/`)} class="card group overflow-hidden">
+  <div class="media aspect-[4/5] md:aspect-square">
+    <Photo
+      src={data.cover.url}
+      alt={data.cover.alt}
+      width={data.cover.width}
+      height={data.cover.height}
+      widths={[480, 720, 960]}
+      sizes="(min-width: 768px) 45vw, 92vw"
+    />
+  </div>
+  <div class="flex flex-1 flex-col p-6">
+    <p class="eyebrow">{count} {count === 1 ? "peça" : "peças"}</p>
+    <h3 class="mt-2 text-2xl">{data.title}</h3>
+    <p class="mt-2 text-text-muted">{data.subtitle}</p>
+    <span class="link-arrow mt-auto pt-4">Ver coleção <span class="arrow" aria-hidden="true">→</span></span>
+  </div>
+</a>

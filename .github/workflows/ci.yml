@@ -16,6 +16,32 @@ permissions:
   contents: read
 
 jobs:
+  site:
+    name: Site (Astro) build + tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - run: npm ci
+
+      # astro check (types) + static build; placeholder photos are optimised at build time.
+      - name: Build
+        run: npm run build
+
+      # Contrast tokens + rules on the built HTML (SEO tags, external links, self-hosted assets,
+      # catalog order, JSON-LD).
+      - name: Test
+        run: npm test
+
   build-test:
     name: Build & test (non-Apple targets)
     runs-on: ubuntu-latest
