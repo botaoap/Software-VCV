@@ -1,11 +1,13 @@
 ---
 import type { CollectionEntry } from "astro:content";
 import Photo from "./Photo.astro";
+import { coverOf } from "../lib/catalog";
 import { badgeLabels, formatBrl } from "../lib/format";
 import { url } from "../lib/url";
 
 // A product tile: the whole tile is one link. Photo (fixed 3:4, no layout shift) with a subtle hover
-// zoom, marketing badge, name, price. data-* attributes feed the catalog filter/sort island.
+// zoom, marketing badge, name, price and the color swatches (marketplace pattern). data-* attributes
+// feed the catalog filter/sort island.
 interface Props {
   product: CollectionEntry<"products">;
   /** Position in content order, so the catalog island can restore "Novidades". */
@@ -19,8 +21,9 @@ interface Props {
 }
 const { product, index = 0, priority = false, heading: Heading = "h3", search, class: className } = Astro.props;
 const { data } = product;
-const cover = data.images[0];
+const cover = coverOf(data);
 const badge = data.badges[0];
+const MAX_SWATCHES = 5;
 ---
 
 <li
@@ -31,6 +34,7 @@ const badge = data.badges[0];
   data-search={search}
   data-price={data.priceCents}
   data-collection={data.collection.id}
+  data-audience={data.audience}
   data-sizes={data.sizes.join(",")}
 >
   <a href={url(`/produto/${product.id}/`)} class="group block">
@@ -52,5 +56,15 @@ const badge = data.badges[0];
       {data.name}
     </Heading>
     <p class="mt-1 text-base font-medium text-wine">{formatBrl(data.priceCents)}</p>
+    {
+      data.colors.length > 1 && (
+        <p class="mt-2 flex items-center gap-1.5">
+          {data.colors.slice(0, MAX_SWATCHES).map((color) => (
+            <span class="swatch swatch-sm" style={`--swatch: ${color.hex}`} aria-hidden="true" />
+          ))}
+          <span class="ml-1 text-xs text-text-muted">{data.colors.length} cores</span>
+        </p>
+      )
+    }
   </a>
 </li>

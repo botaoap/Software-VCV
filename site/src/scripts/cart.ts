@@ -9,7 +9,11 @@ export type CartLine = {
   /** Built (optimised, self-hosted) thumbnail URL, or null. */
   image: string | null;
   unitPriceCents: number;
-  size: number;
+  /** Size label: "M", "GG", "42"… (older bags stored numbers; normalised on read). */
+  size: string;
+  /** Chosen color, when the product has colors. */
+  colorId?: string;
+  colorName?: string;
   quantity: number;
 };
 
@@ -19,7 +23,13 @@ const MAX_QTY = 99;
 
 let memory: CartLine[] = []; // fallback when storage is blocked (private mode)
 
-export const lineKey = (line: Pick<CartLine, "productId" | "size">) => `${line.productId}:${line.size}`;
+/** Line identity = product + color + size. */
+export const lineKey = (line: Pick<CartLine, "productId" | "size" | "colorId">) =>
+  [line.productId, line.colorId, line.size].filter(Boolean).join(":");
+
+/** "Cor Coral · Tamanho M" — the variant as shown in the bag and the checkout summary. */
+export const variantLabel = (line: Pick<CartLine, "size" | "colorName">) =>
+  [line.colorName && `Cor ${line.colorName}`, `Tamanho ${line.size}`].filter(Boolean).join(" · ");
 
 const isLine = (v: unknown): v is CartLine => {
   const l = v as Partial<CartLine> | null;
@@ -28,7 +38,7 @@ const isLine = (v: unknown): v is CartLine => {
     typeof l.productId === "string" &&
     typeof l.name === "string" &&
     typeof l.unitPriceCents === "number" &&
-    typeof l.size === "number" &&
+    (typeof l.size === "string" || typeof l.size === "number") &&
     typeof l.quantity === "number" &&
     l.quantity > 0
   );
@@ -37,7 +47,7 @@ const isLine = (v: unknown): v is CartLine => {
 export function readCart(): CartLine[] {
   try {
     const parsed = JSON.parse(localStorage.getItem(KEY) ?? "[]");
-    return Array.isArray(parsed) ? parsed.filter(isLine) : [];
+    return Array.isArray(parsed) ? parsed.filter(isLine).map((l) => ({ ...l, size: String(l.size) })) : [];
   } catch {
     return memory;
   }
@@ -53,7 +63,7 @@ function write(lines: CartLine[]) {
   window.dispatchEvent(new CustomEvent(EVENT));
 }
 
-/** Adding the same product + size again bumps the quantity (line identity = product + size). */
+/** Adding the same product + color + size again bumps the quantity. */
 export function addToCart(line: Omit<CartLine, "quantity">, quantity = 1) {
   const lines = readCart();
   const existing = lines.find((l) => lineKey(l) === lineKey(line));

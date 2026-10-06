@@ -6,8 +6,10 @@ import Photo from "../../components/Photo.astro";
 import ProductCard from "../../components/ProductCard.astro";
 import SectionHeading from "../../components/SectionHeading.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import { coverOf, galleryOf } from "../../lib/catalog";
 import { getCategoryOf, getCollectionOf, getProducts } from "../../lib/content";
 import { badgeLabels, formatBrl } from "../../lib/format";
+import { photoSrc } from "../../lib/images";
 import { brand } from "../../lib/site";
 import { url } from "../../lib/url";
 
@@ -26,10 +28,27 @@ const related = [
   ...all.filter((p) => p.id !== product.id && p.data.collection.id !== data.collection.id),
 ].slice(0, 4);
 
-const cover = data.images[0];
-// Optimised, self-hosted thumbnail stored with each bag line, and the link-preview image.
-const thumb = await getImage({ src: cover.url, width: 160, height: 213, format: "webp", inferSize: false });
-const og = await getImage({ src: cover.url, width: 1200, height: 630, fit: "contain", background: "#F6F0EA", format: "jpg", inferSize: false });
+// Marketplace pattern: one gallery per color (its photos, then the shared ones); the first color is
+// the default and ?cor=<id> deep-links another. A product without colors has a single gallery.
+const colors = data.colors;
+const galleries = colors.length > 0
+  ? colors.map((color) => ({ colorId: color.id, images: galleryOf(data, color.id) }))
+  : [{ colorId: undefined, images: data.images }];
+
+// Optimised, self-hosted thumbnail stored with each bag line (per color), and the link-preview image.
+const bagThumb = (src: string) => getImage({ src: photoSrc(src), width: 160, height: 213, format: "webp", inferSize: false });
+const thumb = await bagThumb(coverOf(data).url);
+const colorThumbs = await Promise.all(colors.map((color) => bagThumb(color.images[0].url)));
+const og = await getImage({ src: photoSrc(coverOf(data).url), width: 1200, height: 630, fit: "contain", background: "#F6F0EA", format: "jpg", inferSize: false });
+
+const spec = [
+  ["Material", data.fabric.material],
+  ["Origem", data.fabric.origin],
+  ["Cuidados", data.fabric.care.join(" · ")],
+  ["Notas", data.fabric.notes],
+].filter((row): row is [string, string] => Boolean(row[1]));
+const chart = data.measurements;
+const cm = (value: number) => value.toLocaleString("pt-BR");
 
 const pageUrl = new URL(Astro.url.pathname, Astro.site!).href;
 const productLd = {
@@ -38,7 +57,8 @@ const productLd = {
   name: data.name,
   description: data.shortDescription,
   image: [new URL(og.src, Astro.site!).href],
-  material: data.fabric.material,
+  ...(data.fabric.material && { material: data.fabric.material }),
+  ...(colors.length > 0 && { color: colors.map((color) => color.name).join(", ") }),
   brand: { "@type": "Brand", name: brand.name },
   offers: {
     "@type": "Offer",
@@ -63,7 +83,7 @@ const crumbsLd = {
 
 <BaseLayout
   title={data.name}
-  description={`${data.shortDescription} ${data.fabric.material}, feito em ${data.fabric.origin}.`}
+  description={[data.shortDescription, data.fabric.material && data.fabric.origin && `${data.fabric.material}, feito em ${data.fabric.origin}.`].filter(Boolean).join(" ")}
   ogType="product"
   ogImage={og.src}
   structuredData={[productLd, crumbsLd]}
@@ -80,48 +100,51 @@ const crumbsLd = {
   </div>
 
   <section class="container-page grid gap-10 pb-16 lg:grid-cols-2 lg:gap-16" aria-labelledby="product-title">
-    <!-- Gallery: a CSS scroll-snap strip (swipe on touch, works without JS); thumbnails jump to a slide. -->
-    <div class="lg:sticky lg:top-28 lg:self-start" data-gallery>
-      <ul class="gallery-track media flex snap-x snap-mandatory overflow-x-auto rounded-lg" data-gallery-track>
-        {
-          data.images.map((image, index) => (
-            <li id={`foto-${index + 1}`} class="aspect-[3/4] w-full shrink-0 snap-center" data-gallery-slide>
-              <Photo
-                src={image.url}
-                alt={image.alt}
-                width={image.width}
-                height={image.height}
-                widths={[480, 720, 960, 1200]}
-                sizes="(min-width: 1024px) 46vw, 100vw"
-                priority={index === 0}
-                class="size-full object-cover"
-              />
-            </li>
-          ))
-        }
-      </ul>
+    <!-- Gallery: a CSS scroll-snap strip per color (swipe on touch, works without JS); thumbnails jump
+         to a slide. Only the chosen color's gallery is shown. -->
+    <div class="min-w-0 lg:sticky lg:top-28 lg:self-start">
       {
-        data.images.length > 1 && (
-          <ul class="mt-3 flex gap-3" aria-label="Fotos da peça">
-            {data.images.map((image, index) => (
-              <li>
-                <a
-                  href={`#foto-${index + 1}`}
-                  class="media block aspect-[3/4] w-16 rounded-md border-2 border-transparent opacity-70 transition-opacity hover:opacity-100 aria-[current=true]:border-wine aria-[current=true]:opacity-100"
-                  aria-label={`Ver foto ${index + 1}: ${image.alt}`}
-                  aria-current={index === 0 ? "true" : undefined}
-                  data-gallery-thumb={index}
-                >
-                  <Photo src={image.url} alt="" width={image.width} height={image.height} widths={[120, 160]} sizes="64px" />
-                </a>
-              </li>
-            ))}
-          </ul>
-        )
+        galleries.map(({ colorId, images }, galleryIndex) => (
+          <div data-gallery data-gallery-color={colorId} hidden={galleryIndex > 0}>
+            <ul class="gallery-track media flex snap-x snap-mandatory overflow-x-auto rounded-lg" data-gallery-track>
+              {images.map((image, index) => (
+                <li id={`foto-${colorId ? `${colorId}-` : ""}${index + 1}`} class="aspect-[3/4] w-full shrink-0 snap-center" data-gallery-slide>
+                  <Photo
+                    src={image.url}
+                    alt={image.alt}
+                    width={image.width}
+                    height={image.height}
+                    widths={[480, 720, 960, 1200]}
+                    sizes="(min-width: 1024px) 46vw, 100vw"
+                    priority={galleryIndex === 0 && index === 0}
+                    class="size-full object-cover"
+                  />
+                </li>
+              ))}
+            </ul>
+            {images.length > 1 && (
+              <ul class="mt-3 flex flex-wrap gap-3" aria-label="Fotos da peça">
+                {images.map((image, index) => (
+                  <li>
+                    <a
+                      href={`#foto-${colorId ? `${colorId}-` : ""}${index + 1}`}
+                      class="media block aspect-[3/4] w-16 rounded-md border-2 border-transparent opacity-70 transition-opacity hover:opacity-100 aria-[current=true]:border-wine aria-[current=true]:opacity-100"
+                      aria-label={`Ver foto ${index + 1}: ${image.alt}`}
+                      aria-current={index === 0 ? "true" : undefined}
+                      data-gallery-thumb={index}
+                    >
+                      <Photo src={image.url} alt="" width={image.width} height={image.height} widths={[120, 160]} sizes="64px" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ))
       }
     </div>
 
-    <div>
+    <div class="min-w-0">
       {data.badges[0] && <p class="mb-3"><span class:list={["badge", data.badges[0] === "LAST_UNITS" && "badge-alert"]}>{badgeLabels[data.badges[0]]}</span></p>}
       <p class="eyebrow">{collection?.data.title}</p>
       <h1 id="product-title" class="mt-3 text-4xl md:text-5xl">{data.name}</h1>
@@ -137,6 +160,34 @@ const crumbsLd = {
         data-image={thumb.src}
         novalidate
       >
+        {
+          colors.length > 0 && (
+            <fieldset class="mb-6">
+              <legend class="text-xs font-medium tracking-[0.18em] text-text-muted uppercase">
+                Cor: <span class="font-sans text-sm font-medium tracking-normal text-text normal-case" data-color-label>{colors[0].name}</span>
+              </legend>
+              <div class="mt-2 flex flex-wrap gap-1" role="radiogroup">
+                {colors.map((color, index) => (
+                  <label class="relative" title={color.name}>
+                    <input
+                      type="radio"
+                      name="color"
+                      value={color.id}
+                      checked={index === 0}
+                      aria-label={color.name}
+                      data-color-name={color.name}
+                      data-image={colorThumbs[index].src}
+                      class="absolute inset-0 size-full cursor-pointer opacity-0"
+                    />
+                    <span class="swatch-option">
+                      <span class="swatch" style={`--swatch: ${color.hex}`} />
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          )
+        }
         <fieldset>
           <legend class="text-xs font-medium tracking-[0.18em] text-text-muted uppercase">Tamanhos</legend>
           <div class="mt-3 flex flex-wrap gap-2" role="radiogroup">
@@ -150,6 +201,11 @@ const crumbsLd = {
             }
           </div>
         </fieldset>
+        {chart && (
+          <p class="mt-3">
+            <a href="#medidas" class="link-arrow text-sm">Tabela de medidas <span class="arrow" aria-hidden="true">→</span></a>
+          </p>
+        )}
         <button type="submit" class="btn btn-primary btn-lg mt-6 w-full" data-add-button disabled>
           <Icon name="bag" size={18} />
           <span data-add-label>Adicionar à sacola</span>
@@ -165,17 +221,49 @@ const crumbsLd = {
       </noscript>
 
 
-      <section class="mt-10 border-t border-border pt-8" aria-labelledby="spec-title">
-        <h2 id="spec-title" class="text-2xl">Ficha técnica</h2>
-        <dl class="mt-5 grid grid-cols-[7rem_1fr] gap-x-4 gap-y-3 text-sm">
-          <dt class="text-text-muted">Material</dt>
-          <dd>{data.fabric.material}</dd>
-          <dt class="text-text-muted">Origem</dt>
-          <dd>{data.fabric.origin}</dd>
-          {data.fabric.care.length > 0 && (<><dt class="text-text-muted">Cuidados</dt><dd>{data.fabric.care.join(" · ")}</dd></>)}
-          {data.fabric.notes && (<><dt class="text-text-muted">Notas</dt><dd>{data.fabric.notes}</dd></>)}
-        </dl>
-      </section>
+      {
+        spec.length > 0 && (
+          <section class="mt-10 border-t border-border pt-8" aria-labelledby="spec-title">
+            <h2 id="spec-title" class="text-2xl">Ficha técnica</h2>
+            <dl class="mt-5 grid grid-cols-[7rem_1fr] gap-x-4 gap-y-3 text-sm">
+              {spec.map(([term, value]) => (
+                <>
+                  <dt class="text-text-muted">{term}</dt>
+                  <dd>{value}</dd>
+                </>
+              ))}
+            </dl>
+          </section>
+        )
+      }
+
+      {
+        chart && (
+          <section id="medidas" class="mt-10 scroll-mt-28 border-t border-border pt-8" aria-labelledby="chart-title">
+            <h2 id="chart-title" class="text-2xl">Medidas da peça</h2>
+            <div class="mt-5 overflow-x-auto">
+              <table class="size-table">
+                <caption class="sr-only">Medidas da peça em centímetros, por tamanho</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Tam.</th>
+                    {chart.columns.map((column) => <th scope="col">{column}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {chart.rows.map((row) => (
+                    <tr>
+                      <th scope="row">{row.size}</th>
+                      {row.values.map((value) => <td>{cm(value)}</td>)}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {chart.note && <p class="mt-3 text-xs text-text-muted">{chart.note}</p>}
+          </section>
+        )
+      }
     </div>
   </section>
 
@@ -206,9 +294,9 @@ const crumbsLd = {
   import { addToCart } from "../../scripts/cart";
 
   // Gallery thumbnails scroll the strip (no page jump); the active thumb follows the strip.
-  const track = document.querySelector<HTMLElement>("[data-gallery-track]");
-  const thumbs = [...document.querySelectorAll<HTMLAnchorElement>("[data-gallery-thumb]")];
-  if (track && thumbs.length > 0) {
+  for (const gallery of document.querySelectorAll<HTMLElement>("[data-gallery]")) {
+    const track = gallery.querySelector<HTMLElement>("[data-gallery-track]")!;
+    const thumbs = [...gallery.querySelectorAll<HTMLAnchorElement>("[data-gallery-thumb]")];
     thumbs.forEach((thumb, index) =>
       thumb.addEventListener("click", (event) => {
         event.preventDefault();
@@ -225,6 +313,30 @@ const crumbsLd = {
     );
   }
 
+  // Color: shows that color's gallery (from its first photo), updates "Cor: …" and mirrors the choice
+  // in ?cor= so a color can be shared or linked from a card.
+  const colorInputs = [...document.querySelectorAll<HTMLInputElement>("input[name=color]")];
+  const colorLabel = document.querySelector<HTMLElement>("[data-color-label]");
+  const showColor = (input: HTMLInputElement, updateUrl: boolean) => {
+    input.checked = true;
+    if (colorLabel) colorLabel.textContent = input.dataset.colorName ?? "";
+    for (const gallery of document.querySelectorAll<HTMLElement>("[data-gallery]")) {
+      const active = gallery.dataset.galleryColor === input.value;
+      gallery.hidden = !active;
+      if (active) gallery.querySelector<HTMLElement>("[data-gallery-track]")!.scrollTo({ left: 0 });
+    }
+    if (updateUrl) {
+      const params = new URLSearchParams(location.search);
+      if (input === colorInputs[0]) params.delete("cor");
+      else params.set("cor", input.value);
+      const query = params.toString();
+      history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}${location.hash}`);
+    }
+  };
+  const requested = colorInputs.find((input) => input.value === new URLSearchParams(location.search).get("cor"));
+  if (requested) showColor(requested, false);
+  colorInputs.forEach((input) => input.addEventListener("change", () => showColor(input, true)));
+
   const form = document.querySelector<HTMLFormElement>("[data-add-form]");
   if (form) {
     const button = form.querySelector<HTMLButtonElement>("[data-add-button]")!;
@@ -232,6 +344,7 @@ const crumbsLd = {
     const hint = form.querySelector<HTMLElement>("[data-add-hint]")!;
     const actions = form.querySelector<HTMLElement>("[data-added-actions]")!;
     const selected = () => form.querySelector<HTMLInputElement>("input[name=size]:checked");
+    const selectedColor = () => form.querySelector<HTMLInputElement>("input[name=color]:checked");
     let resetTimer: number | undefined;
 
     const reset = () => {
@@ -253,15 +366,19 @@ const crumbsLd = {
         hint.textContent = "Selecione um tamanho.";
         return;
       }
+      const color = selectedColor();
       addToCart({
         productId: form.dataset.productId!,
         name: form.dataset.name!,
-        image: form.dataset.image ?? null,
+        image: color?.dataset.image ?? form.dataset.image ?? null,
         unitPriceCents: Number(form.dataset.price),
-        size: Number(size.value),
+        size: size.value,
+        colorId: color?.value,
+        colorName: color?.dataset.colorName,
       });
       label.textContent = "Adicionado à sacola ✓";
-      hint.textContent = `${form.dataset.name} (tamanho ${size.value}) foi adicionado à sacola.`;
+      const variant = [color && `cor ${color.dataset.colorName}`, `tamanho ${size.value}`].filter(Boolean).join(", ");
+      hint.textContent = `${form.dataset.name} (${variant}) foi adicionado à sacola.`;
       actions.classList.remove("hidden");
       window.clearTimeout(resetTimer);
       resetTimer = window.setTimeout(reset, 2500);

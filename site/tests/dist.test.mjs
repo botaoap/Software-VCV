@@ -86,8 +86,8 @@ for (const file of pages) {
 test("every product has a page with a size per variant and matching JSON-LD", () => {
   for (const product of products) {
     const html = read("produto", product.id, "index.html");
-    const sizes = [...html.matchAll(/<input[^>]*name="size"[^>]*value="(\d+)"/g)].map((m) => Number(m[1]));
-    assert.deepEqual(sizes, product.sizes, `${product.id}: size selector`);
+    const sizes = [...html.matchAll(/<input[^>]*name="size"[^>]*value="([^"]+)"/g)].map((m) => m[1]);
+    assert.deepEqual(sizes, product.sizes.map(String), `${product.id}: size selector`);
 
     const ld = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => JSON.parse(m[1]));
     const ldProduct = ld.find((entry) => entry["@type"] === "Product");
@@ -95,6 +95,37 @@ test("every product has a page with a size per variant and matching JSON-LD", ()
     assert.equal(ldProduct.offers.price, (product.priceCents / 100).toFixed(2));
     assert.equal(ldProduct.offers.priceCurrency, "BRL");
     assert.ok(ldProduct.image.every((url) => url.startsWith(`${SITE}/`)), `${product.id}: absolute og image`);
+  }
+});
+
+test("products with colors: one swatch and one gallery per color, the first one shown", () => {
+  const colored = products.filter((p) => p.colors?.length > 0);
+  assert.ok(colored.length > 0, "the catalog has products with colors");
+  for (const product of colored) {
+    const html = read("produto", product.id, "index.html");
+    const swatches = [...html.matchAll(/<input[^>]*name="color"[^>]*value="([^"]+)"/g)].map((m) => m[1]);
+    assert.deepEqual(swatches, product.colors.map((c) => c.id), `${product.id}: color picker`);
+    const galleries = [...html.matchAll(/<div[^>]*data-gallery(?:-color="([^"]+)")?[^>]*>/g)].filter((m) => !/data-gallery-track/.test(m[0]));
+    assert.deepEqual(galleries.map((m) => m[1]), product.colors.map((c) => c.id), `${product.id}: a gallery per color`);
+    assert.ok(galleries.slice(1).every((m) => /\shidden\b/.test(m[0])) && !/\shidden\b/.test(galleries[0][0]), `${product.id}: only the first color is visible`);
+    for (const color of product.colors) {
+      const gallery = html.split(`data-gallery-color="${color.id}"`)[1].split("data-gallery-color=")[0];
+      const slides = [...gallery.matchAll(/data-gallery-slide/g)].length;
+      assert.equal(slides, color.images.length + (product.images?.length ?? 0), `${product.id}/${color.id}: its photos + the shared ones`);
+    }
+  }
+});
+
+test("a product with a size chart renders it as a table, one row per size", () => {
+  for (const product of products.filter((p) => p.measurements)) {
+    const html = read("produto", product.id, "index.html");
+    const section = html.split('id="medidas"')[1]?.split("</section>")[0];
+    assert.ok(section, `${product.id}: Medidas da peça section`);
+    const rows = [...section.matchAll(/<th scope="row"[^>]*>([^<]+)<\/th>/g)].map((m) => m[1]);
+    assert.deepEqual(rows, product.measurements.rows.map((r) => String(r.size)), `${product.id}: size rows`);
+    const headers = [...section.matchAll(/<th scope="col"[^>]*>([^<]+)<\/th>/g)].map((m) => m[1]).slice(1);
+    assert.deepEqual(headers, product.measurements.columns, `${product.id}: columns`);
+    assert.match(html, /href="#medidas"/, `${product.id}: link from the size picker`);
   }
 });
 
