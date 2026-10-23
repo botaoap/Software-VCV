@@ -98,7 +98,11 @@ const canCheckout = checkout.capabilities.checkout;
       status.textContent = "Abrindo o pagamento…";
       try {
         const start = await checkout.startCheckout(readCart());
-        if (start.kind === "redirect") return location.assign(start.url);
+        // Only ever leave for a secure checkout page; anything else is shown as a failure.
+        if (start.kind === "redirect") {
+          if (new URL(start.url).protocol !== "https:") throw new Error("checkout URL is not https");
+          return location.assign(start.url);
+        }
         status.textContent = start.reason;
       } catch {
         status.textContent = "Não foi possível abrir o pagamento agora. Tente de novo em instantes.";
