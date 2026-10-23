@@ -10,7 +10,7 @@ import { fromNuvemshop } from "../src/lib/commerce/adapters/nuvemshop/map.ts";
 import { checkout as staticCheckout } from "../src/lib/commerce/adapters/static/checkout.ts";
 import { fromContent } from "../src/lib/commerce/adapters/static/map.ts";
 import { badges, variantKey } from "../src/lib/commerce/port.ts";
-import { openingColorId, shownPrice, sizeHint, sizesForSale, sortSizes, uniqueById } from "../src/lib/catalog.ts";
+import { coverOf, openingColorId, shownPrice, sizeHint, sizesForSale, sortSizes, uniqueById } from "../src/lib/catalog.ts";
 
 const json = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
 const categoryIds = json("../content/categories.json").map((c) => c.id);
@@ -308,4 +308,33 @@ test("adding a variant already in the bag refreshes its price and ref, and bumps
   assert.deepEqual(line, { ...fresh, quantity: 3 });
   assert.equal(mergeLine([], fresh, 1).length, 1);
   assert.equal(mergeLine([{ ...stale, quantity: 99 }], fresh, 5)[0].quantity, 99, "capped");
+});
+
+// QA-16: the card, link preview and JSON-LD image show the color the product page opens on, not a
+// sold-out first color.
+test("cover photo follows the opening color", () => {
+  const photo = (url) => ({ url, alt: url, width: 3, height: 4 });
+  const product = {
+    images: [photo("shared")],
+    colors: [{ id: "coral", images: [photo("coral")] }, { id: "azul", images: [photo("azul")] }],
+    variants: [
+      { colorId: "coral", size: "M", priceCents: 5000, available: false },
+      { colorId: "azul", size: "M", priceCents: 10000, available: true },
+    ],
+  };
+  assert.equal(coverOf(product).url, "azul");
+  assert.equal(coverOf({ ...product, variants: product.variants.map((v) => ({ ...v, available: true })) }).url, "coral");
+  assert.equal(coverOf({ images: [photo("shared")], colors: [], variants: [] }).url, "shared");
+});
+
+// QA-17: only the letter grade is normalised to upper case; other labels keep the store's spelling.
+test("size labels: letter grades upper-cased, other labels kept as typed", () => {
+  const product = {
+    id: 1, name: { pt: "Vestido Infantil" }, description: { pt: "" }, handle: { pt: "vestido-infantil" }, published: true,
+    attributes: [{ pt: "Tamanho" }],
+    variants: ["3-4 anos", "gg", "p"].map((size, i) => ({ id: 10 + i, image_id: null, price: "50.00", promotional_price: null, stock: 1, sku: null, values: [{ pt: size }] })),
+    images: [{ id: 1, src: "https://dcdn.mitiendanube.com/a.jpg", position: 1 }],
+    categories: [{ id: 1, handle: { pt: "vestidos" }, name: { pt: "Vestidos" } }], tags: "",
+  };
+  assert.deepEqual(fromNuvemshop(product, { categoryIds }).sizes, ["P", "GG", "3-4 anos"]);
 });

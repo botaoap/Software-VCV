@@ -1,4 +1,4 @@
-import { shownPrice, sortSizes } from "../../../catalog.ts";
+import { letterSizes, shownPrice, sortSizes } from "../../../catalog.ts";
 import type { Audience, Badge, Color, Photo, Product, Variant } from "../../port.ts";
 import { badges as knownBadges, variantKey } from "../../port.ts";
 import type { Localized, NsImage, NsProduct, NsVariant } from "./api.ts";
@@ -108,7 +108,9 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
       }
     }
     const sizeLabel = (sizeAxis >= 0 && pt(values[sizeAxis])) || "U";
-    const size = ONE_SIZE.includes(slug(sizeLabel)) ? "U" : sizeLabel.toUpperCase(); // "p" = "P"
+    // The letter grade is case-insensitive ("p" = "P"); any other label keeps the store's spelling.
+    const letter = sizeLabel.toUpperCase();
+    const size = ONE_SIZE.includes(slug(sizeLabel)) ? "U" : (letterSizes as readonly string[]).includes(letter) ? letter : sizeLabel;
     const key = variantKey({ productId: id, colorId: color?.id, size });
     if (variants.some((v) => v.key === key)) {
       console.warn(`Nuvemshop product "${id}": variant ${variant.id} repeats ${key}; the first one is kept`);
