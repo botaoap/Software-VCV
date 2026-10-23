@@ -25,7 +25,7 @@ Node 22 or newer.
 | Variable | Default | Effect |
 |---|---|---|
 | `SITE_URL` | `https://vestecomvoce.com.br` | Absolute canonical / Open Graph / sitemap URLs |
-| `BASE_PATH` | `/` | Deploy sub-path, e.g. `/Software-VCV` for GitHub Pages project sites |
+| `BASE_PATH` | `/` | Deploy sub-path, e.g. `/Software-VCV` for GitHub Pages project sites (crawlers read `robots.txt` only at a domain root, so under a sub-path it is ignored: submit the sitemap in Search Console instead) |
 | `PUBLIC_GA_ID` | _(off)_ | Google Analytics id → shows the LGPD consent banner; GA loads only after "Aceitar" |
 | `PUBLIC_NEWSLETTER_ACTION` | _(off)_ | Newsletter provider form URL → shows the signup card in the footer |
 | `PUBLIC_COMMERCE` | `static` | Commerce adapter: `static` (content/products.json, payment "em breve") or `nuvemshop` |
