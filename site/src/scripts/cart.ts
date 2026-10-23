@@ -1,4 +1,4 @@
-import { variantKey, type CartLine } from "../lib/commerce/port";
+import { variantKey, type CartLine } from "../lib/commerce/port.ts";
 
 /**
  * The bag. Persisted in localStorage (the app's VCV-29 behaviour) so it survives reloads and is
@@ -52,13 +52,18 @@ function write(lines: CartLine[]) {
   window.dispatchEvent(new CustomEvent(EVENT));
 }
 
-/** Adding the same product + color + size again bumps the quantity. */
-export function addToCart(line: Omit<CartLine, "quantity">, quantity = 1) {
-  const lines = readCart();
+/**
+ * Adding the same product + color + size again bumps the quantity and takes the new add's details
+ * (price, platform ref, name, photo), so a line saved by an older build is refreshed by re-adding it.
+ */
+export function mergeLine(lines: CartLine[], line: Omit<CartLine, "quantity">, quantity: number): CartLine[] {
   const existing = lines.find((l) => lineKey(l) === lineKey(line));
-  if (existing) existing.quantity = Math.min(MAX_QTY, existing.quantity + quantity);
-  else lines.push({ ...line, quantity });
-  write(lines);
+  if (!existing) return [...lines, { ...line, quantity }];
+  return lines.map((l) => (l === existing ? { ...line, quantity: Math.min(MAX_QTY, l.quantity + quantity) } : l));
+}
+
+export function addToCart(line: Omit<CartLine, "quantity">, quantity = 1) {
+  write(mergeLine(readCart(), line, quantity));
 }
 
 export function setQuantity(key: string, quantity: number) {

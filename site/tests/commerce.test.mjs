@@ -296,3 +296,16 @@ test("buy box: the price is the lowest one for sale, 'A partir de' only when pri
   const product = map({ variants: [nsVariant(1, ["Coral", "M"], { price: "50.00", stock: 0 }), nsVariant(2, ["Coral", "G"])] });
   assert.equal(product.priceCents, 10000);
 });
+
+// QA-12: a bag line saved by an older build (old price, no platform ref) is refreshed when the same
+// variant is added again, so re-adding is a real fix and not just a quantity bump.
+test("adding a variant already in the bag refreshes its price and ref, and bumps the quantity", async () => {
+  const { mergeLine } = await import("../src/scripts/cart.ts");
+  const stale = { productId: "p", name: "P", image: null, unitPriceCents: 5000, size: "M", quantity: 2 };
+  const fresh = { productId: "p", name: "P novo", image: "/x.webp", unitPriceCents: 12000, size: "M", ref: "13" };
+  const [line, ...rest] = mergeLine([stale], fresh, 1);
+  assert.equal(rest.length, 0);
+  assert.deepEqual(line, { ...fresh, quantity: 3 });
+  assert.equal(mergeLine([], fresh, 1).length, 1);
+  assert.equal(mergeLine([{ ...stale, quantity: 99 }], fresh, 5)[0].quantity, 99, "capped");
+});
