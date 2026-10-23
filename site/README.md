@@ -130,7 +130,7 @@ for a size that is not sold.
   "shortDescription": "…",
   "fabric": { "material": "…", "origin": "…", "care": [] },   // leave unknown facts out
   "available": true,                           // false → JSON-LD OutOfStock
-  "badges": ["FEATURED", "NEW_IN"]             // RECOMMENDED | BEST_SELLER | FEATURED (home rails), NEW_IN | LAST_UNITS (labels)
+  "badges": ["FEATURED", "NEW_IN"]             // RECOMMENDED | BEST_SELLER | FEATURED (home rails); label = first of LAST_UNITS, NEW_IN, BEST_SELLER
 }
 ```
 

@@ -40,7 +40,8 @@ export type Audience = (typeof audiences)[number];
 
 /**
  * Curated marks. RECOMMENDED / BEST_SELLER / FEATURED drive the home rails ("Recomendado para você",
- * "Maiores vendas", "Produtos principais"); NEW_IN and LAST_UNITS are card labels only.
+ * "Maiores vendas", "Produtos principais"). The card / PDP label is the first of LAST_UNITS, NEW_IN,
+ * BEST_SELLER the product has (lib/format.ts `labelOf`).
  */
 export const badges = ["RECOMMENDED", "BEST_SELLER", "FEATURED", "NEW_IN", "LAST_UNITS"] as const;
 export type Badge = (typeof badges)[number];

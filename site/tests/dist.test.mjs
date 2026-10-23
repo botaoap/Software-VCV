@@ -205,6 +205,22 @@ test("home rails: Recomendado para você, Maiores vendas, Produtos principais, e
   assert.match(html, /href="[^"]*\/produtos\/"/);
 });
 
+// The card / PDP label is the most useful mark the product has; rail marks (Recomendado, Destaque)
+// only place it on the home.
+const labelOf = (product) => ({ LAST_UNITS: "Últimas peças", NEW_IN: "Novo", BEST_SELLER: "Mais vendido" })[["LAST_UNITS", "NEW_IN", "BEST_SELLER"].find((b) => product.badges.includes(b))];
+const badgeTexts = (html) => [...html.matchAll(/<span class="badge[^"]*"[^>]*>([^<]+)<\/span>/g)].map((m) => m[1]).filter((t) => t !== "Esgotado");
+test("card and PDP label: Últimas peças, else Novo, else Mais vendido; never a rail mark", () => {
+  const catalog = read("produtos", "index.html");
+  for (const product of products) {
+    const card = catalog.split(`data-name="${product.name.toLowerCase()}"`)[1].split("</li>")[0];
+    const pdp = read("produto", product.id, "index.html");
+    const head = pdp.slice(pdp.indexOf('aria-labelledby="product-title"'), pdp.indexOf('id="product-title"'));
+    const expected = labelOf(product) ? [labelOf(product)] : [];
+    assert.deepEqual(badgeTexts(card), expected, `${product.id}: card label`);
+    assert.deepEqual(badgeTexts(head), expected, `${product.id}: PDP label`);
+  }
+});
+
 test("cart, checkout and search are per-visitor steps: noindex and out of the sitemap", () => {
   for (const flow of ["carrinho", "checkout", "busca"]) assert.match(read(flow, "index.html"), /content="noindex"/);
   const sitemap = readdirSync(dist)
