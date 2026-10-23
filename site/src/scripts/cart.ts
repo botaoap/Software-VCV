@@ -6,8 +6,6 @@ import { variantKey, type CartLine } from "../lib/commerce/port";
  * Prices are integer cents. Lines use the commerce port's neutral `CartLine`; paying is the
  * port's job (src/lib/commerce/checkout.ts), whichever platform is behind it.
  */
-export type { CartLine };
-
 const KEY = "vcv.cart.v1";
 const EVENT = "vcv:cart";
 const MAX_QTY = 99;
@@ -15,7 +13,7 @@ const MAX_QTY = 99;
 let memory: CartLine[] = []; // fallback when storage is blocked (private mode)
 
 /** Line identity = product + color + size (the port's variant key). */
-export const lineKey = (line: Pick<CartLine, "productId" | "size" | "colorId">) => variantKey(line);
+export const lineKey = variantKey;
 
 /** "Cor Coral · Tamanho M" — the variant as shown in the bag and the checkout summary. */
 export const variantLabel = (line: Pick<CartLine, "size" | "colorName">) =>

@@ -9,7 +9,7 @@
  *
  * Split by where it runs:
  *   - CatalogPort runs at build time (static pages for SEO / GEO). It may read secrets from
- *     `process.env` (never `PUBLIC_*`), which never reach the browser.
+ *     `import.meta.env` variables without the `PUBLIC_` prefix, which Astro never ships to the browser.
  *   - CheckoutPort runs in the browser. It holds no secret: calls that need a token go through a
  *     small proxy (serverless function or the Ktor `server/`), configured by a `PUBLIC_*` URL.
  *
