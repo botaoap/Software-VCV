@@ -1,0 +1,49 @@
+[
+  {
+    "id": 101,
+    "name": { "pt": "Calça Pantalona Viscolycra" },
+    "description": { "pt": "<p>Pantalona de cintura alta, <strong>caimento fluido</strong>.</p>" },
+    "handle": { "pt": "calca-pantalona-viscolycra" },
+    "published": true,
+    "attributes": [{ "pt": "Cor" }, { "pt": "Tamanho" }],
+    "variants": [
+      { "id": 9001, "image_id": 501, "price": "149.90", "promotional_price": null, "stock": 3, "sku": "PAN-PRE-P", "values": [{ "pt": "Preto" }, { "pt": "P" }] },
+      { "id": 9002, "image_id": 501, "price": "149.90", "promotional_price": null, "stock": 0, "sku": "PAN-PRE-M", "values": [{ "pt": "Preto" }, { "pt": "M" }] },
+      { "id": 9003, "image_id": 502, "price": "149.90", "promotional_price": "129.90", "stock": null, "sku": "PAN-OFF-M", "values": [{ "pt": "Off-white" }, { "pt": "M" }] }
+    ],
+    "images": [
+      { "id": 502, "src": "//dcdn.mitiendanube.com/stores/1/products/off.jpg", "position": 2, "alt": ["Pantalona off-white, frente"] },
+      { "id": 501, "src": "https://dcdn.mitiendanube.com/stores/1/products/preto.jpg", "position": 1, "alt": [] },
+      { "id": 503, "src": "https://dcdn.mitiendanube.com/stores/1/products/detalhe.jpg", "position": 3, "width": 1200, "height": 1500 }
+    ],
+    "categories": [{ "id": 7, "handle": { "pt": "pantalonas" }, "name": { "pt": "Pantalonas" } }],
+    "tags": "Recomendado, Novo"
+  },
+  {
+    "id": 102,
+    "name": { "pt": "Regata Básica" },
+    "description": { "pt": "" },
+    "handle": { "pt": "regata-basica" },
+    "published": true,
+    "attributes": [{ "pt": "Tamanho" }],
+    "variants": [
+      { "id": 9101, "image_id": null, "price": "59.90", "promotional_price": null, "stock": 5, "sku": null, "values": [{ "pt": "G" }] },
+      { "id": 9102, "image_id": null, "price": "59.90", "promotional_price": null, "stock": 5, "sku": null, "values": [{ "pt": "P" }] }
+    ],
+    "images": [{ "id": 601, "src": "https://dcdn.mitiendanube.com/stores/1/products/regata.jpg", "position": 1 }],
+    "categories": [{ "id": 8, "handle": { "pt": "regatas" }, "name": { "pt": "Regatas" } }],
+    "tags": "mais vendido,unissex"
+  },
+  {
+    "id": 103,
+    "name": { "pt": "Cinto (fora do catálogo do site)" },
+    "description": { "pt": "" },
+    "handle": { "pt": "cinto" },
+    "published": true,
+    "attributes": [],
+    "variants": [{ "id": 9201, "image_id": null, "price": "39.90", "promotional_price": null, "stock": 1, "sku": null, "values": [] }],
+    "images": [],
+    "categories": [{ "id": 9, "handle": { "pt": "acessorios" }, "name": { "pt": "Acessórios" } }],
+    "tags": ""
+  }
+]

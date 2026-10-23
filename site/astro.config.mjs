@@ -23,7 +23,8 @@ export default defineConfig({
   build: { format: "directory" },
   // Placeholder photography is optimised at build time and self-hosted (no third-party request at
   // runtime). Replace the URLs in content/ with real campaign photos when they exist.
-  image: { domains: ["images.unsplash.com"] },
+  // Nuvemshop product photos (PUBLIC_COMMERCE=nuvemshop) come from its CDN and are self-hosted the same way.
+  image: { domains: ["images.unsplash.com"], remotePatterns: [{ protocol: "https", hostname: "**.mitiendanube.com" }] },
   // Sections that no longer exist (VCV-39: no collections or "Novidades" at launch; "Atelier" became
   // "Sobre") keep their old links working. Static builds emit a redirect page for each.
   redirects: Object.fromEntries([

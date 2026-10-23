@@ -28,13 +28,39 @@ Node 22 or newer.
 | `BASE_PATH` | `/` | Deploy sub-path, e.g. `/Software-VCV` for GitHub Pages project sites |
 | `PUBLIC_GA_ID` | _(off)_ | Google Analytics id → shows the LGPD consent banner; GA loads only after "Aceitar" |
 | `PUBLIC_NEWSLETTER_ACTION` | _(off)_ | Newsletter provider form URL → shows the signup card in the footer |
+| `PUBLIC_COMMERCE` | `static` | Commerce adapter: `static` (content/products.json, payment "em breve") or `nuvemshop` |
+| `NUVEMSHOP_STORE_ID`, `NUVEMSHOP_TOKEN` | _(none)_ | Build-time only (never `PUBLIC_`): the Nuvemshop store whose catalog the pages are built from |
+| `PUBLIC_COMMERCE_PROXY_URL` | _(off)_ | VCV's commerce proxy (checkout, stock, freight); with it, "Finalizar compra" hands the bag to the platform's checkout |
 
 With nothing configured there is no banner (nothing to consent to), and the footer "Novas peças"
 card links to Instagram / WhatsApp once those exist (hidden otherwise) instead of a form that posts nowhere.
 
-**Payment is paused** until the client picks the commerce platform (Shopify, Nuvemshop, …): the bag works
-and is saved in the browser, "Finalizar compra" is disabled with "Pagamento online em breve", and no
-WhatsApp order is triggered.
+**Commerce is platform-agnostic** (VCV-41). VCV goes with **Nuvemshop + Mercado Pago** (decision
+2026-10-23), but the site talks to commerce only through one port, `src/lib/commerce/port.ts`
+(neutral `Product`, `Variant` = product + color + size, `CartLine`, cents), so another platform is a
+new adapter, not a rewrite:
+
+```
+src/lib/commerce/port.ts          CatalogPort (build time) + CheckoutPort (browser) + neutral types
+src/lib/commerce/index.ts         getCatalog(): the adapter chosen by PUBLIC_COMMERCE (pages use it via lib/content.ts)
+src/lib/commerce/checkout.ts      the browser-safe checkout adapter (cart / checkout pages)
+src/lib/commerce/adapters/static/     content/products.json; checkout "em breve" (default; CI's offline double)
+src/lib/commerce/adapters/nuvemshop/  API → Product mapping, catalog fetch, checkout via VCV's proxy (skeleton)
+```
+
+Pages, components and the bag import only the port; platform names, SDKs and id formats stay in
+`adapters/<name>/` (a test fails otherwise). Platform ids travel as the opaque `Variant.ref`. The
+catalog is read at build time (static pages for SEO); the store token is a build-time secret and
+never reaches the browser, so runtime calls that need it (checkout, live stock, freight) go through a
+small proxy (`PUBLIC_COMMERCE_PROXY_URL`; its contract is in `adapters/nuvemshop/checkout.ts`).
+`tests/commerce.test.mjs` runs every adapter's mapping through the same Product contract.
+
+The Nuvemshop adapter is a **skeleton** until the VCV store exists. To verify with the real account:
+the cart → checkout hand-off, the stock/price webhook (rebuild trigger), the store conventions in
+`adapters/nuvemshop/map.ts` (category handle = our category id, attributes "Cor" / "Tamanho", tags
+for the rails), and the UpSeller NF-e setting for Nuvemshop orders. Until then the default `static`
+adapter keeps the bag working, saved in the browser, with "Finalizar compra" disabled and
+"Pagamento online em breve"; no WhatsApp order is triggered.
 
 **Contact channels are optional** (`content/brand.json` → `contact.whatsapp` / `instagram` / `email`).
 VCV has none yet (Felipe, 2026-10), so no WhatsApp button, Instagram link, `mailto:` or JSON-LD
@@ -51,9 +77,10 @@ src/lib/catalog.ts       size order, cover / per-color gallery rules (shared by 
 src/styles/global.css    design tokens (@theme, 1C "Corpo"), .btn/.card/.link-arrow, motion tokens
 src/layouts/BaseLayout   head (title/canonical/OG/JSON-LD), chrome, reveal script
 src/components/          Header, Footer, PromoBar, HeroCarousel, ProductCard, CatalogGrid, …
+src/lib/commerce/        the commerce port + adapters (see above)
 src/scripts/cart.ts      the bag (localStorage `vcv.cart.v1`, shared across tabs)
 src/pages/               one file per route: /produtos, /produtos/{categoria}, /produto/{id}, /sobre, /busca, robots.txt, …
-tests/                   tokens.test.mjs (WCAG AA) · dist.test.mjs (built HTML)
+tests/                   tokens.test.mjs (WCAG AA) · dist.test.mjs (built HTML) · commerce.test.mjs (adapter contract)
 ```
 
 Menu (Felipe, 2026-10): **Produtos** (dropdown by garment type, from `content/categories.json`),
@@ -140,7 +167,7 @@ from `measurements`.
 | Promo bar and trust strip copy (only "Envio para todo o Brasil" and Gaspar, SC are confirmed) | `src/lib/site.ts` | add frete / parcelamento / PIX / troca / atendimento only when they are real |
 | Legal pages (`/privacidade`, `/cookies`, `/termos`) | `src/pages/*/index.astro` | text written or approved by the client; they are `noindex` until then |
 | Domain | `SITE_URL` / `BASE_PATH` | custom domain at the root is best |
-| Payment | bag page CTA + `src/pages/checkout` | commerce platform decision (Shopify, Nuvemshop, own backend…); then wire checkout and re-enable the CTA |
+| Payment | `src/lib/commerce/adapters/nuvemshop` + the commerce proxy | Felipe's Nuvemshop store (Mercado Pago + UpSeller connected) and an API token; then `PUBLIC_COMMERCE=nuvemshop` |
 
 ## Deploy
 

@@ -1,13 +1,10 @@
-import { getCollection, getEntries, getEntry } from "astro:content";
+import { getCollection, getEntry } from "astro:content";
 import categoriesFile from "../../content/categories.json";
-import productsFile from "../../content/products.json";
+import { getCatalog } from "./commerce";
+import type { Product } from "./commerce/port";
 
-// Astro's file loader returns entries sorted by id; the editorial order (the catalog's default
-// "Relevância" sort) is the order of the entries in the content file, so restore it explicitly.
-const byFileOrder = (file: { id: string }[]) => {
-  const order = new Map(file.map((entry, index) => [entry.id, index]));
-  return <T extends { id: string }>(a: T, b: T) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0);
-};
+// Site content (brand, garment types) comes from content/; the products come from the commerce
+// port (src/lib/commerce), whichever platform is behind it.
 
 export async function getBrand() {
   const entry = await getEntry("brand", "brand");
@@ -15,29 +12,30 @@ export async function getBrand() {
   return entry.data;
 }
 
-/** Products in content order. */
-export async function getProducts() {
-  return (await getCollection("products")).sort(byFileOrder(productsFile));
+/** Products in editorial order (the catalog's default "Relevância"). */
+export async function getProducts(): Promise<Product[]> {
+  return getCatalog();
 }
 
 export async function getProduct(id: string) {
-  return getEntry("products", id);
+  return (await getProducts()).find((product) => product.id === id);
 }
 
 /** Every garment type, in content order, including the ones with no product yet. */
 export async function getCategories() {
-  return (await getCollection("categories")).sort(byFileOrder(categoriesFile));
+  const order = new Map(categoriesFile.map((entry, index) => [entry.id, index]));
+  return (await getCollection("categories")).sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
 }
 
 /** The garment types that have at least one product: the menu, the pages and the sitemap. */
 export async function getStockedCategories() {
   const [categories, products] = await Promise.all([getCategories(), getProducts()]);
-  return categories.filter((category) => products.some((product) => product.data.category.id === category.id));
+  return categories.filter((category) => products.some((product) => product.categoryId === category.id));
 }
 
 export async function getProductsOfCategory(categoryId: string) {
   const products = await getProducts();
-  return products.filter((product) => product.data.category.id === categoryId);
+  return products.filter((product) => product.categoryId === categoryId);
 }
 
 /**
@@ -54,11 +52,12 @@ export const rails = [
 export async function getRails() {
   const products = await getProducts();
   return rails
-    .map((rail) => ({ ...rail, products: products.filter((product) => product.data.badges.includes(rail.badge)) }))
+    .map((rail) => ({ ...rail, products: products.filter((product) => product.badges.includes(rail.badge)) }))
     .filter((rail) => rail.products.length > 0);
 }
 
-export async function getCategoryOf(product: Awaited<ReturnType<typeof getProducts>>[number]) {
-  const [category] = await getEntries([product.data.category]);
+export async function getCategoryOf(product: Product) {
+  const category = await getEntry("categories", product.categoryId);
+  if (!category) throw new Error(`${product.id}: unknown category "${product.categoryId}" (content/categories.json)`);
   return category;
 }

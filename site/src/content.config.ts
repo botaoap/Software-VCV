@@ -2,6 +2,7 @@ import { defineCollection, reference } from "astro:content";
 import { file } from "astro/loaders";
 import { z } from "astro/zod";
 import { letterSizes } from "./lib/catalog";
+import { audiences, badges } from "./lib/commerce/port";
 
 // The catalog mirrors the app's domain model (Product, FabricSpec, ImageRef) so the two stay
 // interchangeable. `reference()` makes a typo'd category slug fail the build.
@@ -16,13 +17,6 @@ const photo = z.object({
   width: z.number().int().positive(),
   height: z.number().int().positive(),
 });
-
-/**
- * Curated marks. The three home rails (Felipe, 2026-10) are driven by RECOMMENDED ("Recomendado para
- * você"), BEST_SELLER ("Maiores vendas") and FEATURED ("Produtos principais"); NEW_IN and LAST_UNITS
- * are card labels only. VCV has no collections at launch.
- */
-export const badges = ["RECOMMENDED", "BEST_SELLER", "FEATURED", "NEW_IN", "LAST_UNITS"] as const;
 
 /**
  * Garment types of the "Produtos" menu (Vestidos, Calças, Pantalonas, …). A type with no product yet
@@ -52,8 +46,11 @@ const sizeChart = z.object({
   note: z.string().optional(),
 });
 
-export const audiences = ["feminino", "masculino", "unissex"] as const;
-
+/**
+ * The `static` commerce adapter's catalog (src/lib/commerce/adapters/static). With another adapter
+ * (PUBLIC_COMMERCE=nuvemshop) the products come from the platform and this file is not read by pages.
+ * Badges: RECOMMENDED / BEST_SELLER / FEATURED drive the home rails; VCV has no collections at launch.
+ */
 const products = defineCollection({
   loader: file("content/products.json"),
   schema: z.object({

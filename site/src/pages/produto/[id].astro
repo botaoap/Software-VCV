@@ -19,44 +19,43 @@ export async function getStaticPaths() {
 }
 
 const { product } = Astro.props;
-const { data } = product;
 const category = await getCategoryOf(product);
 const all = await getProducts();
 const related = [
-  ...all.filter((p) => p.id !== product.id && p.data.category.id === data.category.id),
-  ...all.filter((p) => p.id !== product.id && p.data.category.id !== data.category.id),
+  ...all.filter((p) => p.id !== product.id && p.categoryId === product.categoryId),
+  ...all.filter((p) => p.id !== product.id && p.categoryId !== product.categoryId),
 ].slice(0, 4);
 
 // Marketplace pattern: one gallery per color (its photos, then the shared ones); the first color is
 // the default and ?cor=<id> deep-links another. A product without colors has a single gallery.
-const colors = data.colors;
+const colors = product.colors;
 const galleries = colors.length > 0
-  ? colors.map((color) => ({ colorId: color.id, images: galleryOf(data, color.id) }))
-  : [{ colorId: undefined, images: data.images }];
+  ? colors.map((color) => ({ colorId: color.id, images: galleryOf(product, color.id) }))
+  : [{ colorId: undefined, images: product.images }];
 
 // Optimised, self-hosted thumbnail stored with each bag line (per color), and the link-preview image.
 const bagThumb = (src: string) => getImage({ src: photoSrc(src), width: 160, height: 213, format: "webp", inferSize: false });
-const thumb = await bagThumb(coverOf(data).url);
+const thumb = await bagThumb(coverOf(product).url);
 const colorThumbs = await Promise.all(colors.map((color) => bagThumb(color.images[0].url)));
-const og = await getImage({ src: photoSrc(coverOf(data).url), width: 1200, height: 630, fit: "contain", background: "#F6F0EA", format: "jpg", inferSize: false });
+const og = await getImage({ src: photoSrc(coverOf(product).url), width: 1200, height: 630, fit: "contain", background: "#F6F0EA", format: "jpg", inferSize: false });
 
 const spec = [
-  ["Material", data.fabric.material],
-  ["Origem", data.fabric.origin],
-  ["Cuidados", data.fabric.care.join(" · ")],
-  ["Notas", data.fabric.notes],
+  ["Material", product.fabric.material],
+  ["Origem", product.fabric.origin],
+  ["Cuidados", product.fabric.care.join(" · ")],
+  ["Notas", product.fabric.notes],
 ].filter((row): row is [string, string] => Boolean(row[1]));
-const chart = data.measurements;
+const chart = product.measurements;
 const cm = (value: number) => value.toLocaleString("pt-BR");
 
 const pageUrl = new URL(Astro.url.pathname, Astro.site!).href;
 const productLd = {
   "@context": "https://schema.org",
   "@type": "Product",
-  name: data.name,
-  description: data.shortDescription,
+  name: product.name,
+  description: product.shortDescription,
   image: [new URL(og.src, Astro.site!).href],
-  ...(data.fabric.material && { material: data.fabric.material }),
+  ...(product.fabric.material && { material: product.fabric.material }),
   ...(colors.length > 0 && { color: colors.map((color) => color.name).join(", ") }),
   brand: { "@type": "Brand", name: brand.short },
   category: category.data.title,
@@ -64,8 +63,8 @@ const productLd = {
     "@type": "Offer",
     url: pageUrl,
     priceCurrency: "BRL",
-    price: (data.priceCents / 100).toFixed(2),
-    availability: `https://schema.org/${data.available ? "InStock" : "OutOfStock"}`,
+    price: (product.priceCents / 100).toFixed(2),
+    availability: `https://schema.org/${product.available ? "InStock" : "OutOfStock"}`,
   },
 };
 const crumbsLd = {
@@ -75,15 +74,15 @@ const crumbsLd = {
     { name: "Início", item: new URL(url("/"), Astro.site!).href },
     { name: "Produtos", item: new URL(url("/produtos/"), Astro.site!).href },
     { name: category.data.title, item: new URL(url(`/produtos/${category.id}/`), Astro.site!).href },
-    { name: data.name, item: pageUrl },
+    { name: product.name, item: pageUrl },
   ].map((entry, index) => ({ "@type": "ListItem", position: index + 1, ...entry })),
 };
 
 ---
 
 <BaseLayout
-  title={data.name}
-  description={[data.shortDescription, data.fabric.material && data.fabric.origin && `${data.fabric.material}, feito em ${data.fabric.origin}.`].filter(Boolean).join(" ")}
+  title={product.name}
+  description={[product.shortDescription, product.fabric.material && product.fabric.origin && `${product.fabric.material}, feito em ${product.fabric.origin}.`].filter(Boolean).join(" ")}
   ogType="product"
   ogImage={og.src}
   structuredData={[productLd, crumbsLd]}
@@ -94,7 +93,7 @@ const crumbsLd = {
         { label: "Início", href: url("/") },
         { label: "Produtos", href: url("/produtos/") },
         { label: category.data.title, href: url(`/produtos/${category.id}/`) },
-        { label: data.name },
+        { label: product.name },
       ]}
     />
   </div>
@@ -145,19 +144,20 @@ const crumbsLd = {
     </div>
 
     <div class="min-w-0">
-      {data.badges[0] && <p class="mb-3"><span class:list={["badge", data.badges[0] === "LAST_UNITS" && "badge-alert"]}>{badgeLabels[data.badges[0]]}</span></p>}
+      {product.badges[0] && <p class="mb-3"><span class:list={["badge", product.badges[0] === "LAST_UNITS" && "badge-alert"]}>{badgeLabels[product.badges[0]]}</span></p>}
       <p class="eyebrow">{category.data.title}</p>
-      <h1 id="product-title" class="mt-3 text-4xl md:text-5xl">{data.name}</h1>
-      <p class="mt-4 font-sans text-2xl font-medium text-wine">{formatBrl(data.priceCents)}</p>
-      <p class="mt-5 text-lg leading-relaxed text-text-muted">{data.shortDescription}</p>
+      <h1 id="product-title" class="mt-3 text-4xl md:text-5xl">{product.name}</h1>
+      <p class="mt-4 font-sans text-2xl font-medium text-wine">{formatBrl(product.priceCents)}</p>
+      <p class="mt-5 text-lg leading-relaxed text-text-muted">{product.shortDescription}</p>
 
       <form
         class="js-only mt-8"
         data-add-form
         data-product-id={product.id}
-        data-name={data.name}
-        data-price={data.priceCents}
+        data-name={product.name}
+        data-price={product.priceCents}
         data-image={thumb.src}
+        data-refs={JSON.stringify(Object.fromEntries(product.variants.flatMap((v) => (v.ref ? [[v.key, v.ref]] : []))))}
         novalidate
       >
         {
@@ -192,7 +192,7 @@ const crumbsLd = {
           <legend class="text-xs font-medium tracking-[0.18em] text-text-muted uppercase">Tamanhos</legend>
           <div class="mt-3 flex flex-wrap gap-2" role="radiogroup">
             {
-              data.sizes.map((size) => (
+              product.sizes.map((size) => (
                 <label class="relative">
                   <input type="radio" name="size" value={size} class="absolute inset-0 size-full cursor-pointer opacity-0" />
                   <span class="size-pill">{size}</span>
@@ -291,7 +291,7 @@ const crumbsLd = {
 </style>
 
 <script>
-  import { addToCart } from "../../scripts/cart";
+  import { addToCart, lineKey } from "../../scripts/cart";
 
   // Gallery thumbnails scroll the strip (no page jump); the active thumb follows the strip.
   for (const gallery of document.querySelectorAll<HTMLElement>("[data-gallery]")) {
@@ -367,6 +367,9 @@ const crumbsLd = {
         return;
       }
       const color = selectedColor();
+      // The platform's id for this color + size (opaque; only the commerce adapter reads it).
+      const refs: Record<string, string> = JSON.parse(form.dataset.refs ?? "{}");
+      const ref = refs[lineKey({ productId: form.dataset.productId!, colorId: color?.value, size: size.value })];
       addToCart({
         productId: form.dataset.productId!,
         name: form.dataset.name!,
@@ -375,6 +378,7 @@ const crumbsLd = {
         size: size.value,
         colorId: color?.value,
         colorName: color?.dataset.colorName,
+        ...(ref && { ref }),
       });
       label.textContent = "Adicionado à sacola ✓";
       const variant = [color && `cor ${color.dataset.colorName}`, `tamanho ${size.value}`].filter(Boolean).join(", ");

@@ -16,7 +16,7 @@ const products = await getProducts();
 const items = await Promise.all(
   products.map(async (product) => {
     const category = await getCategoryOf(product);
-    const { audience, colors, fabric, name, shortDescription } = product.data;
+    const { audience, colors, fabric, name, shortDescription } = product;
     const terms = [name, category.data.title, audienceLabels[audience], fabric.material, ...colors.map((c) => c.name), shortDescription];
     return { product, search: normalize(terms.filter(Boolean).join(" ")) };
   }),

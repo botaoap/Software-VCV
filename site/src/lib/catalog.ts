@@ -1,3 +1,5 @@
+import type { Color, Photo } from "./commerce/port.ts";
+
 // Pure catalog rules shared by every page: size order, a product's cover, its colors and per-color
 // gallery. Keep them here so the PDP, the cards, the catalog filters and the tests agree.
 
@@ -12,8 +14,6 @@ const rank = (size: string) => {
 /** Distinct sizes in wear order: PP, P, M, G, GG, …, then 38, 40, … */
 export const sortSizes = (sizes: Iterable<string>) => [...new Set(sizes)].sort((a, b) => rank(a) - rank(b));
 
-export type Photo = { url: string; alt: string; width: number; height: number };
-export type Color = { id: string; name: string; hex: string; images: Photo[] };
 export type ProductMedia = { images: Photo[]; colors: Color[] };
 
 /** The card / link-preview photo: the first color's first photo, else the first shared photo. */

@@ -1,21 +1,12 @@
+import { variantKey, type CartLine } from "../lib/commerce/port";
+
 /**
  * The bag. Persisted in localStorage (the app's VCV-29 behaviour) so it survives reloads and is
  * shared across tabs; a custom event keeps same-page widgets (header badge, cart page) in sync.
- * Prices are integer cents. Payment is paused until the commerce platform is chosen.
+ * Prices are integer cents. Lines use the commerce port's neutral `CartLine`; paying is the
+ * port's job (src/lib/commerce/checkout.ts), whichever platform is behind it.
  */
-export type CartLine = {
-  productId: string;
-  name: string;
-  /** Built (optimised, self-hosted) thumbnail URL, or null. */
-  image: string | null;
-  unitPriceCents: number;
-  /** Size label: "M", "GG", "42"… (older bags stored numbers; normalised on read). */
-  size: string;
-  /** Chosen color, when the product has colors. */
-  colorId?: string;
-  colorName?: string;
-  quantity: number;
-};
+export type { CartLine };
 
 const KEY = "vcv.cart.v1";
 const EVENT = "vcv:cart";
@@ -23,9 +14,8 @@ const MAX_QTY = 99;
 
 let memory: CartLine[] = []; // fallback when storage is blocked (private mode)
 
-/** Line identity = product + color + size. */
-export const lineKey = (line: Pick<CartLine, "productId" | "size" | "colorId">) =>
-  [line.productId, line.colorId, line.size].filter(Boolean).join(":");
+/** Line identity = product + color + size (the port's variant key). */
+export const lineKey = (line: Pick<CartLine, "productId" | "size" | "colorId">) => variantKey(line);
 
 /** "Cor Coral · Tamanho M" — the variant as shown in the bag and the checkout summary. */
 export const variantLabel = (line: Pick<CartLine, "size" | "colorName">) =>
@@ -47,6 +37,7 @@ const isLine = (v: unknown): v is CartLine => {
 export function readCart(): CartLine[] {
   try {
     const parsed = JSON.parse(localStorage.getItem(KEY) ?? "[]");
+    // Older bags stored sizes as numbers; normalise on read.
     return Array.isArray(parsed) ? parsed.filter(isLine).map((l) => ({ ...l, size: String(l.size) })) : [];
   } catch {
     return memory;

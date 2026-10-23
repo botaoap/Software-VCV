@@ -1,5 +1,5 @@
 ---
-import type { CollectionEntry } from "astro:content";
+import type { Product } from "../lib/commerce/port";
 import ProductCard from "./ProductCard.astro";
 import { audienceLabels, sortSizes } from "../lib/catalog";
 
@@ -8,13 +8,13 @@ import { audienceLabels, sortSizes } from "../lib/catalog";
 // in the URL (?ordem=&para=&tam=) so a filtered view can be shared. Each filter appears only
 // when it can narrow the list (e.g. "Para" once both feminine and masculine pieces are on sale).
 interface Props {
-  products: CollectionEntry<"products">[];
+  products: Product[];
   label: string;
 }
 const { products, label } = Astro.props;
-const sizes = sortSizes(products.flatMap((product) => product.data.sizes));
+const sizes = sortSizes(products.flatMap((product) => product.sizes));
 const audiences = (Object.keys(audienceLabels) as (keyof typeof audienceLabels)[]).filter((audience) =>
-  products.some((product) => product.data.audience === audience),
+  products.some((product) => product.audience === audience),
 );
 ---
 
