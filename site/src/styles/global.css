@@ -578,22 +578,26 @@
   transform: none;
 }
 
-/* Grid-rows collapse for custom disclosures (mobile menu, cookie customization). */
-.expandable {
-  display: grid;
-  grid-template-rows: 0fr;
-  opacity: 0;
-  transition:
-    grid-template-rows 350ms var(--ease-soft),
-    opacity 300ms var(--ease-soft);
-}
-.expandable[data-open="true"] {
-  grid-template-rows: 1fr;
-  opacity: 1;
-}
-.expandable > * {
-  min-height: 0;
-  overflow: hidden;
+/* Grid-rows collapse for custom disclosures (mobile menu, cookie customization). In the components
+   layer so display utilities on the same element win: unlayered CSS would beat `lg:hidden` and show
+   the mobile menu on desktop when JS is off (VCV-48). */
+@layer components {
+  .expandable {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition:
+      grid-template-rows 350ms var(--ease-soft),
+      opacity 300ms var(--ease-soft);
+  }
+  .expandable[data-open="true"] {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+  .expandable > * {
+    min-height: 0;
+    overflow: hidden;
+  }
 }
 
 /* Native <details> disclosure (ficha técnica). Browsers without ::details-content support still

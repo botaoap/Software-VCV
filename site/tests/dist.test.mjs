@@ -341,6 +341,79 @@ test("no invented brand claims (atelier, rolo a rolo, ficha técnica, casa têxt
   }
 });
 
+// Tailwind utilities live in @layer utilities, and unlayered CSS beats any layer whatever its
+// specificity. So an unlayered rule that shows an element (`display` other than none) silently
+// overrides `hidden` / `lg:hidden` on it (VCV-48: the mobile menu showed on desktop with JS off).
+// Astro component <style> blocks are always unlayered, and small ones are inlined into the page.
+// Unlayered `display: none` (e.g. `.js-only` without JS) is meant to win.
+const HIDING_UTILITY = /^(?:[\w-]+:)*hidden$/;
+const unlayeredShownSelectors = (css) => {
+  const found = new Set(); // ".class" and "#id"
+  const stack = [];
+  let start = 0;
+  for (let i = 0; i < css.length; i++) {
+    const ch = css[i];
+    if (ch === "{") {
+      stack.push(css.slice(start, i).trim());
+      start = i + 1;
+    } else if (ch === "}") {
+      const prelude = stack.pop() ?? "";
+      const body = css.slice(start, i);
+      const layered = stack.some((p) => p.startsWith("@layer"));
+      if (!layered && !prelude.startsWith("@") && /(?:^|;)\s*display\s*:\s*(?!none\b)/.test(body)) {
+        for (const [name] of prelude.matchAll(/[.#][\w-]+/g)) found.add(name);
+      }
+      start = i + 1;
+    } else if (ch === ";" && stack.length === 0) {
+      start = i + 1; // top-level statements such as @layer a,b;
+    }
+  }
+  return found;
+};
+
+test("unlayeredShownSelectors finds unlayered rules that show an element, and nothing else", () => {
+  const css =
+    "@layer components{.a{display:grid}}.b{opacity:0;display:grid}.c .d{color:red}" +
+    "@media (min-width:1px){.e{display:flex}}html:not(.js) .f{display:none}#g{display:block}";
+  assert.deepEqual([...unlayeredShownSelectors(css)].sort(), ["#g", ".b", ".e"]);
+});
+
+test("hidden / lg:hidden win: no unlayered CSS shows an element they hide", () => {
+  const cssDir = join(dist, "_astro");
+  const shared = readdirSync(cssDir)
+    .filter((name) => name.endsWith(".css"))
+    .map((name) => readFileSync(join(cssDir, name), "utf8"))
+    .join("\n");
+  assert.ok(shared.length > 0, "no built stylesheet in dist/_astro");
+  for (const file of pages) {
+    const html = readFileSync(file, "utf8");
+    const inline = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join("\n");
+    const shown = unlayeredShownSelectors(`${shared}\n${inline}`);
+    for (const [tag] of html.matchAll(/<[a-z][\w-]*\s[^>]*>/g)) {
+      const classes = (tag.match(/\sclass="([^"]*)"/)?.[1] ?? "").split(/\s+/);
+      if (!classes.some((c) => HIDING_UTILITY.test(c))) continue;
+      const id = tag.match(/\sid="([^"]*)"/)?.[1];
+      const clash = [...classes.map((c) => `.${c}`), ...(id ? [`#${id}`] : [])].filter((s) => shown.has(s));
+      assert.deepEqual(clash, [], `${rel(file)}: unlayered display on ${clash.join(", ")} overrides ${tag}`);
+    }
+  }
+});
+
+// Without JS nothing can toggle the mobile menu's sub-panels, so the noscript style opens them too
+// and the toggles hide: no invisible links or dead buttons in the tab order (VCV-48 QA-1, QA-3).
+test("no-JS mobile menu: open with its sub-panels, header not sticky, toggles js-only", () => {
+  const html = read("index.html");
+  const noscript = html.match(/<noscript><style>([\s\S]*?)<\/style><\/noscript>/)?.[1] ?? "";
+  assert.match(noscript, /#mobile-menu\b/, "noscript opens the mobile menu");
+  assert.match(noscript, /\[data-sub-panel\]/, "noscript opens the sub-panels");
+  // The open menu is tall, so a sticky header would cover most of a phone screen (QA-2).
+  assert.match(noscript, /@media \(width < 64rem\) \{ \.site-header \{ position: static; \} \}/, "no-JS header unsticks below lg");
+  const toggles = [...html.matchAll(/<button\b[^>]*data-(?:sub|menu)-toggle[^>]*>/g)].map(([tag]) => tag);
+  assert.equal(toggles.filter((tag) => tag.includes("data-menu-toggle")).length, 1, "one menu toggle");
+  assert.ok(toggles.length > 1, "the menu has a sub-panel toggle");
+  for (const tag of toggles) assert.match(tag, /class="[^"]*\bjs-only\b/, `toggle needs js-only: ${tag}`);
+});
+
 test("robots.txt points to the sitemap with an absolute URL", () => {
   const robots = read("robots.txt");
   assert.match(robots, /^User-agent: \*/m);
