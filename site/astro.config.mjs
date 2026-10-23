@@ -12,7 +12,6 @@ const site = process.env.SITE_URL ?? "https://vestecomvoce.com.br";
 const base = process.env.BASE_PATH ?? "/";
 
 const movedToCatalog = ["/novidades", "/colecoes", "/colecao/essenciais", "/colecao/verao"];
-const redirected = [...movedToCatalog, "/atelier"];
 
 export default defineConfig({
   site,
@@ -33,8 +32,9 @@ export default defineConfig({
   ]),
   integrations: [
     sitemap({
-      // Cart, checkout and search are per-visitor steps, not pages worth indexing; redirects are not pages.
-      filter: (page) => !/\/(carrinho|checkout|busca)\/?$/.test(page) && !redirected.some((path) => page.endsWith(`${path}/`)),
+      // Cart, checkout and search are per-visitor steps, not pages worth indexing. (Redirects are
+      // left out of the sitemap by the integration itself.)
+      filter: (page) => !/\/(carrinho|checkout|busca)\/?$/.test(page),
     }),
   ],
   vite: { plugins: [tailwindcss()] },
