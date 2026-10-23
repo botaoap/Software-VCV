@@ -89,7 +89,7 @@ const crumbsLd = {
 
 <BaseLayout
   title={product.name}
-  description={[product.shortDescription, product.fabric.material && product.fabric.origin && `${product.fabric.material}, feito em ${product.fabric.origin}.`].filter(Boolean).join(" ")}
+  description={product.shortDescription}
   ogType="product"
   ogImage={og.src}
   structuredData={[productLd, crumbsLd]}

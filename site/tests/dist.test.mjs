@@ -301,10 +301,15 @@ test("contact channels appear only when they are set in content/brand.json", () 
   if (!instagram) assert.ok(!/"sameAs"/.test(read("index.html")), "no sameAs without an official profile");
 });
 
-test("no invented brand claims (atelier, rolo a rolo, ficha técnica em cada peça, casa têxtil)", () => {
+// Where and how the pieces are made is not confirmed either ("feito em Gaspar", "cortada no Vale").
+test("no invented brand claims (atelier, rolo a rolo, ficha técnica, casa têxtil, where or how pieces are made)", () => {
   for (const file of pages) {
-    const text = readFileSync(file, "utf8").replace(/<script[\s\S]*?<\/script>/g, "");
-    assert.ok(!/ateli[eê]|rolo a rolo|ficha técnica|casa têxtil|poucas peças, bem feitas|viscose e linho/i.test(text), `${rel(file)} repeats an unconfirmed claim`);
+    // Page text, meta tags and JSON-LD; not the bundled scripts.
+    const text = readFileSync(file, "utf8").replace(/<script(?! type="application\/ld\+json")[\s\S]*?<\/script>/g, "");
+    assert.ok(
+      !/ateli[eê]|rolo a rolo|ficha técnica|casa têxtil|poucas peças, bem feitas|viscose e linho|feit[ao]s? (em|no|na)\b|cortad[ao]s? (em|no|na)\b|produzid[ao]s? (em|no|na)\b|confeccionad[ao]s? (em|no|na)\b|provad[ao]s? em corpo real/i.test(text),
+      `${rel(file)} repeats an unconfirmed claim`,
+    );
   }
 });
 
