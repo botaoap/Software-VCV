@@ -24,7 +24,15 @@ const priceOf = (variant: NsVariant) => {
   const promo = cents(variant.promotional_price);
   return price && promo && promo < price ? promo : price;
 };
-const plainText = (html: string) => html.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").replace(/\s([.,;:!?])/g, "$1").trim();
+const entities: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', nbsp: " " };
+/** &amp; &lt; &gt; &quot; &nbsp; and numeric (&#39; &#233; &#xE9;) entities; anything else is kept as typed. */
+const decode = (text: string) =>
+  text.replace(/&(?:#(x[0-9a-f]+|\d+)|([a-z]+));/gi, (entity, code?: string, name?: string) => {
+    if (name) return entities[name.toLowerCase()] ?? entity;
+    const point = code!.startsWith("x") || code!.startsWith("X") ? Number.parseInt(code!.slice(1), 16) : Number(code);
+    return point > 0 && point <= 0x10ffff ? String.fromCodePoint(point) : entity;
+  });
+const plainText = (html: string) => decode(html.replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").replace(/\s([.,;:!?])/g, "$1").trim();
 
 const tagBadges: Record<string, Badge> = {
   recomendado: "RECOMMENDED",

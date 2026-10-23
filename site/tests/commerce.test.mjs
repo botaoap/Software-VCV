@@ -221,3 +221,9 @@ test("sizes sort in wear order; unknown labels go last, alphabetically (QA-7)", 
     assert.deepEqual(map({ variants: [nsVariant(1, ["Coral", unico])] }).sizes, ["U"], `${unico} is the one size U`);
   }
 });
+
+test("nuvemshop mapping: descriptions decode the common HTML entities (CR-9)", () => {
+  const { shortDescription } = map({ description: { pt: "<p>Algodão &amp; linho&nbsp;&lt;leve&gt; &quot;fresco&quot; d&#39;água &#233;&#xE9;</p>" } });
+  assert.equal(shortDescription, `Algodão & linho <leve> "fresco" d'água éé`);
+  assert.equal(map({ description: { pt: "&#99999999; &copy;" } }).shortDescription, "&#99999999; &copy;", "unknown entities kept, never a throw");
+});
