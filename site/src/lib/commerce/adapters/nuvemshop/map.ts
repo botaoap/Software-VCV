@@ -36,6 +36,8 @@ const tagBadges: Record<string, Badge> = {
 
 /** Nuvemshop does not return image sizes for every image; product photos follow the 3:4 pattern. */
 const DEFAULT_SIZE = { width: 1200, height: 1600 };
+/** Store spellings of the one size, shown as "U" like content/products.json. */
+const ONE_SIZE = ["u", "unico", "un"];
 /** Swatch for a color with no entry in `colorHex`. */
 const NEUTRAL_SWATCH = "#B8B0A8";
 
@@ -87,7 +89,8 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
         colorsBySlug.set(colorSlug, color);
       }
     }
-    const size = (sizeAxis >= 0 && pt(values[sizeAxis])) || "U";
+    const sizeLabel = (sizeAxis >= 0 && pt(values[sizeAxis])) || "U";
+    const size = ONE_SIZE.includes(slug(sizeLabel)) ? "U" : sizeLabel;
     const key = variantKey({ productId: id, colorId: color?.id, size });
     if (variants.some((v) => v.key === key)) {
       console.warn(`Nuvemshop product "${id}": variant ${variant.id} repeats ${key}; the first one is kept`);

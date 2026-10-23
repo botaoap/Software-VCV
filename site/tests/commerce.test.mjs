@@ -10,6 +10,7 @@ import { fromNuvemshop } from "../src/lib/commerce/adapters/nuvemshop/map.ts";
 import { checkout as staticCheckout } from "../src/lib/commerce/adapters/static/checkout.ts";
 import { fromContent } from "../src/lib/commerce/adapters/static/map.ts";
 import { badges, variantKey } from "../src/lib/commerce/port.ts";
+import { sortSizes } from "../src/lib/catalog.ts";
 
 const json = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
 const categoryIds = json("../content/categories.json").map((c) => c.id);
@@ -211,4 +212,12 @@ test("nuvemshop mapping: product, color and variant identity survive messy store
   assert.equal(map({ images: undefined }), null, "images missing: no photo");
   const noValues = map({ variants: [{ id: 1, image_id: null, price: "10.00", promotional_price: null, stock: 1, sku: null }] });
   assert.deepEqual([noValues.colors, noValues.sizes], [[], ["U"]], "values missing");
+});
+
+test("sizes sort in wear order; unknown labels go last, alphabetically (QA-7)", () => {
+  assert.deepEqual(sortSizes(["G", "42", "XL", "P", "38", "Kids", "U", "M"]), ["P", "M", "G", "U", "38", "42", "Kids", "XL"]);
+  assert.deepEqual(sortSizes(["XL", "Kids"]), sortSizes(["Kids", "XL"]), "stable whatever the input order");
+  for (const unico of ["Único", "Unico", "UN", "único"]) {
+    assert.deepEqual(map({ variants: [nsVariant(1, ["Coral", unico])] }).sizes, ["U"], `${unico} is the one size U`);
+  }
 });

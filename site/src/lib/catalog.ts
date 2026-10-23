@@ -8,11 +8,14 @@ export const letterSizes = ["PP", "P", "M", "G", "GG", "XG", "XGG", "U"] as cons
 
 const rank = (size: string) => {
   const letter = (letterSizes as readonly string[]).indexOf(size);
-  return letter >= 0 ? letter : letterSizes.length + Number(size);
+  if (letter >= 0) return letter;
+  const number = size.trim() === "" ? Number.NaN : Number(size);
+  return Number.isFinite(number) ? letterSizes.length + number : Number.POSITIVE_INFINITY;
 };
 
-/** Distinct sizes in wear order: PP, P, M, G, GG, …, then 38, 40, … */
-export const sortSizes = (sizes: Iterable<string>) => [...new Set(sizes)].sort((a, b) => rank(a) - rank(b));
+/** Distinct sizes in wear order: PP, P, M, G, GG, …, then 38, 40, …, then unknown labels A–Z. */
+export const sortSizes = (sizes: Iterable<string>) =>
+  [...new Set(sizes)].sort((a, b) => (rank(a) === rank(b) ? a.localeCompare(b, "pt-BR") : rank(a) < rank(b) ? -1 : 1));
 
 export type ProductMedia = { images: Photo[]; colors: Color[] };
 
