@@ -1,4 +1,4 @@
-import { sortSizes } from "../../../catalog.ts";
+import { shownPrice, sortSizes } from "../../../catalog.ts";
 import type { Audience, Badge, Color, Photo, Product, Variant } from "../../port.ts";
 import { badges as knownBadges, variantKey } from "../../port.ts";
 import type { Localized, NsImage, NsProduct, NsVariant } from "./api.ts";
@@ -137,7 +137,7 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
     id,
     name,
     categoryId,
-    priceCents: Math.min(...sold.map((variant) => variant.priceCents)),
+    priceCents: shownPrice(sold).cents,
     audience,
     images: colors.length > 0 ? shared.filter((p) => !colors.some((c) => c.images[0]?.url === p.url)) : shared,
     colors,

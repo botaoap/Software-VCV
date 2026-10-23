@@ -1,4 +1,4 @@
-import type { Color, Photo, Product } from "./commerce/port.ts";
+import type { Color, Photo, Product, Variant } from "./commerce/port.ts";
 
 // Pure catalog rules shared by every page: size order, a product's cover, its colors and per-color
 // gallery. Keep them here so the PDP, the cards, the catalog filters and the tests agree.
@@ -34,6 +34,31 @@ export const coverOf = (product: ProductMedia): Photo => product.colors[0]?.imag
 export const galleryOf = (product: ProductMedia, colorId?: string): Photo[] => {
   const color = product.colors.find((c) => c.id === colorId) ?? product.colors[0];
   return [...(color?.images ?? []), ...product.images];
+};
+
+// The PDP buy box. Pure, so the page, its script and the tests share one rule set.
+type Unit = Pick<Variant, "colorId" | "size" | "priceCents" | "available">;
+type Offer = { colors: { id: string }[]; variants: Unit[] };
+
+/** Sizes of one color (or of a product without colors) that are for sale. */
+export const sizesForSale = (offer: Pick<Offer, "variants">, colorId: string | undefined) =>
+  offer.variants.filter((v) => v.available && v.colorId === colorId).map((v) => v.size);
+
+/** The color the PDP opens on (unless ?cor= asks for another): the first with something for sale. */
+export const openingColorId = (offer: Offer) => (offer.colors.find((c) => sizesForSale(offer, c.id).length > 0) ?? offer.colors[0])?.id;
+
+export const sizeHint = (offer: Pick<Offer, "variants">, colorId: string | undefined) =>
+  !offer.variants.some((v) => v.available)
+    ? "Esta peça está esgotada no momento."
+    : sizesForSale(offer, colorId).length === 0
+      ? "Cor esgotada."
+      : "Selecione um tamanho.";
+
+/** The price shown: the lowest among units for sale (all units when none is), "A partir de" when those differ. */
+export const shownPrice = (variants: Unit[]) => {
+  const priced = variants.some((v) => v.available) ? variants.filter((v) => v.available) : variants;
+  const prices = priced.map((v) => v.priceCents);
+  return { cents: Math.min(...prices), from: new Set(prices).size > 1 };
 };
 
 export const audienceLabels = { feminino: "Feminino", masculino: "Masculino", unissex: "Unissex" } as const;

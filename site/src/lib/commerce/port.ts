@@ -65,7 +65,7 @@ export type Product = {
   name: string;
   /** One of content/categories.json (the site's own taxonomy; adapters map platform categories to it). */
   categoryId: string;
-  /** The lowest variant price (the PDP says "A partir de" when variant prices differ). */
+  /** The lowest price among variants for sale (all when none is): lib/catalog.ts `shownPrice`. */
   priceCents: Cents;
   audience: Audience;
   /** Photos shared by every color. */

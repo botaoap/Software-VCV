@@ -110,7 +110,7 @@ test("every product has a page with a size per variant and matching JSON-LD", ()
 // The PDP form carries every variant (key → price, availability, platform ref).
 const decodeAttr = (value) => value.replace(/&quot;|&#34;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
 const addForm = (html) => html.match(/<form[^>]*data-add-form[^>]*>/)[0];
-const variantsOf = (html) => JSON.parse(decodeAttr(addForm(html).match(/data-variants="([^"]*)"/)[1]));
+const variantsOf = (html) => Object.fromEntries(JSON.parse(decodeAttr(addForm(html).match(/data-variants="([^"]*)"/)[1])).map((v) => [v.key, v]));
 const isDisabled = (tag) => /\sdisabled(?=[\s>=])/.test(tag);
 const productPages = () => (built ? readdirSync(join(dist, "produto")).map((id) => [id, read("produto", id, "index.html")]) : []);
 
@@ -121,7 +121,7 @@ test("static catalog: the PDP offers every color × size at the product price, f
     const keys = colorIds.flatMap((colorId) => product.sizes.map((size) => [product.id, colorId, size].filter(Boolean).join(":")));
     assert.deepEqual(Object.keys(variants).sort(), keys.sort(), `${product.id}: variants`);
     for (const [key, variant] of Object.entries(variants)) {
-      assert.equal(variant.price, product.priceCents, `${key}: price`);
+      assert.equal(variant.priceCents, product.priceCents, `${key}: price`);
       assert.equal(variant.available, product.available !== false, `${key}: availability`);
     }
   }
@@ -130,7 +130,7 @@ test("static catalog: the PDP offers every color × size at the product price, f
 test("PDP: sizes that do not exist or are sold out for the shown color are disabled; nothing for sale = Esgotado", () => {
   for (const [id, html] of productPages()) {
     const variants = variantsOf(html);
-    const color = html.match(/<input[^>]*name="color"[^>]*value="([^"]+)"/)?.[1];
+    const color = html.match(/<input[^>]*name="color"[^>]*value="([^"]+)"[^>]*\schecked/)?.[1];
     for (const [input, size] of html.matchAll(/<input[^>]*name="size"[^>]*value="([^"]+)"[^>]*>/g)) {
       const forSale = variants[[id, color, size].filter(Boolean).join(":")]?.available === true;
       assert.equal(isDisabled(input), !forSale, `${id}: size ${size} of ${color ?? "the product"}`);
@@ -140,7 +140,7 @@ test("PDP: sizes that do not exist or are sold out for the shown color are disab
     const button = html.match(/<button[^>]*data-add-button[^>]*>[\s\S]*?<\/button>/)[0];
     assert.equal(/Esgotado/.test(text), soldOut, `${id}: "Esgotado" only when nothing is for sale`);
     if (soldOut) assert.ok(isDisabled(button.match(/<button[^>]*>/)[0]) && /Esgotado/.test(button), `${id}: the button says Esgotado and is disabled`);
-    const prices = new Set(Object.values(variants).map((v) => v.price));
+    const prices = new Set(Object.values(variants).filter((v) => v.available || soldOut).map((v) => v.priceCents));
     assert.equal(/A partir de/.test(text), prices.size > 1, `${id}: "A partir de" only when variant prices differ`);
   }
 });

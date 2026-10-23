@@ -10,7 +10,7 @@ import { fromNuvemshop } from "../src/lib/commerce/adapters/nuvemshop/map.ts";
 import { checkout as staticCheckout } from "../src/lib/commerce/adapters/static/checkout.ts";
 import { fromContent } from "../src/lib/commerce/adapters/static/map.ts";
 import { badges, variantKey } from "../src/lib/commerce/port.ts";
-import { sortSizes, uniqueById } from "../src/lib/catalog.ts";
+import { openingColorId, shownPrice, sizeHint, sizesForSale, sortSizes, uniqueById } from "../src/lib/catalog.ts";
 
 const json = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
 const categoryIds = json("../content/categories.json").map((c) => c.id);
@@ -59,7 +59,7 @@ for (const [name, products] of Object.entries(adapters)) {
         assert.ok(v.ref === undefined || typeof v.ref === "string", `${p.id}: ref is opaque text`);
         assert.ok(Number.isInteger(v.priceCents) && v.priceCents > 0, `${p.id}: ${v.key} has its own integer price`);
       }
-      assert.equal(p.priceCents, Math.min(...p.variants.map((v) => v.priceCents)), `${p.id}: price = lowest variant price`);
+      assert.equal(p.priceCents, shownPrice(p.variants).cents, `${p.id}: price = lowest price for sale`);
       assert.equal(p.available, p.variants.some((v) => v.available), `${p.id}: available = any variant for sale`);
     }
   });
@@ -262,4 +262,37 @@ test("catalog: two products with the same id keep the first, with a warning (QA-
   const other = map({ handle: { pt: "vestido-bia" } });
   assert.deepEqual(uniqueById([first, again, other]), [first, other]);
   assert.match(warn.mock.calls.at(-1).arguments.join(" "), /vestido-ana/);
+});
+
+// The PDP buy box (CR2-1, QA-1/4/5/9/13), on hand-made products: the static catalog has no sold-out
+// unit, no missing pair and no price gap, so only these tests exercise those cases.
+const unit = (colorId, size, priceCents, available = true) => ({ key: ["p", colorId, size].filter(Boolean).join(":"), colorId, size, priceCents, available });
+const offer = (variants) => ({ colors: [...new Set(variants.map((v) => v.colorId).filter(Boolean))].map((id) => ({ id })), variants });
+
+test("buy box: a size is offered only when that color has it for sale", () => {
+  const product = offer([unit("preto", "P", 100), unit("preto", "M", 100, false), unit("off", "M", 100)]);
+  assert.deepEqual(sizesForSale(product, "preto"), ["P"], "M is sold out in preto");
+  assert.deepEqual(sizesForSale(product, "off"), ["M"], "off has no P at all");
+  assert.deepEqual(sizesForSale(offer([unit(undefined, "U", 100)]), undefined), ["U"], "a product without colors");
+});
+
+test("buy box: the page opens on the first color with something for sale; a sold-out color says so (QA-13)", () => {
+  const product = offer([unit("coral", "M", 100, false), unit("azul", "M", 100), unit("azul", "G", 100)]);
+  assert.equal(openingColorId(product), "azul");
+  assert.equal(sizeHint(product, "coral"), "Cor esgotada.");
+  assert.equal(sizeHint(product, "azul"), "Selecione um tamanho.");
+  const soldOut = offer([unit("coral", "M", 100, false)]);
+  assert.equal(openingColorId(soldOut), "coral", "nothing for sale: the first color");
+  assert.equal(sizeHint(soldOut, "coral"), "Esta peça está esgotada no momento.");
+  assert.equal(openingColorId(offer([unit(undefined, "M", 100)])), undefined, "no colors");
+});
+
+test("buy box: the price is the lowest one for sale, 'A partir de' only when prices for sale differ (QA-4/QA-9)", () => {
+  assert.deepEqual(shownPrice([unit("a", "P", 100), unit("a", "M", 100)]), { cents: 100, from: false });
+  assert.deepEqual(shownPrice([unit("a", "P", 120), unit("a", "M", 100)]), { cents: 100, from: true });
+  assert.deepEqual(shownPrice([unit("a", "P", 50, false), unit("a", "M", 100)]), { cents: 100, from: false }, "a cheaper sold-out unit is not the price");
+  assert.deepEqual(shownPrice([unit("a", "P", 50, false), unit("a", "M", 100, false)]), { cents: 50, from: true }, "nothing for sale: all units");
+  // The mapper publishes that price on the product (cards, JSON-LD).
+  const product = map({ variants: [nsVariant(1, ["Coral", "M"], { price: "50.00", stock: 0 }), nsVariant(2, ["Coral", "G"])] });
+  assert.equal(product.priceCents, 10000);
 });
