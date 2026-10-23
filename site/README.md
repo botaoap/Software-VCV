@@ -37,7 +37,7 @@ card links to Instagram / WhatsApp once those exist (hidden otherwise) instead o
 
 **Commerce is platform-agnostic** (VCV-41). VCV goes with **Nuvemshop + Mercado Pago** (decision
 2026-10-23), but the site talks to commerce only through one port, `src/lib/commerce/port.ts`
-(neutral `Product`, `Variant` = product + color + size, `CartLine`, cents), so another platform is a
+(neutral `Product`, `Variant` = product + color + size with its own price and availability, `CartLine`, cents), so another platform is a
 new adapter, not a rewrite:
 
 ```
@@ -129,7 +129,7 @@ for a size that is not sold.
   },
   "shortDescription": "…",
   "fabric": { "material": "…", "origin": "…", "care": [] },   // leave unknown facts out
-  "available": true,                           // false → JSON-LD OutOfStock
+  "available": true,                           // false → "Esgotado" on the PDP (sizes and button disabled), JSON-LD OutOfStock
   "badges": ["FEATURED", "NEW_IN"]             // RECOMMENDED | BEST_SELLER | FEATURED (home rails); label = first of LAST_UNITS, NEW_IN, BEST_SELLER
 }
 ```

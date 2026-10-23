@@ -75,7 +75,7 @@ const products = defineCollection({
       })
       .default({ care: [] }),
     sizes: z.array(size).min(1),
-    /** In stock / for sale. Feeds the Product JSON-LD availability (the commerce platform refreshes it). */
+    /** In stock / for sale. false → "Esgotado" on the PDP and JSON-LD OutOfStock (the commerce platform refreshes it). */
     available: z.boolean().default(true),
     measurements: sizeChart.optional(),
     badges: z.array(z.enum(badges)),
