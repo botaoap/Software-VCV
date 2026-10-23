@@ -258,6 +258,16 @@ test("menu: Produtos dropdown lists the garment types that have products; no Col
   }
 });
 
+test("the site description names only garment types that have products", () => {
+  const home = read("index.html");
+  const meta = home.match(/<meta name="description" content="([^"]+)"/)[1];
+  const store = [...home.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => JSON.parse(m[1])).find((e) => e["@type"] === "ClothingStore");
+  for (const category of categories.filter((c) => !stocked.includes(c))) {
+    const named = new RegExp(`(^|[^\\p{L}])${category.title}([^\\p{L}]|$)`, "iu");
+    assert.ok(!named.test(meta) && !named.test(store.description), `the description offers ${category.title}, which has no product`);
+  }
+});
+
 test("Pantalonas, Shorts and Regatas are garment types", () => {
   for (const id of ["pantalonas", "shorts", "regatas"]) assert.ok(categories.some((c) => c.id === id), id);
 });
