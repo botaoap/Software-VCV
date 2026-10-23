@@ -133,7 +133,7 @@ const whatsapp = contact.whatsapp && whatsappHref(contact.whatsapp, "Olá! Vim p
                     {item.children && (
                       <button
                         type="button"
-                        class="inline-flex size-12 cursor-pointer items-center justify-center text-text-muted"
+                        class="js-only inline-flex size-12 cursor-pointer items-center justify-center text-text-muted"
                         aria-expanded="false"
                         aria-controls={`sub-${index}`}
                         aria-label={`Abrir submenu de ${item.label}`}
@@ -170,7 +170,8 @@ const whatsapp = contact.whatsapp && whatsappHref(contact.whatsapp, "Olá! Vim p
       </nav>
     </div>
   </div>
-  <noscript><style>#mobile-menu { grid-template-rows: 1fr; opacity: 1; }</style></noscript>
+  {/* Without JS nothing toggles the panels: show the menu and its sub-panels open (VCV-48). */}
+  <noscript><style>#mobile-menu, #mobile-menu [data-sub-panel] { grid-template-rows: 1fr; opacity: 1; }</style></noscript>
 </header>
 
 <style>

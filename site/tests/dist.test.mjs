@@ -399,6 +399,18 @@ test("hidden / lg:hidden win: no unlayered CSS shows an element they hide", () =
   }
 });
 
+// Without JS nothing can toggle the mobile menu's sub-panels, so the noscript style opens them too
+// and their toggles hide: no invisible links in the tab order (VCV-48 QA-1).
+test("no-JS mobile menu: sub-panels open with it and their toggles are js-only", () => {
+  const html = read("index.html");
+  const noscript = html.match(/<noscript><style>([\s\S]*?)<\/style><\/noscript>/)?.[1] ?? "";
+  assert.match(noscript, /#mobile-menu\b/, "noscript opens the mobile menu");
+  assert.match(noscript, /\[data-sub-panel\]/, "noscript opens the sub-panels");
+  const toggles = [...html.matchAll(/<button\b[^>]*data-sub-toggle[^>]*>/g)].map(([tag]) => tag);
+  assert.ok(toggles.length > 0, "the menu has a sub-panel toggle");
+  for (const tag of toggles) assert.match(tag, /class="[^"]*\bjs-only\b/, `sub toggle needs js-only: ${tag}`);
+});
+
 test("robots.txt points to the sitemap with an absolute URL", () => {
   const robots = read("robots.txt");
   assert.match(robots, /^User-agent: \*/m);
