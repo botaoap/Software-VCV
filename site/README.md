@@ -30,7 +30,7 @@ Node 22 or newer.
 | `PUBLIC_NEWSLETTER_ACTION` | _(off)_ | Newsletter provider form URL → shows the signup card in the footer |
 | `PUBLIC_COMMERCE` | `static` | Commerce adapter: `static` (content/products.json, payment "em breve") or `nuvemshop` |
 | `NUVEMSHOP_STORE_ID`, `NUVEMSHOP_TOKEN` | _(none)_ | Build-time only (never `PUBLIC_`): the Nuvemshop store whose catalog the pages are built from |
-| `PUBLIC_COMMERCE_PROXY_URL` | _(off)_ | VCV's commerce proxy (checkout, stock, freight); with it, "Finalizar compra" hands the bag to the platform's checkout |
+| `PUBLIC_COMMERCE_PROXY_URL` | _(off)_ | VCV's commerce proxy (checkout); with it, "Finalizar compra" hands the bag to the platform's checkout |
 
 With nothing configured there is no banner (nothing to consent to), and the footer "Novas peças"
 card links to Instagram / WhatsApp once those exist (hidden otherwise) instead of a form that posts nowhere.
@@ -51,8 +51,8 @@ src/lib/commerce/adapters/nuvemshop/  API → Product mapping, catalog fetch, ch
 Pages, components and the bag import only the port; platform names, SDKs and id formats stay in
 `adapters/<name>/` (a test fails otherwise). Platform ids travel as the opaque `Variant.ref`. The
 catalog is read at build time (static pages for SEO); the store token is a build-time secret and
-never reaches the browser, so runtime calls that need it (checkout, live stock, freight) go through a
-small proxy (`PUBLIC_COMMERCE_PROXY_URL`; its contract is in `adapters/nuvemshop/checkout.ts`).
+never reaches the browser, so runtime calls that need it (today only creating the checkout; live
+stock and freight are added when a page needs them) go through a small proxy (`PUBLIC_COMMERCE_PROXY_URL`; its contract is in `adapters/nuvemshop/checkout.ts`).
 `tests/commerce.test.mjs` runs every adapter's mapping through the same Product contract.
 
 The Nuvemshop adapter is a **skeleton** until the VCV store exists. To verify with the real account:

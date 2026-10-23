@@ -92,11 +92,10 @@ test("nuvemshop mapping: handles, cents, colors with their photos, sizes in wear
   assert.equal(regata.shortDescription, "Regata Básica", "empty description falls back to the name");
 });
 
-test("static checkout: no online payment, every capability off", async () => {
-  assert.deepEqual(staticCheckout.capabilities, { checkout: false, shippingQuote: false, liveStock: false });
+test("static checkout: no online payment; the port has only what a page uses (CR-3)", async () => {
+  assert.deepEqual(staticCheckout.capabilities, { checkout: false });
+  assert.deepEqual(Object.keys(staticCheckout).sort(), ["capabilities", "name", "startCheckout"]);
   assert.deepEqual(await staticCheckout.startCheckout([]), { kind: "unavailable", reason: "Pagamento online em breve." });
-  assert.equal(await staticCheckout.getStock([]), null);
-  assert.deepEqual(await staticCheckout.quoteShipping("89110000", []), []);
 });
 
 // Platform-agnostic rule: pages, components and the bag script import only the port; platform names

@@ -97,8 +97,6 @@ export type CartLine = {
   quantity: number;
 };
 
-export type ShippingQuote = { service: string; priceCents: Cents; days?: { min: number; max: number } };
-
 export type CheckoutStart =
   /** Hand the bag to the platform's hosted checkout (payment stays on the platform: no card data here). */
   | { kind: "redirect"; url: string }
@@ -112,15 +110,11 @@ export interface CatalogPort {
   getProducts(): Promise<Product[]>;
 }
 
-/** Browser: live data and the hand-off to payment. */
+/** Browser: the hand-off to payment. (Live stock and freight quotes are added when a page needs them.) */
 export interface CheckoutPort {
   readonly name: string;
   /** What this adapter can do today; the pages decide what to render from it. */
-  readonly capabilities: { checkout: boolean; shippingQuote: boolean; liveStock: boolean };
-  /** Units still for sale, by `Variant.key`. Adapters without live stock answer `null` (= use the build's data). */
-  getStock(lines: Pick<CartLine, "productId" | "colorId" | "size" | "ref">[]): Promise<Map<string, boolean> | null>;
-  /** Freight options for a CEP (8 digits). Empty when quoting is not available. */
-  quoteShipping(cep: string, lines: CartLine[]): Promise<ShippingQuote[]>;
+  readonly capabilities: { checkout: boolean };
   startCheckout(lines: CartLine[]): Promise<CheckoutStart>;
 }
 

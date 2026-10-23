@@ -1,18 +1,15 @@
-import type { CartLine, CheckoutPort, CheckoutStart, ShippingQuote } from "../../port.ts";
-import { variantKey } from "../../port.ts";
+import type { CartLine, CheckoutPort, CheckoutStart } from "../../port.ts";
 
 /**
- * Nuvemshop in the browser. Every call that needs the store token (stock, freight, creating the
- * checkout) goes through VCV's commerce proxy (a serverless function or the Ktor `server/`), whose
+ * Nuvemshop in the browser. Every call that needs the store token (today: creating the checkout)
+ * goes through VCV's commerce proxy (a serverless function or the Ktor `server/`), whose
  * base URL is PUBLIC_COMMERCE_PROXY_URL. The token never ships to the browser.
  *
  * Proxy contract (JSON over HTTPS; the proxy maps `ref` to Nuvemshop variant ids):
- *   POST /checkout  { lines: [{ ref, quantity }] }            → { url }   (Nuvemshop checkout, paid with Mercado Pago)
- *   POST /stock     { refs: string[] }                        → { [ref]: boolean }
- *   POST /shipping  { cep, lines: [{ ref, quantity }] }       → ShippingQuote[]
+ *   POST /checkout  { lines: [{ ref, quantity }] }  → { url }   (Nuvemshop checkout, paid with Mercado Pago)
  *
- * SKELETON (VCV-41): the proxy does not exist yet, so without PUBLIC_COMMERCE_PROXY_URL every
- * capability is off and the site keeps "Pagamento online em breve". To verify with the real account:
+ * SKELETON (VCV-41): the proxy does not exist yet, so without PUBLIC_COMMERCE_PROXY_URL
+ * checkout is off and the site keeps "Pagamento online em breve". To verify with the real account:
  * the headless cart → checkout hand-off, and the UpSeller NF-e setting for Nuvemshop orders.
  */
 const proxy = (import.meta.env.PUBLIC_COMMERCE_PROXY_URL ?? "").replace(/\/$/, "");
@@ -32,17 +29,7 @@ const units = (lines: CartLine[]) => lines.filter((line) => line.ref).map((line)
 
 export const checkout: CheckoutPort = {
   name: "nuvemshop",
-  capabilities: { checkout: enabled, shippingQuote: enabled, liveStock: enabled },
-  async getStock(lines) {
-    if (!enabled) return null;
-    const refs = lines.flatMap((line) => (line.ref ? [line.ref] : []));
-    const stock = await post<Record<string, boolean>>("/stock", { refs });
-    return new Map(lines.flatMap((line) => (line.ref && line.ref in stock ? [[variantKey(line), stock[line.ref]] as const] : [])));
-  },
-  async quoteShipping(cep, lines) {
-    if (!enabled || !/^\d{8}$/.test(cep)) return [];
-    return post<ShippingQuote[]>("/shipping", { cep, lines: units(lines) });
-  },
+  capabilities: { checkout: enabled },
   async startCheckout(lines): Promise<CheckoutStart> {
     if (!enabled) return { kind: "unavailable", reason: "Pagamento online em breve." };
     const items = units(lines);
