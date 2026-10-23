@@ -51,6 +51,8 @@ export type Variant = {
   key: string;
   colorId?: string;
   size: string;
+  /** What the platform charges for this unit (promotions included). */
+  priceCents: Cents;
   available: boolean;
   /** The platform's own id for this unit, opaque to the site (only its adapter reads it). */
   ref?: string;
@@ -62,6 +64,7 @@ export type Product = {
   name: string;
   /** One of content/categories.json (the site's own taxonomy; adapters map platform categories to it). */
   categoryId: string;
+  /** The lowest variant price (the PDP says "A partir de" when variant prices differ). */
   priceCents: Cents;
   audience: Audience;
   /** Photos shared by every color. */

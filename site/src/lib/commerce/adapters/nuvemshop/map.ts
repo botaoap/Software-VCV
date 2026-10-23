@@ -1,7 +1,7 @@
 import { sortSizes } from "../../../catalog.ts";
 import type { Audience, Badge, Color, Photo, Product, Variant } from "../../port.ts";
 import { badges as knownBadges, variantKey } from "../../port.ts";
-import type { Localized, NsImage, NsProduct } from "./api.ts";
+import type { Localized, NsImage, NsProduct, NsVariant } from "./api.ts";
 
 // Nuvemshop product → neutral Product. Pure (no I/O), so the contract tests run it offline on a
 // fixture. Conventions the store must follow (to agree with Felipe when the store is created):
@@ -13,7 +13,17 @@ import type { Localized, NsImage, NsProduct } from "./api.ts";
 const pt = (text: Localized | undefined) => (text?.pt ?? text?.es ?? text?.en ?? "").trim();
 const slug = (text: string) =>
   text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-const cents = (price: string) => Math.round(Number.parseFloat(price) * 100);
+/** "189.90" → 18990; anything else (empty, "abc", "0", negative) → undefined, never a R$ 0,00 price. */
+const cents = (price: string | null | undefined) => {
+  const value = Math.round(Number(price ?? "") * 100);
+  return Number.isFinite(value) && value > 0 ? value : undefined;
+};
+/** The price charged: the promotional one only when valid and lower. */
+const priceOf = (variant: NsVariant) => {
+  const price = cents(variant.price);
+  const promo = cents(variant.promotional_price);
+  return price && promo && promo < price ? promo : price;
+};
 const plainText = (html: string) => html.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").replace(/\s([.,;:!?])/g, "$1").trim();
 
 const tagBadges: Record<string, Badge> = {
@@ -38,7 +48,9 @@ export type MapOptions = {
 
 export function fromNuvemshop(product: NsProduct, options: MapOptions): Product | null {
   const categoryId = product.categories.map((c) => pt(c.handle)).find((handle) => options.categoryIds.includes(handle));
-  if (!product.published || !categoryId || product.variants.length === 0) return null;
+  // A variant with no valid price is not for sale on the site.
+  const forSale = product.variants.filter((variant) => priceOf(variant));
+  if (!product.published || !categoryId || forSale.length === 0) return null;
 
   const id = pt(product.handle) || slug(pt(product.name));
   const name = pt(product.name);
@@ -57,7 +69,7 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
   // Colors in first-seen order; a color's photos are the images its variants point at.
   const colors: Color[] = [];
   if (colorAxis >= 0) {
-    for (const variant of product.variants) {
+    for (const variant of forSale) {
       const colorName = pt(variant.values[colorAxis]);
       if (!colorName) continue;
       let color = colors.find((c) => c.name === colorName);
@@ -74,13 +86,14 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
   // A color without its own photo shows the first shared one, so every gallery has a cover.
   for (const color of colors) if (color.images.length === 0 && shared[0]) color.images.push(shared[0]);
 
-  const variants: Variant[] = product.variants.map((variant) => {
+  const variants: Variant[] = forSale.map((variant) => {
     const colorId = colorAxis >= 0 ? slug(pt(variant.values[colorAxis])) || undefined : undefined;
     const size = sizeAxis >= 0 ? pt(variant.values[sizeAxis]) || "U" : "U";
     return {
       key: variantKey({ productId: id, colorId, size }),
       colorId,
       size,
+      priceCents: priceOf(variant)!,
       available: variant.stock === null || variant.stock > 0,
       ref: String(variant.id),
     };
@@ -96,7 +109,7 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
     id,
     name,
     categoryId,
-    priceCents: Math.min(...product.variants.map((variant) => cents(variant.promotional_price ?? variant.price))),
+    priceCents: Math.min(...variants.map((variant) => variant.priceCents)),
     audience,
     images: colors.length > 0 ? shared.filter((p) => !colors.some((c) => c.images[0]?.url === p.url)) : shared,
     colors,

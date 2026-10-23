@@ -56,7 +56,9 @@ for (const [name, products] of Object.entries(adapters)) {
         assert.ok(p.sizes.includes(v.size), `${p.id}: variant size ${v.size} is listed`);
         if (v.colorId) assert.ok(p.colors.some((c) => c.id === v.colorId), `${p.id}: variant color ${v.colorId} exists`);
         assert.ok(v.ref === undefined || typeof v.ref === "string", `${p.id}: ref is opaque text`);
+        assert.ok(Number.isInteger(v.priceCents) && v.priceCents > 0, `${p.id}: ${v.key} has its own integer price`);
       }
+      assert.equal(p.priceCents, Math.min(...p.variants.map((v) => v.priceCents)), `${p.id}: price = lowest variant price`);
       assert.equal(p.available, p.variants.some((v) => v.available), `${p.id}: available = any variant for sale`);
     }
   });
@@ -76,11 +78,11 @@ test("nuvemshop mapping: handles, cents, colors with their photos, sizes in wear
   assert.deepEqual(pantalona.sizes, ["P", "M"]);
   assert.deepEqual(pantalona.badges, ["RECOMMENDED", "NEW_IN"]);
   assert.deepEqual(
-    pantalona.variants.map((v) => [v.key, v.available, v.ref]),
+    pantalona.variants.map((v) => [v.key, v.priceCents, v.available, v.ref]),
     [
-      ["calca-pantalona-viscolycra:preto:P", true, "9001"],
-      ["calca-pantalona-viscolycra:preto:M", false, "9002"],
-      ["calca-pantalona-viscolycra:off-white:M", true, "9003"],
+      ["calca-pantalona-viscolycra:preto:P", 14990, true, "9001"],
+      ["calca-pantalona-viscolycra:preto:M", 14990, false, "9002"],
+      ["calca-pantalona-viscolycra:off-white:M", 12990, true, "9003"],
     ],
   );
   assert.deepEqual(regata.sizes, ["P", "G"]);
@@ -110,4 +112,43 @@ test("no commerce platform name outside src/lib/commerce/", () => {
     const code = readFileSync(file, "utf8").replace(/^\s*(\/\/|\*|\/\*).*$/gm, ""); // comments may name the decision
     assert.ok(!/nuvemshop|tiendanube|shopify|mercado ?pago|mercadopago/i.test(code), `${file.slice(src.length)} names a platform`);
   }
+});
+
+// Hostile store data (QA, VCV-41): whatever Felipe types in the store admin must never break the
+// build or publish a wrong price. `nsProduct` is a valid product; each test overrides one thing.
+const nsProduct = (overrides = {}) => ({
+  id: 1,
+  name: { pt: "Vestido Ana" },
+  description: { pt: "<p>Vestido leve.</p>" },
+  handle: { pt: "vestido-ana" },
+  published: true,
+  attributes: [{ pt: "Cor" }, { pt: "Tamanho" }],
+  images: [
+    { id: 10, src: "https://dcdn.mitiendanube.com/a.jpg", position: 1 },
+    { id: 11, src: "https://dcdn.mitiendanube.com/b.jpg", position: 2 },
+  ],
+  variants: [nsVariant(100, ["Coral", "M"], { image_id: 10 })],
+  categories: [{ id: 1, handle: { pt: "vestidos" }, name: { pt: "Vestidos" } }],
+  tags: "",
+  ...overrides,
+});
+function nsVariant(id, values, overrides = {}) {
+  return { id, image_id: null, price: "100.00", promotional_price: null, stock: 1, sku: null, values: values.map((pt) => ({ pt })), ...overrides };
+}
+const map = (overrides) => fromNuvemshop(nsProduct(overrides), { categoryIds });
+
+test("nuvemshop mapping: invalid prices are never published (QA-3)", () => {
+  for (const price of ["0", "0.00", "abc", "", "-10.00", "Infinity"]) {
+    assert.equal(map({ variants: [nsVariant(1, ["Coral", "M"], { price })] }), null, `only variant priced "${price}": product skipped`);
+  }
+  for (const promotional_price of ["0.00", "", "abc", "120.00", "100.00"]) {
+    const [variant] = map({ variants: [nsVariant(1, ["Coral", "M"], { promotional_price })] }).variants;
+    assert.equal(variant.priceCents, 10000, `promo "${promotional_price}" is not a valid lower price`);
+  }
+  const [promo] = map({ variants: [nsVariant(1, ["Coral", "M"], { promotional_price: "79.90" })] }).variants;
+  assert.equal(promo.priceCents, 7990, "a valid lower promo is the price");
+  const product = map({ variants: [nsVariant(1, ["Coral", "M"], { price: "0" }), nsVariant(2, ["Coral", "G"])] });
+  assert.deepEqual(product.variants.map((v) => v.size), ["G"], "a variant with no valid price is dropped");
+  assert.deepEqual(product.sizes, ["G"]);
+  assert.equal(product.priceCents, 10000);
 });
