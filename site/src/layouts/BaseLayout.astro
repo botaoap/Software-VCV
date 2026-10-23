@@ -6,6 +6,7 @@ import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
 import PromoBar from "../components/PromoBar.astro";
 import { getBrand } from "../lib/content";
+import { photoSrc } from "../lib/images";
 import { brand } from "../lib/site";
 import { consentEnabled } from "../lib/services";
 import { url } from "../lib/url";
@@ -31,7 +32,7 @@ const canonical = new URL(Astro.url.pathname, site).href;
 
 // Default link-preview image (WhatsApp, Instagram…): the first hero photo cropped to 1200×630.
 const { hero } = await getBrand();
-const defaultOg = await getImage({ src: hero[0].url, width: 1200, height: 630, fit: "cover", format: "jpg", inferSize: false });
+const defaultOg = await getImage({ src: photoSrc(hero[0].url), width: 1200, height: 630, fit: "cover", format: "jpg", inferSize: false });
 const ogImage = new URL(Astro.props.ogImage ?? defaultOg.src, site).href;
 ---
 
@@ -66,7 +67,7 @@ const ogImage = new URL(Astro.props.ogImage ?? defaultOg.src, site).href;
     <slot name="head" />
     {structuredData.map((data) => <script type="application/ld+json" set:html={JSON.stringify(data)} />)}
   </head>
-  <body class="flex min-h-dvh flex-col" data-base={url("/")} data-whatsapp={(await getBrand()).contact.whatsapp}>
+  <body class="flex min-h-dvh flex-col" data-base={url("/")}>
     <a
       href="#conteudo"
       class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[70] focus:rounded-md focus:bg-wine focus:px-4 focus:py-3 focus:text-sm focus:text-cream"

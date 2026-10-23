@@ -11,6 +11,9 @@ import tailwindcss from "@tailwindcss/vite";
 const site = process.env.SITE_URL ?? "https://vestecomvoce.com.br";
 const base = process.env.BASE_PATH ?? "/";
 
+const movedToCatalog = ["/novidades", "/colecoes", "/colecao/essenciais", "/colecao/verao"];
+const redirected = [...movedToCatalog, "/atelier"];
+
 export default defineConfig({
   site,
   base,
@@ -21,10 +24,16 @@ export default defineConfig({
   // Placeholder photography is optimised at build time and self-hosted (no third-party request at
   // runtime). Replace the URLs in content/ with real campaign photos when they exist.
   image: { domains: ["images.unsplash.com"] },
+  // Sections that no longer exist (VCV-39: no collections or "Novidades" at launch; "Atelier" became
+  // "Sobre") keep their old links working. Static builds emit a redirect page for each.
+  redirects: Object.fromEntries([
+    ...movedToCatalog.map((path) => [path, `${base.replace(/\/$/, "")}/produtos/`]),
+    ["/atelier", `${base.replace(/\/$/, "")}/sobre/`],
+  ]),
   integrations: [
     sitemap({
-      // Cart, checkout and search are per-visitor steps, not pages worth indexing.
-      filter: (page) => !/\/(carrinho|checkout|busca)\/?$/.test(page),
+      // Cart, checkout and search are per-visitor steps, not pages worth indexing; redirects are not pages.
+      filter: (page) => !/\/(carrinho|checkout|busca)\/?$/.test(page) && !redirected.some((path) => page.endsWith(`${path}/`)),
     }),
   ],
   vite: { plugins: [tailwindcss()] },

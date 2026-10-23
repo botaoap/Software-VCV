@@ -7,7 +7,7 @@ import ProductCard from "../../components/ProductCard.astro";
 import SectionHeading from "../../components/SectionHeading.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { coverOf, galleryOf } from "../../lib/catalog";
-import { getCategoryOf, getCollectionOf, getProducts } from "../../lib/content";
+import { getCategoryOf, getProducts } from "../../lib/content";
 import { badgeLabels, formatBrl } from "../../lib/format";
 import { photoSrc } from "../../lib/images";
 import { brand } from "../../lib/site";
@@ -20,12 +20,11 @@ export async function getStaticPaths() {
 
 const { product } = Astro.props;
 const { data } = product;
-const collection = await getCollectionOf(product);
 const category = await getCategoryOf(product);
 const all = await getProducts();
 const related = [
-  ...all.filter((p) => p.id !== product.id && p.data.collection.id === data.collection.id),
-  ...all.filter((p) => p.id !== product.id && p.data.collection.id !== data.collection.id),
+  ...all.filter((p) => p.id !== product.id && p.data.category.id === data.category.id),
+  ...all.filter((p) => p.id !== product.id && p.data.category.id !== data.category.id),
 ].slice(0, 4);
 
 // Marketplace pattern: one gallery per color (its photos, then the shared ones); the first color is
@@ -59,13 +58,14 @@ const productLd = {
   image: [new URL(og.src, Astro.site!).href],
   ...(data.fabric.material && { material: data.fabric.material }),
   ...(colors.length > 0 && { color: colors.map((color) => color.name).join(", ") }),
-  brand: { "@type": "Brand", name: brand.name },
+  brand: { "@type": "Brand", name: brand.short },
+  category: category.data.title,
   offers: {
     "@type": "Offer",
     url: pageUrl,
     priceCurrency: "BRL",
     price: (data.priceCents / 100).toFixed(2),
-    availability: "https://schema.org/InStock",
+    availability: `https://schema.org/${data.available ? "InStock" : "OutOfStock"}`,
   },
 };
 const crumbsLd = {
@@ -73,7 +73,7 @@ const crumbsLd = {
   "@type": "BreadcrumbList",
   itemListElement: [
     { name: "Início", item: new URL(url("/"), Astro.site!).href },
-    { name: "Produto", item: new URL(url("/produtos/"), Astro.site!).href },
+    { name: "Produtos", item: new URL(url("/produtos/"), Astro.site!).href },
     { name: category.data.title, item: new URL(url(`/produtos/${category.id}/`), Astro.site!).href },
     { name: data.name, item: pageUrl },
   ].map((entry, index) => ({ "@type": "ListItem", position: index + 1, ...entry })),
@@ -92,7 +92,7 @@ const crumbsLd = {
     <Breadcrumbs
       items={[
         { label: "Início", href: url("/") },
-        { label: "Produto", href: url("/produtos/") },
+        { label: "Produtos", href: url("/produtos/") },
         { label: category.data.title, href: url(`/produtos/${category.id}/`) },
         { label: data.name },
       ]}
@@ -146,7 +146,7 @@ const crumbsLd = {
 
     <div class="min-w-0">
       {data.badges[0] && <p class="mb-3"><span class:list={["badge", data.badges[0] === "LAST_UNITS" && "badge-alert"]}>{badgeLabels[data.badges[0]]}</span></p>}
-      <p class="eyebrow">{collection?.data.title}</p>
+      <p class="eyebrow">{category.data.title}</p>
       <h1 id="product-title" class="mt-3 text-4xl md:text-5xl">{data.name}</h1>
       <p class="mt-4 font-sans text-2xl font-medium text-wine">{formatBrl(data.priceCents)}</p>
       <p class="mt-5 text-lg leading-relaxed text-text-muted">{data.shortDescription}</p>
@@ -224,7 +224,7 @@ const crumbsLd = {
       {
         spec.length > 0 && (
           <section class="mt-10 border-t border-border pt-8" aria-labelledby="spec-title">
-            <h2 id="spec-title" class="text-2xl">Ficha técnica</h2>
+            <h2 id="spec-title" class="text-2xl">Composição e cuidados</h2>
             <dl class="mt-5 grid grid-cols-[7rem_1fr] gap-x-4 gap-y-3 text-sm">
               {spec.map(([term, value]) => (
                 <>

@@ -8,8 +8,16 @@
     "title": "Calças"
   },
   {
+    "id": "pantalonas",
+    "title": "Pantalonas"
+  },
+  {
     "id": "blusas",
     "title": "Blusas"
+  },
+  {
+    "id": "regatas",
+    "title": "Regatas"
   },
   {
     "id": "saias",
@@ -18,6 +26,10 @@
   {
     "id": "bermudas",
     "title": "Bermudas"
+  },
+  {
+    "id": "shorts",
+    "title": "Shorts"
   },
   {
     "id": "camisetas",

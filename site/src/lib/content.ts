@@ -1,10 +1,9 @@
 import { getCollection, getEntries, getEntry } from "astro:content";
 import categoriesFile from "../../content/categories.json";
-import collectionsFile from "../../content/collections.json";
 import productsFile from "../../content/products.json";
 
-// Astro's file loader returns entries sorted by id; the editorial order ("Novidades") is the
-// order of the entries in the content file, so restore it explicitly.
+// Astro's file loader returns entries sorted by id; the editorial order (the catalog's default
+// "Relevância" sort) is the order of the entries in the content file, so restore it explicitly.
 const byFileOrder = (file: { id: string }[]) => {
   const order = new Map(file.map((entry, index) => [entry.id, index]));
   return <T extends { id: string }>(a: T, b: T) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0);
@@ -16,7 +15,7 @@ export async function getBrand() {
   return entry.data;
 }
 
-/** Products in content order ("Novidades"). */
+/** Products in content order. */
 export async function getProducts() {
   return (await getCollection("products")).sort(byFileOrder(productsFile));
 }
@@ -25,12 +24,15 @@ export async function getProduct(id: string) {
   return getEntry("products", id);
 }
 
-export async function getCollections() {
-  return (await getCollection("collections")).sort(byFileOrder(collectionsFile));
-}
-
+/** Every garment type, in content order, including the ones with no product yet. */
 export async function getCategories() {
   return (await getCollection("categories")).sort(byFileOrder(categoriesFile));
+}
+
+/** The garment types that have at least one product: the menu, the pages and the sitemap. */
+export async function getStockedCategories() {
+  const [categories, products] = await Promise.all([getCategories(), getProducts()]);
+  return categories.filter((category) => products.some((product) => product.data.category.id === category.id));
 }
 
 export async function getProductsOfCategory(categoryId: string) {
@@ -38,30 +40,25 @@ export async function getProductsOfCategory(categoryId: string) {
   return products.filter((product) => product.data.category.id === categoryId);
 }
 
-/** "Novidades": the products the client marked as new (badge NEW_IN). */
-export async function getNewIn() {
-  const products = await getProducts();
-  return products.filter((product) => product.data.badges.includes("NEW_IN"));
-}
+/**
+ * The home rails Felipe asked for instead of "Novidades" and collections, in this order. Each is a
+ * curated badge; a rail with no product is not shown. ("Recomendado para você" is a curated pick
+ * until there is traffic to personalise it; "Maiores vendas" follows the sales VCV reports.)
+ */
+export const rails = [
+  { id: "recomendados", badge: "RECOMMENDED", title: "Recomendado para você" },
+  { id: "mais-vendidos", badge: "BEST_SELLER", title: "Maiores vendas" },
+  { id: "principais", badge: "FEATURED", title: "Produtos principais" },
+] as const;
 
-export async function getProductsOf(collectionId: string) {
+export async function getRails() {
   const products = await getProducts();
-  return products.filter((product) => product.data.collection.id === collectionId);
-}
-
-/** Home highlights: products carrying a badge, else the first four (same rule as the app). */
-export async function getFeatured() {
-  const products = await getProducts();
-  const badged = products.filter((product) => product.data.badges.length > 0);
-  return badged.length > 0 ? badged : products.slice(0, 4);
+  return rails
+    .map((rail) => ({ ...rail, products: products.filter((product) => product.data.badges.includes(rail.badge)) }))
+    .filter((rail) => rail.products.length > 0);
 }
 
 export async function getCategoryOf(product: Awaited<ReturnType<typeof getProducts>>[number]) {
   const [category] = await getEntries([product.data.category]);
   return category;
-}
-
-export async function getCollectionOf(product: Awaited<ReturnType<typeof getProducts>>[number]) {
-  const [collection] = await getEntries([product.data.collection]);
-  return collection;
 }

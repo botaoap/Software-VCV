@@ -2,7 +2,6 @@
   {
     "id": "bermuda-marisa",
     "name": "Bermuda Marisa",
-    "collection": "verao",
     "category": "bermudas",
     "audience": "feminino",
     "priceCents": 12900,
@@ -94,13 +93,13 @@
       "note": "Medidas aproximadas da peça, em centímetros; podem variar."
     },
     "badges": [
+      "FEATURED",
       "NEW_IN"
     ]
   },
   {
     "id": "bermuda-masculina-conforto",
     "name": "Bermuda Masculina Conforto",
-    "collection": "verao",
     "category": "bermudas",
     "audience": "masculino",
     "priceCents": 8990,
@@ -239,13 +238,13 @@
       "note": "Medidas aproximadas da peça, em centímetros; podem variar."
     },
     "badges": [
+      "FEATURED",
       "NEW_IN"
     ]
   },
   {
     "id": "camiseta-masculina-listrada",
     "name": "Camiseta Masculina Listrada",
-    "collection": "essenciais",
     "category": "camisetas",
     "audience": "masculino",
     "priceCents": 6990,
@@ -332,13 +331,13 @@
       "note": "Medidas aproximadas da peça, em centímetros; podem variar."
     },
     "badges": [
+      "RECOMMENDED",
       "NEW_IN"
     ]
   },
   {
     "id": "vestido-zebra",
     "name": "Vestido Curto Zebra",
-    "collection": "essenciais",
     "category": "vestidos",
     "priceCents": 18900,
     "images": [
@@ -383,7 +382,6 @@
   {
     "id": "calca-viscolinho",
     "name": "Calça Pantalona Viscolinho",
-    "collection": "essenciais",
     "category": "calcas",
     "priceCents": 22900,
     "images": [
@@ -414,13 +412,13 @@
       52
     ],
     "badges": [
-      "ATELIER_PICK"
+      "RECOMMENDED",
+      "BEST_SELLER"
     ]
   },
   {
     "id": "blusa-linho",
     "name": "Blusa Ampla Linho",
-    "collection": "verao",
     "category": "blusas",
     "priceCents": 14900,
     "images": [
@@ -449,13 +447,12 @@
       48
     ],
     "badges": [
-      "NEW_IN"
+      "RECOMMENDED"
     ]
   },
   {
     "id": "saia-midi",
     "name": "Saia Midi Viscose",
-    "collection": "verao",
     "category": "saias",
     "priceCents": 17900,
     "images": [
@@ -484,6 +481,8 @@
       50,
       52
     ],
-    "badges": []
+    "badges": [
+      "FEATURED"
+    ]
   }
 ]

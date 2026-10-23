@@ -12,8 +12,9 @@ export function whatsappHref(base: string, text?: string): string {
 }
 
 export const badgeLabels = {
-  BEST_SELLER: "Best-seller",
+  RECOMMENDED: "Recomendado",
+  BEST_SELLER: "Mais vendido",
+  FEATURED: "Destaque",
   NEW_IN: "Novo",
   LAST_UNITS: "Últimas peças",
-  ATELIER_PICK: "Escolha do ateliê",
 } as const;

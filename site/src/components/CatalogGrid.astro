@@ -3,16 +3,15 @@ import type { CollectionEntry } from "astro:content";
 import ProductCard from "./ProductCard.astro";
 import { audienceLabels, sortSizes } from "../lib/catalog";
 
-// Product grid + sort/filter controls. The server renders every product in content order ("Novidades"),
+// Product grid + sort/filter controls. The server renders every product in content order ("Relevância"),
 // so the page is complete without JS; the island then sorts/filters in place and mirrors the choice
-// in the URL (?ordem=&para=&colecao=&tam=) so a filtered view can be shared. Each filter appears only
+// in the URL (?ordem=&para=&tam=) so a filtered view can be shared. Each filter appears only
 // when it can narrow the list (e.g. "Para" once both feminine and masculine pieces are on sale).
 interface Props {
   products: CollectionEntry<"products">[];
-  collections?: CollectionEntry<"collections">[];
   label: string;
 }
-const { products, collections = [], label } = Astro.props;
+const { products, label } = Astro.props;
 const sizes = sortSizes(products.flatMap((product) => product.data.sizes));
 const audiences = (Object.keys(audienceLabels) as (keyof typeof audienceLabels)[]).filter((audience) =>
   products.some((product) => product.data.audience === audience),
@@ -24,7 +23,7 @@ const audiences = (Object.keys(audienceLabels) as (keyof typeof audienceLabels)[
     <div>
       <label for="catalog-sort" class="text-xs font-medium tracking-[0.18em] text-text-muted uppercase">Ordenar por</label>
       <select id="catalog-sort" class="field w-full sm:w-auto sm:min-w-44 !mt-1" data-sort>
-        <option value="novidades">Novidades</option>
+        <option value="relevancia">Relevância</option>
         <option value="menor-preco">Menor preço</option>
         <option value="maior-preco">Maior preço</option>
         <option value="nome">Nome A–Z</option>
@@ -37,17 +36,6 @@ const audiences = (Object.keys(audienceLabels) as (keyof typeof audienceLabels)[
           <select id="catalog-audience" class="field w-full sm:w-auto sm:min-w-36 !mt-1" data-filter-audience>
             <option value="">Todos</option>
             {audiences.map((audience) => <option value={audience}>{audienceLabels[audience]}</option>)}
-          </select>
-        </div>
-      )
-    }
-    {
-      collections.length > 1 && (
-        <div>
-          <label for="catalog-collection" class="text-xs font-medium tracking-[0.18em] text-text-muted uppercase">Coleção</label>
-          <select id="catalog-collection" class="field w-full sm:w-auto sm:min-w-44 !mt-1" data-filter-collection>
-            <option value="">Todas</option>
-            {collections.map((collection) => <option value={collection.id}>{collection.data.title}</option>)}
           </select>
         </div>
       )
@@ -83,13 +71,12 @@ const audiences = (Object.keys(audienceLabels) as (keyof typeof audienceLabels)[
     const cards = [...grid.querySelectorAll<HTMLElement>("[data-product-card]")];
     const sort = root.querySelector<HTMLSelectElement>("[data-sort]")!;
     const audience = root.querySelector<HTMLSelectElement>("[data-filter-audience]");
-    const collection = root.querySelector<HTMLSelectElement>("[data-filter-collection]");
     const size = root.querySelector<HTMLSelectElement>("[data-filter-size]");
     const count = root.querySelector<HTMLElement>("[data-count]")!;
     const empty = root.querySelector<HTMLElement>("[data-empty]")!;
 
     const sorters: Record<string, (a: HTMLElement, b: HTMLElement) => number> = {
-      novidades: (a, b) => Number(a.dataset.index) - Number(b.dataset.index),
+      relevancia: (a, b) => Number(a.dataset.index) - Number(b.dataset.index),
       "menor-preco": (a, b) => Number(a.dataset.price) - Number(b.dataset.price),
       "maior-preco": (a, b) => Number(b.dataset.price) - Number(a.dataset.price),
       nome: (a, b) => (a.dataset.name ?? "").localeCompare(b.dataset.name ?? "", "pt-BR"),
@@ -101,17 +88,15 @@ const audiences = (Object.keys(audienceLabels) as (keyof typeof audienceLabels)[
     };
     set(sort, params.get("ordem"));
     set(audience, params.get("para"));
-    set(collection, params.get("colecao"));
     set(size, params.get("tam"));
 
     const render = () => {
-      const ordered = [...cards].sort(sorters[sort.value] ?? sorters.novidades);
+      const ordered = [...cards].sort(sorters[sort.value] ?? sorters.relevancia);
       ordered.forEach((card, position) => (card.style.order = String(position)));
       let visible = 0;
       for (const card of cards) {
         const matches =
           (!audience?.value || card.dataset.audience === audience.value) &&
-          (!collection?.value || card.dataset.collection === collection.value) &&
           (!size?.value || (card.dataset.sizes ?? "").split(",").includes(size.value));
         card.hidden = !matches;
         if (matches) visible++;
@@ -120,19 +105,17 @@ const audiences = (Object.keys(audienceLabels) as (keyof typeof audienceLabels)[
       empty.classList.toggle("hidden", visible > 0);
 
       const next = new URLSearchParams();
-      if (sort.value !== "novidades") next.set("ordem", sort.value);
+      if (sort.value !== "relevancia") next.set("ordem", sort.value);
       if (audience?.value) next.set("para", audience.value);
-      if (collection?.value) next.set("colecao", collection.value);
       if (size?.value) next.set("tam", size.value);
       const query = next.toString();
       history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}`);
     };
 
-    [sort, audience, collection, size].forEach((select) => select?.addEventListener("change", render));
+    [sort, audience, size].forEach((select) => select?.addEventListener("change", render));
     root.querySelector("[data-reset]")?.addEventListener("click", () => {
-      sort.value = "novidades";
+      sort.value = "relevancia";
       if (audience) audience.value = "";
-      if (collection) collection.value = "";
       if (size) size.value = "";
       render();
     });

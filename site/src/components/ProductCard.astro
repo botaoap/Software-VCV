@@ -10,7 +10,7 @@ import { url } from "../lib/url";
 // feed the catalog filter/sort island.
 interface Props {
   product: CollectionEntry<"products">;
-  /** Position in content order, so the catalog island can restore "Novidades". */
+  /** Position in content order, so the catalog island can restore "Relevância". */
   index?: number;
   priority?: boolean;
   /** Heading level for the product name: h3 under a section title, h2 on listing pages. */
@@ -33,7 +33,7 @@ const MAX_SWATCHES = 5;
   data-name={data.name.toLowerCase()}
   data-search={search}
   data-price={data.priceCents}
-  data-collection={data.collection.id}
+  data-category={data.category.id}
   data-audience={data.audience}
   data-sizes={data.sizes.join(",")}
 >
