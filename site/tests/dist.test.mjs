@@ -342,12 +342,13 @@ test("no invented brand claims (atelier, rolo a rolo, ficha técnica, casa têxt
 });
 
 // Tailwind utilities live in @layer utilities, and unlayered CSS beats any layer whatever its
-// specificity. So an unlayered rule that shows a class (`display` other than none) silently
-// overrides `hidden` / `lg:hidden` on the same element (VCV-48: the mobile menu showed on desktop
-// with JS off). Unlayered `display: none` (e.g. `.js-only` without JS) is meant to win.
+// specificity. So an unlayered rule that shows an element (`display` other than none) silently
+// overrides `hidden` / `lg:hidden` on it (VCV-48: the mobile menu showed on desktop with JS off).
+// Astro component <style> blocks are always unlayered, and small ones are inlined into the page.
+// Unlayered `display: none` (e.g. `.js-only` without JS) is meant to win.
 const HIDING_UTILITY = /^(?:[\w-]+:)*hidden$/;
-const unlayeredDisplayClasses = (css) => {
-  const found = new Set();
+const unlayeredShownSelectors = (css) => {
+  const found = new Set(); // ".class" and "#id"
   const stack = [];
   let start = 0;
   for (let i = 0; i < css.length; i++) {
@@ -360,7 +361,7 @@ const unlayeredDisplayClasses = (css) => {
       const body = css.slice(start, i);
       const layered = stack.some((p) => p.startsWith("@layer"));
       if (!layered && !prelude.startsWith("@") && /(?:^|;)\s*display\s*:\s*(?!none\b)/.test(body)) {
-        for (const [, name] of prelude.matchAll(/\.([\w-]+)/g)) found.add(name);
+        for (const [name] of prelude.matchAll(/[.#][\w-]+/g)) found.add(name);
       }
       start = i + 1;
     } else if (ch === ";" && stack.length === 0) {
@@ -370,26 +371,30 @@ const unlayeredDisplayClasses = (css) => {
   return found;
 };
 
-test("unlayeredDisplayClasses finds unlayered rules that show an element, and nothing else", () => {
+test("unlayeredShownSelectors finds unlayered rules that show an element, and nothing else", () => {
   const css =
     "@layer components{.a{display:grid}}.b{opacity:0;display:grid}.c .d{color:red}" +
-    "@media (min-width:1px){.e{display:flex}}html:not(.js) .f{display:none}";
-  assert.deepEqual([...unlayeredDisplayClasses(css)].sort(), ["b", "e"]);
+    "@media (min-width:1px){.e{display:flex}}html:not(.js) .f{display:none}#g{display:block}";
+  assert.deepEqual([...unlayeredShownSelectors(css)].sort(), ["#g", ".b", ".e"]);
 });
 
 test("hidden / lg:hidden win: no unlayered CSS shows an element they hide", () => {
   const cssDir = join(dist, "_astro");
-  const css = readdirSync(cssDir)
+  const shared = readdirSync(cssDir)
     .filter((name) => name.endsWith(".css"))
     .map((name) => readFileSync(join(cssDir, name), "utf8"))
     .join("\n");
-  const unlayered = unlayeredDisplayClasses(css);
+  assert.ok(shared.length > 0, "no built stylesheet in dist/_astro");
   for (const file of pages) {
-    for (const [, attr] of readFileSync(file, "utf8").matchAll(/\sclass="([^"]*)"/g)) {
-      const classes = attr.split(/\s+/);
+    const html = readFileSync(file, "utf8");
+    const inline = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join("\n");
+    const shown = unlayeredShownSelectors(`${shared}\n${inline}`);
+    for (const [tag] of html.matchAll(/<[a-z][\w-]*\s[^>]*>/g)) {
+      const classes = (tag.match(/\sclass="([^"]*)"/)?.[1] ?? "").split(/\s+/);
       if (!classes.some((c) => HIDING_UTILITY.test(c))) continue;
-      const clash = classes.filter((c) => unlayered.has(c));
-      assert.deepEqual(clash, [], `${rel(file)}: unlayered display on .${clash.join(", .")} overrides "${attr}"`);
+      const id = tag.match(/\sid="([^"]*)"/)?.[1];
+      const clash = [...classes.map((c) => `.${c}`), ...(id ? [`#${id}`] : [])].filter((s) => shown.has(s));
+      assert.deepEqual(clash, [], `${rel(file)}: unlayered display on ${clash.join(", ")} overrides ${tag}`);
     }
   }
 });
