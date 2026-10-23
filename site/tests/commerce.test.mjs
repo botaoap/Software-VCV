@@ -171,3 +171,44 @@ test("nuvemshop mapping: a product with no photo is skipped with a warning; a co
     ["azul", ["https://dcdn.mitiendanube.com/a.jpg"]],
   ]);
 });
+
+test("nuvemshop mapping: product, color and variant identity survive messy store data (QA-6)", (t) => {
+  const warn = t.mock.method(console, "warn", () => {});
+  // Product id = slug of the handle, else of the name; nothing usable → skipped.
+  assert.equal(map({ handle: { pt: "Vestido Ána/2" } }).id, "vestido-ana-2");
+  assert.equal(map({ handle: { pt: "Vestido-ANA" } }).id, "vestido-ana");
+  assert.equal(map({ handle: {}, name: { pt: "Vestido Ána" } }).id, "vestido-ana");
+  assert.equal(map({ handle: undefined }).id, "vestido-ana");
+  assert.equal(map({ handle: {}, name: { pt: "★★" } }), null);
+
+  // Attribute names: any case or accent, Portuguese or English.
+  for (const [cor, tamanho] of [["COR", "Tamanho "], ["Côr", "TAM"], ["Color", "Size"], ["colour", "size"]]) {
+    const product = map({ attributes: [{ pt: cor }, { en: tamanho }], variants: [nsVariant(1, ["Coral", "M"]), nsVariant(2, ["Coral", "G"])] });
+    assert.deepEqual([product.colors.map((c) => c.id), product.sizes], [["coral"], ["M", "G"]], `${cor} / ${tamanho}`);
+  }
+
+  // Colors equal after slugging are one color; a name with no slug gets cor-<n>.
+  const colors = map({
+    variants: [nsVariant(1, ["Azul Claro", "M"], { image_id: 10 }), nsVariant(2, ["azul claro", "G"], { image_id: 11 }), nsVariant(3, ["🌸", "M"]), nsVariant(4, ["Café", "M"]), nsVariant(5, ["Cafe", "G"])],
+  });
+  assert.deepEqual(colors.colors.map((c) => [c.id, c.name]), [["azul-claro", "Azul Claro"], ["cor-2", "🌸"], ["cafe", "Café"]]);
+  assert.deepEqual(colors.colors[0].images.map((i) => i.url), ["https://dcdn.mitiendanube.com/a.jpg", "https://dcdn.mitiendanube.com/b.jpg"]);
+  assert.deepEqual(colors.variants.map((v) => v.key), ["vestido-ana:azul-claro:M", "vestido-ana:azul-claro:G", "vestido-ana:cor-2:M", "vestido-ana:cafe:M", "vestido-ana:cafe:G"]);
+
+  // The same color + size twice: the first one wins, with a warning.
+  warn.mock.resetCalls();
+  const twice = map({ variants: [nsVariant(1, ["Coral", "M"]), nsVariant(2, ["coral", "M"])] });
+  assert.deepEqual(twice.variants.map((v) => v.ref), ["1"]);
+  assert.equal(warn.mock.callCount(), 1);
+  assert.match(warn.mock.calls[0].arguments.join(" "), /vestido-ana/);
+
+  // A variant with no color on a product with colors is not sold (it would be an orphan size).
+  assert.deepEqual(map({ variants: [nsVariant(1, ["Coral", "M"]), nsVariant(2, ["", "G"])] }).variants.map((v) => v.key), ["vestido-ana:coral:M"]);
+
+  // Missing arrays never throw.
+  assert.equal(map({ categories: undefined }), null, "no category: no page");
+  for (const missing of ["tags", "attributes"]) assert.ok(map({ [missing]: undefined }), `${missing} missing`);
+  assert.equal(map({ images: undefined }), null, "images missing: no photo");
+  const noValues = map({ variants: [{ id: 1, image_id: null, price: "10.00", promotional_price: null, stock: 1, sku: null }] });
+  assert.deepEqual([noValues.colors, noValues.sizes], [[], ["U"]], "values missing");
+});

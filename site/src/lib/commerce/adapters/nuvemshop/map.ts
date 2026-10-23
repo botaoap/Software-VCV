@@ -6,7 +6,7 @@ import type { Localized, NsImage, NsProduct, NsVariant } from "./api.ts";
 // Nuvemshop product → neutral Product. Pure (no I/O), so the contract tests run it offline on a
 // fixture. Conventions the store must follow (to agree with Felipe when the store is created):
 //   - category handle = a content/categories.json id ("vestidos", "pantalonas", …)
-//   - variant attributes named "Cor" and/or "Tamanho"
+//   - variant attributes named "Cor" and/or "Tamanho" (any case or accent; "Color", "Size", "Tam" also work)
 //   - tags carry the curated marks: "recomendado", "mais-vendido", "destaque", "novo", "ultimas-pecas",
 //     and the audience: "masculino" / "unissex" (default feminino)
 
@@ -47,16 +47,16 @@ export type MapOptions = {
 };
 
 export function fromNuvemshop(product: NsProduct, options: MapOptions): Product | null {
-  const categoryId = product.categories.map((c) => pt(c.handle)).find((handle) => options.categoryIds.includes(handle));
+  const categoryId = (product.categories ?? []).map((c) => pt(c.handle)).find((handle) => options.categoryIds.includes(handle));
   // A variant with no valid price is not for sale on the site.
   const forSale = product.variants.filter((variant) => priceOf(variant));
-  if (!product.published || !categoryId || forSale.length === 0) return null;
+  const id = slug(pt(product.handle) || pt(product.name));
+  if (!product.published || !categoryId || forSale.length === 0 || !id) return null;
 
-  const id = pt(product.handle) || slug(pt(product.name));
   const name = pt(product.name);
-  const axis = (label: string) => product.attributes.findIndex((attribute) => pt(attribute).toLowerCase() === label);
-  const colorAxis = axis("cor");
-  const sizeAxis = axis("tamanho");
+  const axis = (names: string[]) => (product.attributes ?? []).findIndex((attribute) => names.includes(slug(pt(attribute))));
+  const colorAxis = axis(["cor", "color", "colour"]);
+  const sizeAxis = axis(["tamanho", "size", "tam"]);
 
   const photo = (image: NsImage): Photo => ({
     url: image.src.startsWith("//") ? `https:${image.src}` : image.src,
@@ -64,47 +64,49 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
     width: image.width ?? DEFAULT_SIZE.width,
     height: image.height ?? DEFAULT_SIZE.height,
   });
-  const images = product.images.filter((image) => image.src).sort((a, b) => a.position - b.position);
+  const images = (product.images ?? []).filter((image) => image.src).sort((a, b) => a.position - b.position);
   if (images.length === 0) {
     // Every page needs a cover photo; skip the product rather than fail the whole build.
     console.warn(`Nuvemshop product "${id}" has no photo: not published on the site`);
     return null;
   }
 
-  // Colors in first-seen order; a color's photos are the images its variants point at.
-  const colors: Color[] = [];
-  if (colorAxis >= 0) {
-    for (const variant of forSale) {
-      const colorName = pt(variant.values[colorAxis]);
-      if (!colorName) continue;
-      let color = colors.find((c) => c.name === colorName);
+  // Colors in first-seen order, one per slug ("Azul Claro" = "azul claro"); a color's photos are the
+  // images its variants point at.
+  const colorsBySlug = new Map<string, Color>();
+  const variants: Variant[] = [];
+  for (const variant of forSale) {
+    const values = variant.values ?? [];
+    const colorName = colorAxis >= 0 ? pt(values[colorAxis]) : "";
+    let color: Color | undefined;
+    if (colorName) {
+      const colorSlug = slug(colorName) || colorName;
+      color = colorsBySlug.get(colorSlug);
       if (!color) {
-        color = { id: slug(colorName), name: colorName, hex: options.colorHex?.[colorName] ?? NEUTRAL_SWATCH, images: [] };
-        colors.push(color);
+        color = { id: slug(colorName) || `cor-${colorsBySlug.size + 1}`, name: colorName, hex: options.colorHex?.[colorName] ?? NEUTRAL_SWATCH, images: [] };
+        colorsBySlug.set(colorSlug, color);
       }
-      const image = images.find((i) => i.id === variant.image_id);
-      if (image && !color.images.some((p) => p.url === photo(image).url)) color.images.push(photo(image));
     }
+    const size = (sizeAxis >= 0 && pt(values[sizeAxis])) || "U";
+    const key = variantKey({ productId: id, colorId: color?.id, size });
+    if (variants.some((v) => v.key === key)) {
+      console.warn(`Nuvemshop product "${id}": variant ${variant.id} repeats ${key}; the first one is kept`);
+      continue;
+    }
+    const image = images.find((i) => i.id === variant.image_id);
+    if (color && image && !color.images.some((p) => p.url === photo(image).url)) color.images.push(photo(image));
+    variants.push({ key, colorId: color?.id, size, priceCents: priceOf(variant)!, available: variant.stock === null || variant.stock > 0, ref: String(variant.id) });
   }
+  const colors = [...colorsBySlug.values()];
+  // On a product with colors, a variant with no color would be a size of no color: not sold.
+  const sold = colors.length > 0 ? variants.filter((variant) => variant.colorId) : variants;
+
   const usedByColor = new Set(colors.flatMap((c) => c.images.map((p) => p.url)));
   const shared = images.map(photo).filter((p) => !usedByColor.has(p.url));
   // A color without its own photo shows the product's first one, so every gallery has a cover.
   for (const color of colors) if (color.images.length === 0) color.images.push(photo(images[0]));
 
-  const variants: Variant[] = forSale.map((variant) => {
-    const colorId = colorAxis >= 0 ? slug(pt(variant.values[colorAxis])) || undefined : undefined;
-    const size = sizeAxis >= 0 ? pt(variant.values[sizeAxis]) || "U" : "U";
-    return {
-      key: variantKey({ productId: id, colorId, size }),
-      colorId,
-      size,
-      priceCents: priceOf(variant)!,
-      available: variant.stock === null || variant.stock > 0,
-      ref: String(variant.id),
-    };
-  });
-
-  const tags = product.tags.split(",").map((tag) => slug(tag)).filter(Boolean);
+  const tags = (product.tags ?? "").split(",").map((tag) => slug(tag)).filter(Boolean);
   const badges = [...new Set(tags.map((tag) => tagBadges[tag]).filter((badge): badge is Badge => Boolean(badge)))].sort(
     (a, b) => knownBadges.indexOf(a) - knownBadges.indexOf(b),
   );
@@ -114,15 +116,15 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
     id,
     name,
     categoryId,
-    priceCents: Math.min(...variants.map((variant) => variant.priceCents)),
+    priceCents: Math.min(...sold.map((variant) => variant.priceCents)),
     audience,
     images: colors.length > 0 ? shared.filter((p) => !colors.some((c) => c.images[0]?.url === p.url)) : shared,
     colors,
     shortDescription: plainText(pt(product.description)) || name,
     fabric: { care: [] },
-    sizes: sortSizes(variants.map((variant) => variant.size)),
+    sizes: sortSizes(sold.map((variant) => variant.size)),
     badges,
-    available: variants.some((variant) => variant.available),
-    variants,
+    available: sold.some((variant) => variant.available),
+    variants: sold,
   };
 }
