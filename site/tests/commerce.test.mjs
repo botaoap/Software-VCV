@@ -152,3 +152,22 @@ test("nuvemshop mapping: invalid prices are never published (QA-3)", () => {
   assert.deepEqual(product.sizes, ["G"]);
   assert.equal(product.priceCents, 10000);
 });
+
+test("nuvemshop mapping: a product with no photo is skipped with a warning; a color with none borrows the first (QA-2)", (t) => {
+  const warn = t.mock.method(console, "warn", () => {});
+  assert.equal(map({ images: [] }), null, "no photo at all");
+  assert.equal(map({ images: [{ id: 10, src: "", position: 1 }] }), null, "no usable photo");
+  assert.equal(map({ images: [], attributes: [{ pt: "Tamanho" }], variants: [nsVariant(1, ["M"])] }), null, "no photo, no colors");
+  assert.equal(warn.mock.callCount(), 3);
+  assert.match(warn.mock.calls[0].arguments.join(" "), /vestido-ana/, "the warning names the product");
+
+  // Every photo belongs to a color: the color without its own photo shows the product's first one.
+  const product = map({
+    images: [{ id: 10, src: "https://dcdn.mitiendanube.com/a.jpg", position: 1 }],
+    variants: [nsVariant(1, ["Coral", "M"], { image_id: 10 }), nsVariant(2, ["Azul", "M"])],
+  });
+  assert.deepEqual(product.colors.map((c) => [c.id, c.images.map((i) => i.url)]), [
+    ["coral", ["https://dcdn.mitiendanube.com/a.jpg"]],
+    ["azul", ["https://dcdn.mitiendanube.com/a.jpg"]],
+  ]);
+});

@@ -64,7 +64,12 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
     width: image.width ?? DEFAULT_SIZE.width,
     height: image.height ?? DEFAULT_SIZE.height,
   });
-  const images = [...product.images].sort((a, b) => a.position - b.position);
+  const images = product.images.filter((image) => image.src).sort((a, b) => a.position - b.position);
+  if (images.length === 0) {
+    // Every page needs a cover photo; skip the product rather than fail the whole build.
+    console.warn(`Nuvemshop product "${id}" has no photo: not published on the site`);
+    return null;
+  }
 
   // Colors in first-seen order; a color's photos are the images its variants point at.
   const colors: Color[] = [];
@@ -83,8 +88,8 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
   }
   const usedByColor = new Set(colors.flatMap((c) => c.images.map((p) => p.url)));
   const shared = images.map(photo).filter((p) => !usedByColor.has(p.url));
-  // A color without its own photo shows the first shared one, so every gallery has a cover.
-  for (const color of colors) if (color.images.length === 0 && shared[0]) color.images.push(shared[0]);
+  // A color without its own photo shows the product's first one, so every gallery has a cover.
+  for (const color of colors) if (color.images.length === 0) color.images.push(photo(images[0]));
 
   const variants: Variant[] = forSale.map((variant) => {
     const colorId = colorAxis >= 0 ? slug(pt(variant.values[colorAxis])) || undefined : undefined;
