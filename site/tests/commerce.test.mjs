@@ -10,7 +10,7 @@ import { fromNuvemshop } from "../src/lib/commerce/adapters/nuvemshop/map.ts";
 import { checkout as staticCheckout } from "../src/lib/commerce/adapters/static/checkout.ts";
 import { fromContent } from "../src/lib/commerce/adapters/static/map.ts";
 import { badges, variantKey } from "../src/lib/commerce/port.ts";
-import { sortSizes } from "../src/lib/catalog.ts";
+import { sortSizes, uniqueById } from "../src/lib/catalog.ts";
 
 const json = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
 const categoryIds = json("../content/categories.json").map((c) => c.id);
@@ -253,4 +253,13 @@ test("nuvemshop mapping: a generated color id never takes a real color's id (QA-
   assert.equal(new Set(ids).size, 3, `distinct ids: ${ids}`);
   assert.deepEqual(product.colors.map((c) => c.name), ["★", "Cor 1", "❤"]);
   assert.equal(product.variants.filter((v) => v.colorId === product.colors[1].id).length, 2, "both Cor 1 sizes share its id");
+});
+
+test("catalog: two products with the same id keep the first, with a warning (QA-10)", (t) => {
+  const warn = t.mock.method(console, "warn", () => {});
+  const first = map({ id: 1 });
+  const again = map({ id: 2, name: { pt: "Vestido Ana (cópia)" } });
+  const other = map({ handle: { pt: "vestido-bia" } });
+  assert.deepEqual(uniqueById([first, again, other]), [first, other]);
+  assert.match(warn.mock.calls.at(-1).arguments.join(" "), /vestido-ana/);
 });

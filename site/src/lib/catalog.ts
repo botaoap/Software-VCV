@@ -1,4 +1,4 @@
-import type { Color, Photo } from "./commerce/port.ts";
+import type { Color, Photo, Product } from "./commerce/port.ts";
 
 // Pure catalog rules shared by every page: size order, a product's cover, its colors and per-color
 // gallery. Keep them here so the PDP, the cards, the catalog filters and the tests agree.
@@ -16,6 +16,14 @@ const rank = (size: string) => {
 /** Distinct sizes in wear order: PP, P, M, G, GG, …, then 38, 40, …, then unknown labels A–Z. */
 export const sortSizes = (sizes: Iterable<string>) =>
   [...new Set(sizes)].sort((a, b) => (rank(a) === rank(b) ? a.localeCompare(b, "pt-BR") : rank(a) < rank(b) ? -1 : 1));
+
+/** One page per id: a repeated id (two store records with one slug) keeps the first, with a warning. */
+export const uniqueById = (products: Product[]) =>
+  products.filter((product, index) => {
+    const first = products.findIndex((p) => p.id === product.id) === index;
+    if (!first) console.warn(`Product "${product.id}" appears twice in the catalog: the first one is kept`);
+    return first;
+  });
 
 export type ProductMedia = { images: Photo[]; colors: Color[] };
 

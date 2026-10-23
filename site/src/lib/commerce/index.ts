@@ -1,3 +1,4 @@
+import { uniqueById } from "../catalog.ts";
 import type { CatalogPort, Product } from "./port.ts";
 
 /**
@@ -15,6 +16,6 @@ let products: Promise<Product[]> | undefined;
 /** The catalog, loaded once per build and shared by every page. */
 export function getCatalog() {
   if (!catalogs[name]) throw new Error(`Unknown PUBLIC_COMMERCE="${name}". Use one of: ${Object.keys(catalogs).join(", ")}`);
-  products ??= catalogs[name]().then(({ catalog }) => catalog.getProducts());
+  products ??= catalogs[name]().then(({ catalog }) => catalog.getProducts()).then(uniqueById);
   return products;
 }
