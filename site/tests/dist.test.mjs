@@ -5,6 +5,7 @@
 //     (WhatsApp/Instagram link previews)
 //   - photos and fonts are self-hosted: no third-party request at runtime (LGPD)
 //   - a branded 404 exists; the buy flow, catalog order and JSON-LD match the content
+//   - nothing claims what VCV does not have yet (contact channels, atelier story, collections)
 import assert from "node:assert/strict";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
@@ -15,7 +16,10 @@ const SITE = process.env.SITE_URL ?? "https://vestecomvoce.com.br";
 const BASE = (process.env.BASE_PATH ?? "/").replace(/\/$/, "");
 
 const products = JSON.parse(readFileSync(new URL("../content/products.json", import.meta.url), "utf8"));
-const collections = JSON.parse(readFileSync(new URL("../content/collections.json", import.meta.url), "utf8"));
+const categories = JSON.parse(readFileSync(new URL("../content/categories.json", import.meta.url), "utf8"));
+const stocked = categories.filter((c) => products.some((p) => p.category === c.id));
+const cardNames = (html) => [...html.matchAll(/data-product-card[^>]*data-name="([^"]+)"/g)].map((m) => m[1]);
+const brandFile = JSON.parse(readFileSync(new URL("../content/brand.json", import.meta.url), "utf8"));
 
 const htmlFiles = (dir) =>
   readdirSync(dir).flatMap((name) => {
@@ -25,7 +29,9 @@ const htmlFiles = (dir) =>
   });
 
 const built = existsSync(dist);
-const pages = built ? htmlFiles(dist) : [];
+// Redirect stubs (astro.config.mjs → redirects) are not pages: they only carry a meta refresh.
+const isRedirect = (path) => /<meta http-equiv="refresh"/.test(readFileSync(path, "utf8"));
+const pages = built ? htmlFiles(dist).filter((path) => !isRedirect(path)) : [];
 const rel = (path) => path.slice(dist.length - 1);
 const read = (...parts) => readFileSync(join(dist, ...parts), "utf8");
 
@@ -95,6 +101,47 @@ test("every product has a page with a size per variant and matching JSON-LD", ()
     assert.equal(ldProduct.offers.price, (product.priceCents / 100).toFixed(2));
     assert.equal(ldProduct.offers.priceCurrency, "BRL");
     assert.ok(ldProduct.image.every((url) => url.startsWith(`${SITE}/`)), `${product.id}: absolute og image`);
+    assert.equal(ldProduct.offers.availability, `https://schema.org/${product.available === false ? "OutOfStock" : "InStock"}`);
+    assert.equal(ldProduct.brand.name, "VCV");
+  }
+});
+
+// The bag only takes a unit that exists and is for sale, at that unit's price (VCV-41, QA-1/4/5).
+// The PDP form carries every variant (key → price, availability, platform ref).
+const decodeAttr = (value) => value.replace(/&quot;|&#34;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+const addForm = (html) => html.match(/<form[^>]*data-add-form[^>]*>/)[0];
+const variantsOf = (html) => Object.fromEntries(JSON.parse(decodeAttr(addForm(html).match(/data-variants="([^"]*)"/)[1])).map((v) => [v.key, v]));
+const isDisabled = (tag) => /\sdisabled(?=[\s>=])/.test(tag);
+const productPages = () => (built ? readdirSync(join(dist, "produto")).map((id) => [id, read("produto", id, "index.html")]) : []);
+
+test("static catalog: the PDP offers every color × size at the product price, for sale when the product is", () => {
+  for (const product of products) {
+    const variants = variantsOf(read("produto", product.id, "index.html"));
+    const colorIds = product.colors?.length > 0 ? product.colors.map((c) => c.id) : [undefined];
+    const keys = colorIds.flatMap((colorId) => product.sizes.map((size) => [product.id, colorId, size].filter(Boolean).join(":")));
+    assert.deepEqual(Object.keys(variants).sort(), keys.sort(), `${product.id}: variants`);
+    for (const [key, variant] of Object.entries(variants)) {
+      assert.equal(variant.priceCents, product.priceCents, `${key}: price`);
+      assert.equal(variant.available, product.available !== false, `${key}: availability`);
+    }
+  }
+});
+
+test("PDP: sizes that do not exist or are sold out for the shown color are disabled; nothing for sale = Esgotado", () => {
+  for (const [id, html] of productPages()) {
+    const variants = variantsOf(html);
+    const color = html.match(/<input[^>]*name="color"[^>]*value="([^"]+)"[^>]*\schecked/)?.[1];
+    for (const [input, size] of html.matchAll(/<input[^>]*name="size"[^>]*value="([^"]+)"[^>]*>/g)) {
+      const forSale = variants[[id, color, size].filter(Boolean).join(":")]?.available === true;
+      assert.equal(isDisabled(input), !forSale, `${id}: size ${size} of ${color ?? "the product"}`);
+    }
+    const text = html.replace(/<script[\s\S]*?<\/script>/g, "");
+    const soldOut = !Object.values(variants).some((v) => v.available);
+    const button = html.match(/<button[^>]*data-add-button[^>]*>[\s\S]*?<\/button>/)[0];
+    assert.equal(/Esgotado/.test(text), soldOut, `${id}: "Esgotado" only when nothing is for sale`);
+    if (soldOut) assert.ok(isDisabled(button.match(/<button[^>]*>/)[0]) && /Esgotado/.test(button), `${id}: the button says Esgotado and is disabled`);
+    const prices = new Set(Object.values(variants).filter((v) => v.available || soldOut).map((v) => v.priceCents));
+    assert.equal(/A partir de/.test(text), prices.size > 1, `${id}: "A partir de" only when variant prices differ`);
   }
 });
 
@@ -129,17 +176,7 @@ test("a product with a size chart renders it as a table, one row per size", () =
   }
 });
 
-test("every collection has a page listing exactly its products", () => {
-  for (const collection of collections) {
-    const html = read("colecao", collection.id, "index.html");
-    const listed = [...html.matchAll(/data-product-card[^>]*data-index="\d+"[^>]*data-collection="([^"]+)"/g)].map((m) => m[1]);
-    const expected = products.filter((p) => p.collection === collection.id).length;
-    assert.equal(listed.length, expected, collection.id);
-    assert.ok(listed.every((c) => c === collection.id));
-  }
-});
-
-test("catalog lists every product, in content order (Novidades)", () => {
+test("catalog lists every product, in content order (Relevância)", () => {
   const html = read("produtos", "index.html");
   const names = [...html.matchAll(/data-product-card[^>]*data-name="([^"]+)"/g)].map((m) => m[1]);
   assert.deepEqual(
@@ -148,13 +185,42 @@ test("catalog lists every product, in content order (Novidades)", () => {
   );
 });
 
-test("home shows the badged products as highlights, with a link to the whole catalog", () => {
+// Felipe (2026-10): no "Novidades" and no collections; the home shows three curated rails instead.
+const rails = [
+  ["recomendados", "RECOMMENDED", "Recomendado para você"],
+  ["mais-vendidos", "BEST_SELLER", "Maiores vendas"],
+  ["principais", "FEATURED", "Produtos principais"],
+];
+test("home rails: Recomendado para você, Maiores vendas, Produtos principais, each listing its badged products", () => {
   const html = read("index.html");
-  const badged = products.filter((p) => p.badges.length > 0).map((p) => p.name.toLowerCase());
-  const section = html.split('id="featured-title"')[1].split("</section>")[0];
-  const shown = [...section.matchAll(/data-product-card[^>]*data-name="([^"]+)"/g)].map((m) => m[1]);
-  assert.deepEqual(shown.toSorted(), badged.toSorted());
-  assert.match(section, /href="[^"]*\/produtos\/"/);
+  const shownRails = [...html.matchAll(/data-rail="([^"]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(shownRails, rails.filter(([, badge]) => products.some((p) => p.badges.includes(badge))).map(([id]) => id));
+  for (const [id, badge, title] of rails) {
+    const marked = products.filter((p) => p.badges.includes(badge)).map((p) => p.name.toLowerCase());
+    if (marked.length === 0) continue;
+    const section = html.split(`data-rail="${id}"`)[1].split("</section>")[0];
+    assert.match(section, new RegExp(`>${title}</h2>`));
+    assert.deepEqual(cardNames(section), marked, id);
+  }
+  // With or without rails, the page body links to the whole catalog (not only the header menu).
+  const main = html.slice(html.indexOf("<main"), html.indexOf("</main>"));
+  assert.match(main, new RegExp(`<a href="${BASE}/produtos/"[^>]*>Ver todos os ${products.length} produtos`));
+});
+
+// The card / PDP label is the most useful mark the product has; rail marks (Recomendado, Destaque)
+// only place it on the home.
+const labelOf = (product) => ({ LAST_UNITS: "Últimas peças", NEW_IN: "Novo", BEST_SELLER: "Mais vendido" })[["LAST_UNITS", "NEW_IN", "BEST_SELLER"].find((b) => product.badges.includes(b))];
+const badgeTexts = (html) => [...html.matchAll(/<span class="badge[^"]*"[^>]*>([^<]+)<\/span>/g)].map((m) => m[1]).filter((t) => t !== "Esgotado");
+test("card and PDP label: Últimas peças, else Novo, else Mais vendido; never a rail mark", () => {
+  const catalog = read("produtos", "index.html");
+  for (const product of products) {
+    const card = catalog.split(`data-name="${product.name.toLowerCase()}"`)[1].split("</li>")[0];
+    const pdp = read("produto", product.id, "index.html");
+    const head = pdp.slice(pdp.indexOf('aria-labelledby="product-title"'), pdp.indexOf('id="product-title"'));
+    const expected = labelOf(product) ? [labelOf(product)] : [];
+    assert.deepEqual(badgeTexts(card), expected, `${product.id}: card label`);
+    assert.deepEqual(badgeTexts(head), expected, `${product.id}: PDP label`);
+  }
 });
 
 test("cart, checkout and search are per-visitor steps: noindex and out of the sitemap", () => {
@@ -189,37 +255,96 @@ test("payment is paused: no WhatsApp order trigger, no checkout form, no direct-
   }
 });
 
-const categories = JSON.parse(readFileSync(new URL("../content/categories.json", import.meta.url), "utf8"));
-const cardNames = (html) => [...html.matchAll(/data-product-card[^>]*data-name="([^"]+)"/g)].map((m) => m[1]);
 
-// The menu follows the storefront pattern (Les Cloches): garment-type and collection dropdowns, built
-// from the content. "Catálogo" is now "Produto" (Felipe); accessories and sale are not offered.
-test("menu: Produto and Coleções dropdowns come from the content; no Catálogo, Acessórios or Sale", () => {
+// Menu (Felipe, 2026-10): "Produtos" with a garment-type dropdown built from the content, then Sobre
+// and Contato. No Coleções or Novidades; accessories and sale are not offered.
+test("menu: Produtos dropdown lists the garment types that have products; no Coleções, Novidades, Catálogo, Acessórios or Sale", () => {
   const home = read("index.html");
   const header = home.slice(home.indexOf("<header"), home.indexOf("</header>"));
   const desktop = header.slice(header.indexOf('aria-label="Principal"'), header.indexOf('aria-label="Principal (celular)"'));
-  for (const category of categories) assert.ok(desktop.includes(`>${category.title}</a>`), `Produto menu lacks ${category.title}`);
-  for (const collection of collections) assert.ok(desktop.includes(`>${collection.title}</a>`), `Coleções menu lacks ${collection.title}`);
+  assert.match(desktop, />Produtos<\/a>/);
+  assert.ok(!/>Produto<\/a>/.test(desktop), "the label is Produtos (plural)");
+  for (const category of categories) {
+    assert.equal(desktop.includes(`>${category.title}</a>`), stocked.includes(category), `Produtos menu and ${category.title}`);
+  }
+  assert.match(desktop, />Sobre<\/a>/);
   assert.match(desktop, /aria-controls="nav-panel-\d+"/);
   assert.match(header, /aria-label="Buscar peças"/);
   for (const file of pages) {
     const text = readFileSync(file, "utf8").replace(/<script[\s\S]*?<\/script>/g, "");
-    assert.ok(!/catálogo|catalogo|acessórios|acessorios|>\s*sale\s*</i.test(text), `${rel(file)} mentions a section VCV does not have`);
+    assert.ok(!/catálogo|catalogo|acessórios|acessorios|coleç(ão|ões)|novidades|>\s*sale\s*</i.test(text), `${rel(file)} mentions a section VCV does not have`);
   }
 });
 
-test("every garment type has a page listing exactly its products", () => {
+test("the site description names only garment types that have products", () => {
+  const home = read("index.html");
+  const meta = home.match(/<meta name="description" content="([^"]+)"/)[1];
+  const store = [...home.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => JSON.parse(m[1])).find((e) => e["@type"] === "ClothingStore");
+  for (const category of categories.filter((c) => !stocked.includes(c))) {
+    const named = new RegExp(`(^|[^\\p{L}])${category.title}([^\\p{L}]|$)`, "iu");
+    assert.ok(!named.test(meta) && !named.test(store.description), `the description offers ${category.title}, which has no product`);
+  }
+});
+
+test("Pantalonas, Shorts and Regatas are garment types", () => {
+  for (const id of ["pantalonas", "shorts", "regatas"]) assert.ok(categories.some((c) => c.id === id), id);
+});
+
+test("every garment type with products has a page listing exactly them; empty ones get no page", () => {
   for (const category of categories) {
+    const path = join(dist, "produtos", category.id, "index.html");
+    if (!stocked.includes(category)) {
+      assert.ok(!existsSync(path), `${category.id} has no product, so no page`);
+      continue;
+    }
     const names = cardNames(read("produtos", category.id, "index.html"));
     assert.deepEqual(names, products.filter((p) => p.category === category.id).map((p) => p.name.toLowerCase()), category.id);
   }
   assert.ok(products.every((p) => categories.some((c) => c.id === p.category)));
 });
 
-test("Novidades lists the products marked as new, and the menu entry exists only then", () => {
-  const isNew = products.filter((p) => p.badges.includes("NEW_IN")).map((p) => p.name.toLowerCase());
-  assert.deepEqual(cardNames(read("novidades", "index.html")), isNew);
-  assert.equal(read("index.html").includes('href="' + BASE + '/novidades/"'), isNew.length > 0);
+test("old sections redirect: /novidades, /colecoes, /colecao/* → /produtos/, /atelier → /sobre/", () => {
+  const moved = { "novidades": "produtos", "colecoes": "produtos", "colecao/essenciais": "produtos", "colecao/verao": "produtos", "atelier": "sobre" };
+  for (const [from, to] of Object.entries(moved)) {
+    const html = read(...from.split("/"), "index.html");
+    assert.match(html, new RegExp(`http-equiv="refresh" content="0;url=${BASE}/${to}/"`), from);
+  }
+  const sitemap = readdirSync(dist).filter((name) => /^sitemap-\d+\.xml$/.test(name)).map((name) => read(name)).join("\n");
+  assert.ok(!/\/(novidades|colecoes|colecao|atelier)\//.test(sitemap), "redirects are not in the sitemap");
+});
+
+// Felipe (2026-10): VCV has no WhatsApp, Instagram or e-mail yet, and the atelier story is being
+// rewritten. Nothing may link to a channel that is not in content/brand.json, or repeat invented claims.
+test("contact channels appear only when they are set in content/brand.json", () => {
+  const { whatsapp, instagram, email } = brandFile.contact;
+  for (const file of pages) {
+    const html = readFileSync(file, "utf8");
+    // The Contato notice ("os canais oficiais … serão publicados") may name the channels; nothing else may.
+    const visible = html.replace(/<script[\s\S]*?<\/script>/g, "").replace(/<p[^>]*data-no-channels[\s\S]*?<\/p>/, "");
+    if (!whatsapp) assert.ok(!/wa\.me|api\.whatsapp|WhatsApp/i.test(visible), `${rel(file)} shows WhatsApp`);
+    if (!instagram) assert.ok(!/instagram\.com/.test(html), `${rel(file)} links Instagram`);
+    if (!email) assert.ok(!/mailto:/.test(html), `${rel(file)} links an e-mail`);
+  }
+  if (!whatsapp && !instagram && !email) assert.match(read("contato", "index.html"), /data-no-channels/);
+  if (!instagram) assert.ok(!/"sameAs"/.test(read("index.html")), "no sameAs without an official profile");
+});
+
+// Where and how the pieces are made is not confirmed either ("feito em Gaspar", "cortada no Vale").
+test("no invented brand claims (atelier, rolo a rolo, ficha técnica, casa têxtil, where or how pieces are made)", () => {
+  for (const file of pages) {
+    // Page text, meta tags and JSON-LD; not the bundled scripts.
+    const text = readFileSync(file, "utf8").replace(/<script(?! type="application\/ld\+json")[\s\S]*?<\/script>/g, "");
+    assert.ok(
+      !/ateli[eê]|rolo a rolo|ficha técnica|casa têxtil|poucas peças, bem feitas|viscose e linho|feit[ao]s? (em|no|na)\b|cortad[ao]s? (em|no|na)\b|produzid[ao]s? (em|no|na)\b|confeccionad[ao]s? (em|no|na)\b|provad[ao]s? em corpo real/i.test(text),
+      `${rel(file)} repeats an unconfirmed claim`,
+    );
+  }
+});
+
+test("robots.txt points to the sitemap with an absolute URL", () => {
+  const robots = read("robots.txt");
+  assert.match(robots, /^User-agent: \*/m);
+  assert.match(robots, new RegExp(`^Sitemap: ${SITE}${BASE}/sitemap-index\.xml$`, "m"));
 });
 
 test("search page carries every product with accent-free search text, and is noindex", () => {

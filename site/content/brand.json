@@ -19,43 +19,29 @@
       "height": 900
     }
   ],
-  "atelier": {
-    "headline": "Veste Com Você — de Gaspar, Vale do Itajaí",
+  "about": {
+    "headline": "VCV — Veste Com Você, de Gaspar, Vale do Itajaí",
     "sections": [
       {
-        "title": "Origem",
-        "body": "A VCV é uma casa têxtil, não uma loja. Cada peça vem com ficha técnica: tecido nomeado e procedência declarada.",
-        "image": {
-          "url": "https://images.unsplash.com/photo-1604882767135-b41fac508fff?w=1800&h=1200&fit=crop&q=80",
-          "alt": "Ateliê VCV em Gaspar",
-          "width": 1800,
-          "height": 1200
-        }
+        "title": "Quem somos",
+        "body": "A VCV — Veste Com Você é uma marca de roupas de Gaspar, no Vale do Itajaí (SC). Vestidos, calças, blusas, saias, bermudas e mais, vendidos pela loja online.",
+        "image": null
       },
       {
-        "title": "Ateliê próprio",
-        "body": "Produção em pequena escala, rolo a rolo. Tecido escolhido à mão, modelagem provada em corpo real.",
-        "image": {
-          "url": "https://images.unsplash.com/photo-1578932750355-5eb30ece487a?w=1800&h=1200&fit=crop&q=80",
-          "alt": "Produção rolo a rolo",
-          "width": 1800,
-          "height": 1200
-        }
+        "title": "Como comprar",
+        "body": "Escolha a peça, a cor e o tamanho e coloque na sacola. Enviamos para todo o Brasil.",
+        "image": null
       },
       {
-        "title": "Compra pouco e bem",
-        "body": "Peças pensadas para durar — a durabilidade é a resposta, não a promoção.",
+        "title": "Nossa história",
+        "body": "A história da marca está sendo escrita com quem faz a VCV e chega a esta página em breve.",
         "image": null
       }
     ]
   },
   "contact": {
-    "whatsapp": "https://wa.me/5547999999999",
-    "instagram": "https://instagram.com/vestecomvoce",
-    "email": "contato@vestecomvoce.com.br",
     "whereToBuy": [
-      "Ateliê em Gaspar, SC (com hora marcada)",
-      "Envio para todo o Brasil"
+      "Loja online, com envio para todo o Brasil"
     ]
   }
 }

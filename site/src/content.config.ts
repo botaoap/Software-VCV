@@ -2,9 +2,10 @@ import { defineCollection, reference } from "astro:content";
 import { file } from "astro/loaders";
 import { z } from "astro/zod";
 import { letterSizes } from "./lib/catalog";
+import { audiences, badges } from "./lib/commerce/port";
 
-// The catalog mirrors the app's domain model (Product, Collection, FabricSpec, ImageRef) so the two
-// stay interchangeable. `reference()` makes a typo'd collection slug fail the build.
+// The catalog mirrors the app's domain model (Product, FabricSpec, ImageRef) so the two stay
+// interchangeable. `reference()` makes a typo'd category slug fail the build.
 
 /**
  * A photo with required alt text and intrinsic size (so grids never reflow). `url` is a remote URL or
@@ -17,19 +18,10 @@ const photo = z.object({
   height: z.number().int().positive(),
 });
 
-export const badges = ["BEST_SELLER", "NEW_IN", "LAST_UNITS", "ATELIER_PICK"] as const;
-
-const collectionsCol = defineCollection({
-  loader: file("content/collections.json"),
-  schema: z.object({
-    title: z.string().min(1),
-    subtitle: z.string().min(1),
-    cover: photo,
-    story: z.string().min(1),
-  }),
-});
-
-/** Garment types shown in the "Produto" menu (Vestidos, Calças, …). Only the types VCV sells. */
+/**
+ * Garment types of the "Produtos" menu (Vestidos, Calças, Pantalonas, …). A type with no product yet
+ * stays out of the menu and gets no page, so nothing links to an empty listing.
+ */
 const categories = defineCollection({
   loader: file("content/categories.json"),
   schema: z.object({ title: z.string().min(1) }),
@@ -54,13 +46,15 @@ const sizeChart = z.object({
   note: z.string().optional(),
 });
 
-export const audiences = ["feminino", "masculino", "unissex"] as const;
-
+/**
+ * The `static` commerce adapter's catalog (src/lib/commerce/adapters/static). With another adapter
+ * (PUBLIC_COMMERCE=nuvemshop) the products come from the platform and this file is not read by pages.
+ * Badges: RECOMMENDED / BEST_SELLER / FEATURED drive the home rails; VCV has no collections at launch.
+ */
 const products = defineCollection({
   loader: file("content/products.json"),
   schema: z.object({
     name: z.string().min(1),
-    collection: reference("collections"),
     category: reference("categories"),
     /** Money is never floating point: integer cents. */
     priceCents: z.number().int().positive(),
@@ -71,8 +65,7 @@ const products = defineCollection({
     /** Color variants; the PDP gallery and the bag line follow the chosen color. */
     colors: z.array(color).default([]),
     shortDescription: z.string().min(1),
-    /** The atelier "ficha técnica" — a brand differentiator. */
-    /** Unknown facts are left out (never "a confirmar"): the page shows only what the atelier confirmed. */
+    /** Composition and care. Unknown facts are left out (never "a confirmar"): the page shows only what VCV confirmed. */
     fabric: z
       .object({
         material: z.string().min(1).optional(),
@@ -82,6 +75,8 @@ const products = defineCollection({
       })
       .default({ care: [] }),
     sizes: z.array(size).min(1),
+    /** In stock / for sale. false → "Esgotado" on the PDP and JSON-LD OutOfStock (the commerce platform refreshes it). */
+    available: z.boolean().default(true),
     measurements: sizeChart.optional(),
     badges: z.array(z.enum(badges)),
   }).superRefine((product, ctx) => {
@@ -104,20 +99,25 @@ const brand = defineCollection({
   loader: file("content/brand.json", { parser: (text) => [{ id: "brand", ...JSON.parse(text) }] }),
   schema: z.object({
     hero: z.array(photo).min(1),
-    atelier: z.object({
+    /** "Sobre a VCV". Only what Felipe confirmed; the brand story is being rewritten with him. */
+    about: z.object({
       headline: z.string().min(1),
       sections: z.array(
         z.object({ title: z.string().min(1), body: z.string().min(1), image: photo.nullable() }),
       ),
     }),
+    /**
+     * Official channels. Each one is optional and every link to it (header, footer, floating button,
+     * Contato, JSON-LD sameAs) appears only once it is set: VCV has none yet (Felipe, 2026-10).
+     */
     contact: z.object({
-      whatsapp: z.url(),
-      instagram: z.url(),
-      email: z.email(),
+      whatsapp: z.url().optional(),
+      instagram: z.url().optional(),
+      email: z.email().optional(),
       whereToBuy: z.array(z.string()),
     }),
   }),
 });
 
 
-export const collections = { collections: collectionsCol, categories, products, brand };
+export const collections = { categories, products, brand };

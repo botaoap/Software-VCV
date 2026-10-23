@@ -2,10 +2,16 @@
 import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import PageHeader from "../../components/PageHeader.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import { checkout } from "../../lib/commerce/checkout";
 import { url } from "../../lib/url";
+
+// The order summary, then the hand-off to the platform's hosted checkout (Nuvemshop + Mercado Pago:
+// Pix, card, installments; no card data on this site). With no checkout-capable adapter the page
+// says "Pagamento online em breve".
+const canCheckout = checkout.capabilities.checkout;
 ---
 
-<BaseLayout title="Finalizar pedido" description="O pagamento online da VCV estará disponível em breve." noindex>
+<BaseLayout title="Finalizar pedido" description={canCheckout ? "Revise seu pedido e siga para o pagamento." : "O pagamento online da VCV estará disponível em breve."} noindex>
   <PageHeader eyebrow="Compra" title="Finalizar pedido">
     <Breadcrumbs
       slot="breadcrumbs"
@@ -15,15 +21,17 @@ import { url } from "../../lib/url";
 
   <section class="section-y">
     <div class="container-page max-w-3xl">
-      <!-- Payment is paused until the client picks the commerce platform (Shopify, Nuvemshop, …).
-           The bag keeps working; this page shows the order and says so. -->
-      <div class="rounded-lg border border-border bg-paper p-6 md:p-8" role="status">
-        <p class="eyebrow">Em breve</p>
-        <h2 class="mt-3 text-3xl">Pagamento online em breve</h2>
-        <p class="mt-4 text-lg leading-relaxed text-text-muted">
-          Estamos finalizando a forma de pagamento da loja. Sua sacola fica salva neste navegador até lá.
-        </p>
-      </div>
+      {
+        !canCheckout && (
+          <div class="rounded-lg border border-border bg-paper p-6 md:p-8" role="status">
+            <p class="eyebrow">Em breve</p>
+            <h2 class="mt-3 text-3xl">Pagamento online em breve</h2>
+            <p class="mt-4 text-lg leading-relaxed text-text-muted">
+              Estamos finalizando a forma de pagamento da loja. Sua sacola fica salva neste navegador até lá.
+            </p>
+          </div>
+        )
+      }
 
       <div class="js-only mt-10" data-checkout>
         <div class="hidden" data-checkout-empty>
@@ -39,9 +47,13 @@ import { url } from "../../lib/url";
             <strong class="text-xl font-medium text-wine" data-checkout-subtotal></strong>
           </p>
           <div class="mt-8 flex flex-wrap gap-3">
+            {canCheckout && (
+              <button type="button" class="btn btn-primary btn-lg" data-checkout-pay>Ir para o pagamento</button>
+            )}
             <a href={url("/carrinho/")} class="btn btn-outline btn-lg">Voltar à sacola</a>
             <a href={url("/produtos/")} class="link-arrow">Continuar comprando <span class="arrow" aria-hidden="true">→</span></a>
           </div>
+          <p class="mt-4 text-sm text-text-muted" aria-live="polite" data-checkout-status></p>
         </div>
       </div>
     </div>
@@ -49,6 +61,7 @@ import { url } from "../../lib/url";
 </BaseLayout>
 
 <script>
+  import { checkout } from "../../lib/commerce/checkout";
   import { formatBrl } from "../../lib/format";
   import { itemCount, readCart, subtotalCents, variantLabel } from "../../scripts/cart";
 
@@ -76,5 +89,25 @@ import { url } from "../../lib/url";
       list.append(li);
     }
     subtotal.textContent = formatBrl(subtotalCents(lines));
+
+    // Hand the bag to the platform's checkout; a failure keeps the visitor here with a message.
+    const pay = root.querySelector<HTMLButtonElement>("[data-checkout-pay]");
+    const status = part("status");
+    pay?.addEventListener("click", async () => {
+      pay.disabled = true;
+      status.textContent = "Abrindo o pagamento…";
+      try {
+        const start = await checkout.startCheckout(readCart());
+        // Only ever leave for a secure checkout page; anything else is shown as a failure.
+        if (start.kind === "redirect") {
+          if (new URL(start.url).protocol !== "https:") throw new Error("checkout URL is not https");
+          return location.assign(start.url);
+        }
+        status.textContent = start.reason;
+      } catch {
+        status.textContent = "Não foi possível abrir o pagamento agora. Tente de novo em instantes.";
+      }
+      pay.disabled = false;
+    });
   }
 </script>

@@ -8,40 +8,56 @@ import { getBrand } from "../../lib/content";
 import { whatsappHref } from "../../lib/format";
 import { url } from "../../lib/url";
 
+// Each channel card appears only once VCV has that official channel (content/brand.json → contact).
 const { contact } = await getBrand();
+const hasChannel = Boolean(contact.whatsapp || contact.instagram || contact.email);
 ---
 
-<BaseLayout title="Contato" description="Fale com a VCV — atendimento direto no WhatsApp, Instagram e e-mail. Ateliê em Gaspar, SC.">
-  <PageHeader eyebrow="Contato" title="Fale com a VCV" lede="Atendimento direto, de Gaspar pra você.">
+<BaseLayout title="Contato" description="Contato e canais de atendimento da VCV — Veste Com Você, marca de roupas de Gaspar, SC, com envio para todo o Brasil.">
+  <PageHeader eyebrow="Contato" title="Fale com a VCV" lede={hasChannel ? "Escolha o canal que preferir." : undefined}>
     <Breadcrumbs slot="breadcrumbs" items={[{ label: "Início", href: url("/") }, { label: "Contato" }]} />
   </PageHeader>
 
   <section class="section-y" aria-labelledby="channels-title">
     <div class="container-page">
-      <h2 id="channels-title" class="sr-only">Canais de atendimento</h2>
-      <ul class="grid gap-6 md:grid-cols-3">
-        <li class="reveal">
-          <ExternalLink href={whatsappHref(contact.whatsapp, "Olá! Vim pelo site da VCV.")} class="card group p-6">
-            <Icon name="message" size={28} class="text-wine" />
-            <h3 class="mt-4 font-sans text-lg font-medium">WhatsApp</h3>
-            <p class="mt-1 text-text-muted">Chame a gente por aqui</p>
-          </ExternalLink>
-        </li>
-        <li class="reveal" style="--reveal-delay:80ms">
-          <ExternalLink href={contact.instagram} class="card group p-6">
-            <Icon name="instagram" size={28} class="text-wine" />
-            <h3 class="mt-4 font-sans text-lg font-medium">Instagram</h3>
-            <p class="mt-1 text-text-muted">Veja as novidades</p>
-          </ExternalLink>
-        </li>
-        <li class="reveal" style="--reveal-delay:160ms">
-          <a href={`mailto:${contact.email}`} class="card group p-6">
-            <Icon name="mail" size={28} class="text-wine" />
-            <h3 class="mt-4 font-sans text-lg font-medium">E-mail</h3>
-            <p class="mt-1 break-all text-text-muted">{contact.email}</p>
-          </a>
-        </li>
-      </ul>
+      <h2 id="channels-title" class:list={[hasChannel ? "sr-only" : "text-3xl md:text-4xl"]}>Canais de atendimento</h2>
+      {
+        hasChannel ? (
+          <ul class="grid gap-6 md:grid-cols-3">
+            {contact.whatsapp && (
+              <li class="reveal">
+                <ExternalLink href={whatsappHref(contact.whatsapp, "Olá! Vim pelo site da VCV.")} class="card group p-6">
+                  <Icon name="message" size={28} class="text-wine" />
+                  <h3 class="mt-4 font-sans text-lg font-medium">WhatsApp</h3>
+                  <p class="mt-1 text-text-muted">Chame a gente por aqui</p>
+                </ExternalLink>
+              </li>
+            )}
+            {contact.instagram && (
+              <li class="reveal" style="--reveal-delay:80ms">
+                <ExternalLink href={contact.instagram} class="card group p-6">
+                  <Icon name="instagram" size={28} class="text-wine" />
+                  <h3 class="mt-4 font-sans text-lg font-medium">Instagram</h3>
+                  <p class="mt-1 text-text-muted">Veja as novas peças</p>
+                </ExternalLink>
+              </li>
+            )}
+            {contact.email && (
+              <li class="reveal" style="--reveal-delay:160ms">
+                <a href={`mailto:${contact.email}`} class="card group p-6">
+                  <Icon name="mail" size={28} class="text-wine" />
+                  <h3 class="mt-4 font-sans text-lg font-medium">E-mail</h3>
+                  <p class="mt-1 break-all text-text-muted">{contact.email}</p>
+                </a>
+              </li>
+            )}
+          </ul>
+        ) : (
+          <p class="mt-4 max-w-2xl text-lg leading-relaxed text-text-muted" data-no-channels>
+            Os canais oficiais de atendimento da VCV (WhatsApp, Instagram e e-mail) serão publicados aqui em breve.
+          </p>
+        )
+      }
     </div>
   </section>
 

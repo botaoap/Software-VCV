@@ -10,7 +10,8 @@ const { contact } = await getBrand();
 const nav = await getNav();
 const pathname = Astro.url.pathname;
 const cartActive = isActive(["/carrinho", "/checkout"], pathname);
-const whatsapp = whatsappHref(contact.whatsapp, "Olá! Vim pelo site da VCV.");
+// No WhatsApp button until VCV has an official number (content/brand.json → contact.whatsapp).
+const whatsapp = contact.whatsapp && whatsappHref(contact.whatsapp, "Olá! Vim pelo site da VCV.");
 ---
 
 <header class="site-header sticky top-0 z-50 border-b border-border bg-cream/90 backdrop-blur-md" data-header>
@@ -93,10 +94,14 @@ const whatsapp = whatsappHref(contact.whatsapp, "Olá! Vim pelo site da VCV.");
         >
         <span class="sr-only" data-cart-label>(vazia)</span>
       </a>
-      <ExternalLink href={whatsapp} class="btn btn-outline hidden md:inline-flex">
-        <Icon name="message" size={18} />
-        WhatsApp
-      </ExternalLink>
+      {
+        whatsapp && (
+          <ExternalLink href={whatsapp} class="btn btn-outline hidden md:inline-flex">
+            <Icon name="message" size={18} />
+            WhatsApp
+          </ExternalLink>
+        )
+      }
       <button
         type="button"
         class="menu-toggle inline-flex size-11 items-center justify-center rounded-md border border-border text-wine transition-colors hover:border-wine lg:hidden"
@@ -154,10 +159,14 @@ const whatsapp = whatsappHref(contact.whatsapp, "Olá! Vim pelo site da VCV.");
             })
           }
         </ul>
-        <ExternalLink href={whatsapp} class="btn btn-primary btn-lg mt-6 w-full">
-          <Icon name="message" size={18} />
-          Falar no WhatsApp
-        </ExternalLink>
+        {
+          whatsapp && (
+            <ExternalLink href={whatsapp} class="btn btn-primary btn-lg mt-6 w-full">
+              <Icon name="message" size={18} />
+              Falar no WhatsApp
+            </ExternalLink>
+          )
+        }
       </nav>
     </div>
   </div>

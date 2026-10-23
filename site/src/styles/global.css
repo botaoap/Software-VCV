@@ -398,6 +398,13 @@
     outline: 2px solid var(--color-wine);
     outline-offset: 3px;
   }
+  /* A size the chosen color does not have, or has sold out. */
+  input:disabled + .size-pill {
+    border-color: var(--color-border);
+    color: var(--color-text-muted);
+    text-decoration: line-through;
+    opacity: 0.6;
+  }
 
   /* ----- Color swatches (PDP picker + card dots). The fill is content data (--swatch). ----- */
   .swatch {
