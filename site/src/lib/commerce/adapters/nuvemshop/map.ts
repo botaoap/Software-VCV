@@ -32,7 +32,7 @@ const decode = (text: string) =>
     const point = code!.startsWith("x") || code!.startsWith("X") ? Number.parseInt(code!.slice(1), 16) : Number(code);
     return point > 0 && point <= 0x10ffff ? String.fromCodePoint(point) : entity;
   });
-const plainText = (html: string) => decode(html.replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").replace(/\s([.,;:!?])/g, "$1").trim();
+const plainText = (html: string) => decode(html.replace(/<(script|style)\b[\s\S]*?<\/\1>/gi, " ").replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").replace(/\s([.,;:!?])/g, "$1").trim();
 
 const tagBadges: Record<string, Badge> = {
   recomendado: "RECOMMENDED",
@@ -57,13 +57,22 @@ export type MapOptions = {
 };
 
 export function fromNuvemshop(product: NsProduct, options: MapOptions): Product | null {
+  const id = slug(pt(product.handle) || pt(product.name));
+  // A record the site cannot show is skipped (never a failed build), with the reason in the build log.
+  const skip = (reason: string) => {
+    console.warn(`Nuvemshop product "${id || product.id}" skipped: ${reason}`);
+    return null;
+  };
+  const name = pt(product.name);
   const categoryId = (product.categories ?? []).map((c) => pt(c.handle)).find((handle) => options.categoryIds.includes(handle));
   // A variant with no valid price is not for sale on the site.
-  const forSale = product.variants.filter((variant) => priceOf(variant));
-  const id = slug(pt(product.handle) || pt(product.name));
-  if (!product.published || !categoryId || forSale.length === 0 || !id) return null;
+  const forSale = (product.variants ?? []).filter((variant) => priceOf(variant));
+  if (!product.published) return skip("not published");
+  if (!id) return skip("no handle or name to build its id from");
+  if (!name) return skip("blank name");
+  if (!categoryId) return skip("in no category of content/categories.json");
+  if (forSale.length === 0) return skip("no variant with a valid price");
 
-  const name = pt(product.name);
   const axis = (names: string[]) => (product.attributes ?? []).findIndex((attribute) => names.includes(slug(pt(attribute))));
   const colorAxis = axis(["cor", "color", "colour"]);
   const sizeAxis = axis(["tamanho", "size", "tam"]);
@@ -75,11 +84,7 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
     height: image.height ?? DEFAULT_SIZE.height,
   });
   const images = (product.images ?? []).filter((image) => image.src).sort((a, b) => a.position - b.position);
-  if (images.length === 0) {
-    // Every page needs a cover photo; skip the product rather than fail the whole build.
-    console.warn(`Nuvemshop product "${id}" has no photo: not published on the site`);
-    return null;
-  }
+  if (images.length === 0) return skip("no photo (every page needs a cover)");
 
   // Colors in first-seen order, one per slug ("Azul Claro" = "azul claro"); a color's photos are the
   // images its variants point at.
@@ -98,7 +103,7 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
       }
     }
     const sizeLabel = (sizeAxis >= 0 && pt(values[sizeAxis])) || "U";
-    const size = ONE_SIZE.includes(slug(sizeLabel)) ? "U" : sizeLabel;
+    const size = ONE_SIZE.includes(slug(sizeLabel)) ? "U" : sizeLabel.toUpperCase(); // "p" = "P"
     const key = variantKey({ productId: id, colorId: color?.id, size });
     if (variants.some((v) => v.key === key)) {
       console.warn(`Nuvemshop product "${id}": variant ${variant.id} repeats ${key}; the first one is kept`);
@@ -117,7 +122,7 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
   // A color without its own photo shows the product's first one, so every gallery has a cover.
   for (const color of colors) if (color.images.length === 0) color.images.push(photo(images[0]));
 
-  const tags = (product.tags ?? "").split(",").map((tag) => slug(tag)).filter(Boolean);
+  const tags = (typeof product.tags === "string" ? product.tags : "").split(",").map((tag) => slug(tag)).filter(Boolean);
   const badges = [...new Set(tags.map((tag) => tagBadges[tag]).filter((badge): badge is Badge => Boolean(badge)))].sort(
     (a, b) => knownBadges.indexOf(a) - knownBadges.indexOf(b),
   );

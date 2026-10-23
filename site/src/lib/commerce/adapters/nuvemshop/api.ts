@@ -29,7 +29,7 @@ export type NsProduct = {
   published: boolean;
   /** Variant axes, e.g. [{ pt: "Cor" }, { pt: "Tamanho" }]. */
   attributes?: Localized[];
-  variants: NsVariant[];
+  variants?: NsVariant[];
   images?: NsImage[];
   categories?: { id: number; handle: Localized; name: Localized }[];
   /** Comma-separated. */

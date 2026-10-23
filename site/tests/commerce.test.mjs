@@ -226,3 +226,23 @@ test("nuvemshop mapping: descriptions decode the common HTML entities (CR-9)", (
   assert.equal(shortDescription, `Algodão & linho <leve> "fresco" d'água éé`);
   assert.equal(map({ description: { pt: "&#99999999; &copy;" } }).shortDescription, "&#99999999; &copy;", "unknown entities kept, never a throw");
 });
+
+test("nuvemshop mapping: odd records never throw, and every skip says why (QA-14)", (t) => {
+  const warn = t.mock.method(console, "warn", () => {});
+  const skipped = (overrides, reason) => {
+    warn.mock.resetCalls();
+    assert.equal(map(overrides), null, reason);
+    assert.equal(warn.mock.callCount(), 1, `${reason}: one warning`);
+    assert.match(warn.mock.calls[0].arguments.join(" "), reason, "the warning gives the reason");
+  };
+  skipped({ variants: undefined }, /variant/);
+  skipped({ variants: [nsVariant(1, ["Coral", "M"], { price: "0" })] }, /price/);
+  skipped({ name: { pt: "  " } }, /name/);
+  skipped({ published: false }, /published/);
+  skipped({ categories: [] }, /categor/);
+  skipped({ handle: {}, name: { pt: "★★" } }, /id/);
+
+  assert.deepEqual(map({ tags: ["novo"] }).badges, [], "tags that are not text are ignored");
+  assert.equal(map({ description: { pt: "<p>Leve.</p><script>alert(1)</script><style>p{color:red}</style>" } }).shortDescription, "Leve.");
+  assert.deepEqual(map({ variants: [nsVariant(1, ["Coral", "p"]), nsVariant(2, ["Coral", "P"]), nsVariant(3, ["Coral", "gg"])] }).sizes, ["P", "GG"], "sizes ignore case");
+});
