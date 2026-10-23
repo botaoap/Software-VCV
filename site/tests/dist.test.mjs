@@ -202,7 +202,9 @@ test("home rails: Recomendado para você, Maiores vendas, Produtos principais, e
     assert.match(section, new RegExp(`>${title}</h2>`));
     assert.deepEqual(cardNames(section), marked, id);
   }
-  assert.match(html, /href="[^"]*\/produtos\/"/);
+  // With or without rails, the page body links to the whole catalog (not only the header menu).
+  const main = html.slice(html.indexOf("<main"), html.indexOf("</main>"));
+  assert.match(main, new RegExp(`<a href="${BASE}/produtos/"[^>]*>Ver todos os ${products.length} produtos`));
 });
 
 // The card / PDP label is the most useful mark the product has; rail marks (Recomendado, Destaque)

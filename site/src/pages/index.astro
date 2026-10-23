@@ -47,6 +47,7 @@ const organization = {
     rails.map((rail, railIndex) => (
       <section class:list={["section-y", railIndex % 2 === 1 && "bg-paper"]} aria-labelledby={`rail-${rail.id}-title`} data-rail={rail.id}>
         <div class="container-page">
+          {/* The first rail carries the link to the whole catalog (a section below holds it when no rail is shown). */}
           <SectionHeading eyebrow={brand.tagline} title={rail.title} id={`rail-${rail.id}-title`}>
             {railIndex === 0 && (
               <a href={url("/produtos/")} class="link-arrow">Ver todos os {all.length} produtos <span class="arrow" aria-hidden="true">→</span></a>
@@ -58,6 +59,16 @@ const organization = {
         </div>
       </section>
     ))
+  }
+
+  {
+    rails.length === 0 && (
+      <section class="section-y">
+        <div class="container-page text-center">
+          <a href={url("/produtos/")} class="link-arrow">Ver todos os {all.length} produtos <span class="arrow" aria-hidden="true">→</span></a>
+        </div>
+      </section>
+    )
   }
 
   {
