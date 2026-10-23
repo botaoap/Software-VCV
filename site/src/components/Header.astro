@@ -104,7 +104,7 @@ const whatsapp = contact.whatsapp && whatsappHref(contact.whatsapp, "Olá! Vim p
       }
       <button
         type="button"
-        class="menu-toggle inline-flex size-11 items-center justify-center rounded-md border border-border text-wine transition-colors hover:border-wine lg:hidden"
+        class="menu-toggle js-only inline-flex size-11 items-center justify-center rounded-md border border-border text-wine transition-colors hover:border-wine lg:hidden"
         aria-expanded="false"
         aria-controls="mobile-menu"
         data-menu-toggle
@@ -170,8 +170,9 @@ const whatsapp = contact.whatsapp && whatsappHref(contact.whatsapp, "Olá! Vim p
       </nav>
     </div>
   </div>
-  {/* Without JS nothing toggles the panels: show the menu and its sub-panels open (VCV-48). */}
-  <noscript><style>#mobile-menu, #mobile-menu [data-sub-panel] { grid-template-rows: 1fr; opacity: 1; }</style></noscript>
+  {/* Without JS nothing toggles the panels: show the menu and its sub-panels open, and unstick the
+      header below lg so the open menu doesn't cover the page (VCV-48). */}
+  <noscript><style>#mobile-menu, #mobile-menu [data-sub-panel] { grid-template-rows: 1fr; opacity: 1; } @media (width < 64rem) { .site-header { position: static; } }</style></noscript>
 </header>
 
 <style>

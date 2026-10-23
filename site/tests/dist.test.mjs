@@ -400,15 +400,18 @@ test("hidden / lg:hidden win: no unlayered CSS shows an element they hide", () =
 });
 
 // Without JS nothing can toggle the mobile menu's sub-panels, so the noscript style opens them too
-// and their toggles hide: no invisible links in the tab order (VCV-48 QA-1).
-test("no-JS mobile menu: sub-panels open with it and their toggles are js-only", () => {
+// and the toggles hide: no invisible links or dead buttons in the tab order (VCV-48 QA-1, QA-3).
+test("no-JS mobile menu: open with its sub-panels, header not sticky, toggles js-only", () => {
   const html = read("index.html");
   const noscript = html.match(/<noscript><style>([\s\S]*?)<\/style><\/noscript>/)?.[1] ?? "";
   assert.match(noscript, /#mobile-menu\b/, "noscript opens the mobile menu");
   assert.match(noscript, /\[data-sub-panel\]/, "noscript opens the sub-panels");
-  const toggles = [...html.matchAll(/<button\b[^>]*data-sub-toggle[^>]*>/g)].map(([tag]) => tag);
-  assert.ok(toggles.length > 0, "the menu has a sub-panel toggle");
-  for (const tag of toggles) assert.match(tag, /class="[^"]*\bjs-only\b/, `sub toggle needs js-only: ${tag}`);
+  // The open menu is tall, so a sticky header would cover most of a phone screen (QA-2).
+  assert.match(noscript, /@media \(width < 64rem\) \{ \.site-header \{ position: static; \} \}/, "no-JS header unsticks below lg");
+  const toggles = [...html.matchAll(/<button\b[^>]*data-(?:sub|menu)-toggle[^>]*>/g)].map(([tag]) => tag);
+  assert.equal(toggles.filter((tag) => tag.includes("data-menu-toggle")).length, 1, "one menu toggle");
+  assert.ok(toggles.length > 1, "the menu has a sub-panel toggle");
+  for (const tag of toggles) assert.match(tag, /class="[^"]*\bjs-only\b/, `toggle needs js-only: ${tag}`);
 });
 
 test("robots.txt points to the sitemap with an absolute URL", () => {
