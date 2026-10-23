@@ -357,7 +357,6 @@
     "shortDescription": "Toque seco e caimento fluido.",
     "fabric": {
       "material": "Viscolinho",
-      "origin": "Gaspar, SC",
       "care": [
         "Lavar à mão",
         "Não usar alvejante",
@@ -395,7 +394,6 @@
     "shortDescription": "Cintura alta e caimento reto. A base que sustenta o guarda-roupa.",
     "fabric": {
       "material": "Viscolinho",
-      "origin": "Gaspar, SC",
       "care": [
         "Lavar à mão",
         "Passar em temperatura média"
@@ -432,7 +430,6 @@
     "shortDescription": "Linho leve, respirável, feito para o calor do vale.",
     "fabric": {
       "material": "Linho",
-      "origin": "Gaspar, SC",
       "care": [
         "Lavar à mão",
         "Secar à sombra"
@@ -466,7 +463,6 @@
     "shortDescription": "Comprimento midi, movimento leve. Do dia ao fim de tarde.",
     "fabric": {
       "material": "Viscose",
-      "origin": "Gaspar, SC",
       "care": [
         "Lavar à mão"
       ]
