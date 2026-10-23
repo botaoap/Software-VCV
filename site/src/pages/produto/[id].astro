@@ -8,6 +8,7 @@ import SectionHeading from "../../components/SectionHeading.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { coverOf, galleryOf } from "../../lib/catalog";
 import { getCategoryOf, getProducts } from "../../lib/content";
+import { variantKey } from "../../lib/commerce/port";
 import { badgeLabels, formatBrl } from "../../lib/format";
 import { photoSrc } from "../../lib/images";
 import { brand } from "../../lib/site";
@@ -38,6 +39,12 @@ const bagThumb = (src: string) => getImage({ src: photoSrc(src), width: 160, hei
 const thumb = await bagThumb(coverOf(product).url);
 const colorThumbs = await Promise.all(colors.map((color) => bagThumb(color.images[0].url)));
 const og = await getImage({ src: photoSrc(coverOf(product).url), width: 1200, height: 630, fit: "contain", background: "#F6F0EA", format: "jpg", inferSize: false });
+
+// Every sellable unit (key → price, availability, platform ref) for the bag script. A size is offered
+// for the chosen color only when that unit exists and is for sale; the first color is shown first.
+const variants = Object.fromEntries(product.variants.map((v) => [v.key, { price: v.priceCents, available: v.available, ...(v.ref && { ref: v.ref }) }]));
+const forSale = (size: string) => variants[variantKey({ productId: product.id, colorId: colors[0]?.id, size })]?.available === true;
+const fromPrice = new Set(product.variants.map((v) => v.priceCents)).size > 1;
 
 const spec = [
   ["Material", product.fabric.material],
@@ -147,7 +154,8 @@ const crumbsLd = {
       {product.badges[0] && <p class="mb-3"><span class:list={["badge", product.badges[0] === "LAST_UNITS" && "badge-alert"]}>{badgeLabels[product.badges[0]]}</span></p>}
       <p class="eyebrow">{category.data.title}</p>
       <h1 id="product-title" class="mt-3 text-4xl md:text-5xl">{product.name}</h1>
-      <p class="mt-4 font-sans text-2xl font-medium text-wine">{formatBrl(product.priceCents)}</p>
+      <p class="mt-4 font-sans text-2xl font-medium text-wine">{fromPrice && "A partir de "}{formatBrl(product.priceCents)}</p>
+      {!product.available && <p class="mt-2"><span class="badge badge-alert">Esgotado</span></p>}
       <p class="mt-5 text-lg leading-relaxed text-text-muted">{product.shortDescription}</p>
 
       <form
@@ -155,9 +163,8 @@ const crumbsLd = {
         data-add-form
         data-product-id={product.id}
         data-name={product.name}
-        data-price={product.priceCents}
         data-image={thumb.src}
-        data-refs={JSON.stringify(Object.fromEntries(product.variants.flatMap((v) => (v.ref ? [[v.key, v.ref]] : []))))}
+        data-variants={JSON.stringify(variants)}
         novalidate
       >
         {
@@ -194,7 +201,7 @@ const crumbsLd = {
             {
               product.sizes.map((size) => (
                 <label class="relative">
-                  <input type="radio" name="size" value={size} class="absolute inset-0 size-full cursor-pointer opacity-0" />
+                  <input type="radio" name="size" value={size} disabled={!forSale(size)} class="absolute inset-0 size-full cursor-pointer opacity-0 disabled:cursor-not-allowed" />
                   <span class="size-pill">{size}</span>
                 </label>
               ))
@@ -208,9 +215,9 @@ const crumbsLd = {
         )}
         <button type="submit" class="btn btn-primary btn-lg mt-6 w-full" data-add-button disabled>
           <Icon name="bag" size={18} />
-          <span data-add-label>Adicionar à sacola</span>
+          <span data-add-label>{product.available ? "Adicionar à sacola" : "Esgotado"}</span>
         </button>
-        <p class="mt-3 text-sm text-text-muted" data-add-hint aria-live="polite">Selecione um tamanho.</p>
+        <p class="mt-3 text-sm text-text-muted" data-add-hint aria-live="polite">{product.available ? "Selecione um tamanho." : "Esta peça está esgotada no momento."}</p>
         <p class="mt-3 hidden" data-added-actions>
           <a href={url("/carrinho/")} class="link-arrow">Ver sacola <span class="arrow" aria-hidden="true">→</span></a>
         </p>
@@ -337,15 +344,27 @@ const crumbsLd = {
   if (requested) showColor(requested, false);
   colorInputs.forEach((input) => input.addEventListener("change", () => showColor(input, true)));
 
+  // A sold-out product keeps its disabled "Esgotado" button: no bag behaviour to wire.
   const form = document.querySelector<HTMLFormElement>("[data-add-form]");
-  if (form) {
+  const variants: Record<string, { price: number; available: boolean; ref?: string }> = JSON.parse(form?.dataset.variants ?? "{}");
+  if (form && Object.values(variants).some((variant) => variant.available)) {
     const button = form.querySelector<HTMLButtonElement>("[data-add-button]")!;
     const label = form.querySelector<HTMLElement>("[data-add-label]")!;
     const hint = form.querySelector<HTMLElement>("[data-add-hint]")!;
     const actions = form.querySelector<HTMLElement>("[data-added-actions]")!;
     const selected = () => form.querySelector<HTMLInputElement>("input[name=size]:checked");
     const selectedColor = () => form.querySelector<HTMLInputElement>("input[name=color]:checked");
+    const variantOf = (size: string) => variants[lineKey({ productId: form.dataset.productId!, colorId: selectedColor()?.value, size })];
     let resetTimer: number | undefined;
+
+    // Only the sizes the chosen color has, and has for sale, can be picked.
+    const offerSizes = () => {
+      for (const input of form.querySelectorAll<HTMLInputElement>("input[name=size]")) {
+        input.disabled = !variantOf(input.value)?.available;
+        if (input.disabled) input.checked = false;
+      }
+    };
+    offerSizes(); // the color may come from ?cor=
 
     const reset = () => {
       label.textContent = "Adicionar à sacola";
@@ -353,6 +372,7 @@ const crumbsLd = {
     };
 
     form.addEventListener("change", () => {
+      offerSizes();
       button.disabled = !selected();
       hint.textContent = selected() ? "" : "Selecione um tamanho.";
       window.clearTimeout(resetTimer);
@@ -367,14 +387,13 @@ const crumbsLd = {
         return;
       }
       const color = selectedColor();
-      // The platform's id for this color + size (opaque; only the commerce adapter reads it).
-      const refs: Record<string, string> = JSON.parse(form.dataset.refs ?? "{}");
-      const ref = refs[lineKey({ productId: form.dataset.productId!, colorId: color?.value, size: size.value })];
+      // The unit's own price, and the platform's id for it (opaque; only the commerce adapter reads it).
+      const { price, ref } = variantOf(size.value);
       addToCart({
         productId: form.dataset.productId!,
         name: form.dataset.name!,
         image: color?.dataset.image ?? form.dataset.image ?? null,
-        unitPriceCents: Number(form.dataset.price),
+        unitPriceCents: price,
         size: size.value,
         colorId: color?.value,
         colorName: color?.dataset.colorName,

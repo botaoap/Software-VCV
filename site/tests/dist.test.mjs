@@ -106,6 +106,45 @@ test("every product has a page with a size per variant and matching JSON-LD", ()
   }
 });
 
+// The bag only takes a unit that exists and is for sale, at that unit's price (VCV-41, QA-1/4/5).
+// The PDP form carries every variant (key → price, availability, platform ref).
+const decodeAttr = (value) => value.replace(/&quot;|&#34;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+const addForm = (html) => html.match(/<form[^>]*data-add-form[^>]*>/)[0];
+const variantsOf = (html) => JSON.parse(decodeAttr(addForm(html).match(/data-variants="([^"]*)"/)[1]));
+const isDisabled = (tag) => /\sdisabled(?=[\s>=])/.test(tag);
+const productPages = () => (built ? readdirSync(join(dist, "produto")).map((id) => [id, read("produto", id, "index.html")]) : []);
+
+test("static catalog: the PDP offers every color × size at the product price, for sale when the product is", () => {
+  for (const product of products) {
+    const variants = variantsOf(read("produto", product.id, "index.html"));
+    const colorIds = product.colors?.length > 0 ? product.colors.map((c) => c.id) : [undefined];
+    const keys = colorIds.flatMap((colorId) => product.sizes.map((size) => [product.id, colorId, size].filter(Boolean).join(":")));
+    assert.deepEqual(Object.keys(variants).sort(), keys.sort(), `${product.id}: variants`);
+    for (const [key, variant] of Object.entries(variants)) {
+      assert.equal(variant.price, product.priceCents, `${key}: price`);
+      assert.equal(variant.available, product.available !== false, `${key}: availability`);
+    }
+  }
+});
+
+test("PDP: sizes that do not exist or are sold out for the shown color are disabled; nothing for sale = Esgotado", () => {
+  for (const [id, html] of productPages()) {
+    const variants = variantsOf(html);
+    const color = html.match(/<input[^>]*name="color"[^>]*value="([^"]+)"/)?.[1];
+    for (const [input, size] of html.matchAll(/<input[^>]*name="size"[^>]*value="([^"]+)"[^>]*>/g)) {
+      const forSale = variants[[id, color, size].filter(Boolean).join(":")]?.available === true;
+      assert.equal(isDisabled(input), !forSale, `${id}: size ${size} of ${color ?? "the product"}`);
+    }
+    const text = html.replace(/<script[\s\S]*?<\/script>/g, "");
+    const soldOut = !Object.values(variants).some((v) => v.available);
+    const button = html.match(/<button[^>]*data-add-button[^>]*>[\s\S]*?<\/button>/)[0];
+    assert.equal(/Esgotado/.test(text), soldOut, `${id}: "Esgotado" only when nothing is for sale`);
+    if (soldOut) assert.ok(isDisabled(button.match(/<button[^>]*>/)[0]) && /Esgotado/.test(button), `${id}: the button says Esgotado and is disabled`);
+    const prices = new Set(Object.values(variants).map((v) => v.price));
+    assert.equal(/A partir de/.test(text), prices.size > 1, `${id}: "A partir de" only when variant prices differ`);
+  }
+});
+
 test("products with colors: one swatch and one gallery per color, the first one shown", () => {
   const colored = products.filter((p) => p.colors?.length > 0);
   assert.ok(colored.length > 0, "the catalog has products with colors");
