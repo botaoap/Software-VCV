@@ -341,6 +341,59 @@ test("no invented brand claims (atelier, rolo a rolo, ficha técnica, casa têxt
   }
 });
 
+// Tailwind utilities live in @layer utilities, and unlayered CSS beats any layer whatever its
+// specificity. So an unlayered rule that shows a class (`display` other than none) silently
+// overrides `hidden` / `lg:hidden` on the same element (VCV-48: the mobile menu showed on desktop
+// with JS off). Unlayered `display: none` (e.g. `.js-only` without JS) is meant to win.
+const HIDING_UTILITY = /^(?:[\w-]+:)*hidden$/;
+const unlayeredDisplayClasses = (css) => {
+  const found = new Set();
+  const stack = [];
+  let start = 0;
+  for (let i = 0; i < css.length; i++) {
+    const ch = css[i];
+    if (ch === "{") {
+      stack.push(css.slice(start, i).trim());
+      start = i + 1;
+    } else if (ch === "}") {
+      const prelude = stack.pop() ?? "";
+      const body = css.slice(start, i);
+      const layered = stack.some((p) => p.startsWith("@layer"));
+      if (!layered && !prelude.startsWith("@") && /(?:^|;)\s*display\s*:\s*(?!none\b)/.test(body)) {
+        for (const [, name] of prelude.matchAll(/\.([\w-]+)/g)) found.add(name);
+      }
+      start = i + 1;
+    } else if (ch === ";" && stack.length === 0) {
+      start = i + 1; // top-level statements such as @layer a,b;
+    }
+  }
+  return found;
+};
+
+test("unlayeredDisplayClasses finds unlayered rules that show an element, and nothing else", () => {
+  const css =
+    "@layer components{.a{display:grid}}.b{opacity:0;display:grid}.c .d{color:red}" +
+    "@media (min-width:1px){.e{display:flex}}html:not(.js) .f{display:none}";
+  assert.deepEqual([...unlayeredDisplayClasses(css)].sort(), ["b", "e"]);
+});
+
+test("hidden / lg:hidden win: no unlayered CSS shows an element they hide", () => {
+  const cssDir = join(dist, "_astro");
+  const css = readdirSync(cssDir)
+    .filter((name) => name.endsWith(".css"))
+    .map((name) => readFileSync(join(cssDir, name), "utf8"))
+    .join("\n");
+  const unlayered = unlayeredDisplayClasses(css);
+  for (const file of pages) {
+    for (const [, attr] of readFileSync(file, "utf8").matchAll(/\sclass="([^"]*)"/g)) {
+      const classes = attr.split(/\s+/);
+      if (!classes.some((c) => HIDING_UTILITY.test(c))) continue;
+      const clash = classes.filter((c) => unlayered.has(c));
+      assert.deepEqual(clash, [], `${rel(file)}: unlayered display on .${clash.join(", .")} overrides "${attr}"`);
+    }
+  }
+});
+
 test("robots.txt points to the sitemap with an absolute URL", () => {
   const robots = read("robots.txt");
   assert.match(robots, /^User-agent: \*/m);
