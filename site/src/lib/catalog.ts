@@ -27,9 +27,6 @@ export const uniqueById = (products: Product[]) =>
 
 export type ProductMedia = { images: Photo[]; colors: Color[] };
 
-/** The card / link-preview photo: the first color's first photo, else the first shared photo. */
-export const coverOf = (product: ProductMedia): Photo => product.colors[0]?.images[0] ?? product.images[0];
-
 /** Gallery for one color: its own photos first, then the shared ones (all-colors shot, details). */
 export const galleryOf = (product: ProductMedia, colorId?: string): Photo[] => {
   const color = product.colors.find((c) => c.id === colorId) ?? product.colors[0];
@@ -46,6 +43,10 @@ export const sizesForSale = (offer: Pick<Offer, "variants">, colorId: string | u
 
 /** The color the PDP opens on (unless ?cor= asks for another): the first with something for sale. */
 export const openingColorId = (offer: Offer) => (offer.colors.find((c) => sizesForSale(offer, c.id).length > 0) ?? offer.colors[0])?.id;
+
+/** The card / link-preview photo: the opening color's first photo, else the first shared photo. */
+export const coverOf = (product: ProductMedia & Pick<Offer, "variants">): Photo =>
+  (product.colors.find((c) => c.id === openingColorId(product)) ?? product.colors[0])?.images[0] ?? product.images[0];
 
 export const sizeHint = (offer: Pick<Offer, "variants">, colorId: string | undefined) =>
   !offer.variants.some((v) => v.available)
