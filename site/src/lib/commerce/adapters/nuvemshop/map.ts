@@ -98,7 +98,12 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
       const colorSlug = slug(colorName) || colorName;
       color = colorsBySlug.get(colorSlug);
       if (!color) {
-        color = { id: slug(colorName) || `cor-${colorsBySlug.size + 1}`, name: colorName, hex: options.colorHex?.[colorName] ?? NEUTRAL_SWATCH, images: [] };
+        // A name with no slug ("★") gets cor-<n>; a suffix keeps every id unique ("Cor 1" after it).
+        const base = slug(colorName) || `cor-${colorsBySlug.size + 1}`;
+        const taken = (candidate: string) => [...colorsBySlug.values()].some((c) => c.id === candidate);
+        let colorId = base;
+        for (let n = 2; taken(colorId); n++) colorId = `${base}-${n}`;
+        color = { id: colorId, name: colorName, hex: options.colorHex?.[colorName] ?? NEUTRAL_SWATCH, images: [] };
         colorsBySlug.set(colorSlug, color);
       }
     }

@@ -246,3 +246,11 @@ test("nuvemshop mapping: odd records never throw, and every skip says why (QA-14
   assert.equal(map({ description: { pt: "<p>Leve.</p><script>alert(1)</script><style>p{color:red}</style>" } }).shortDescription, "Leve.");
   assert.deepEqual(map({ variants: [nsVariant(1, ["Coral", "p"]), nsVariant(2, ["Coral", "P"]), nsVariant(3, ["Coral", "gg"])] }).sizes, ["P", "GG"], "sizes ignore case");
 });
+
+test("nuvemshop mapping: a generated color id never takes a real color's id (QA-11)", () => {
+  const product = map({ variants: [nsVariant(1, ["★", "M"]), nsVariant(2, ["Cor 1", "M"]), nsVariant(3, ["❤", "M"]), nsVariant(4, ["Cor 1", "G"])] });
+  const ids = product.colors.map((c) => c.id);
+  assert.equal(new Set(ids).size, 3, `distinct ids: ${ids}`);
+  assert.deepEqual(product.colors.map((c) => c.name), ["★", "Cor 1", "❤"]);
+  assert.equal(product.variants.filter((v) => v.colorId === product.colors[1].id).length, 2, "both Cor 1 sizes share its id");
+});
