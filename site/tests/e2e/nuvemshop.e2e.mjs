@@ -51,6 +51,7 @@ async function photoProblem(url) {
       if (REDIRECTS.includes(response.status) && location) {
         if (redirects === MAX_REDIRECTS) return `more than ${MAX_REDIRECTS} redirects`;
         current = new URL(location, current).href;
+        if (!current.startsWith("https://")) return `redirects to ${current}, not https`;
         if (!isAllowedImageUrl(current)) return `redirects to ${current}, a host not in src/lib/commerce/image-hosts.ts`;
         continue;
       }
