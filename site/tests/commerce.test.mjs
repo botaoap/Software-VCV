@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { fetchPublishedProducts, PAGE_SIZE } from "../src/lib/commerce/adapters/nuvemshop/client.ts";
 import { fromNuvemshop } from "../src/lib/commerce/adapters/nuvemshop/map.ts";
+import { isAllowedImageUrl, remotePatterns } from "../src/lib/commerce/image-hosts.ts";
 import { checkout as staticCheckout } from "../src/lib/commerce/adapters/static/checkout.ts";
 import { fromContent } from "../src/lib/commerce/adapters/static/map.ts";
 import { badges, variantKey } from "../src/lib/commerce/port.ts";
@@ -389,4 +390,17 @@ test("store client: sends 'Authentication: bearer <token>', a User-Agent, and ho
   assert.equal(calls[0].headers.Authentication, "bearer s3cret");
   assert.ok(calls[0].headers["User-Agent"]);
   assert.match(calls[0].url, /^http:\/\/127\.0\.0\.1:1\/v1\/9\/products\?/);
+});
+
+// CR-10 / VCV-49: astro.config.mjs and the e2e test read the same list of photo hosts; the matcher
+// follows Astro's remotePatterns rules ("**.host" = one or more subdomains, never the bare domain).
+test("image hosts: store photos match the configured patterns, lookalikes do not", () => {
+  assert.ok(remotePatterns.length > 0);
+  assert.ok(isAllowedImageUrl("https://dcdn.mitiendanube.com/stores/1/products/a.jpg"));
+  assert.ok(isAllowedImageUrl("https://a.b.mitiendanube.com/a.jpg"), "any subdomain depth");
+  assert.ok(!isAllowedImageUrl("http://dcdn.mitiendanube.com/a.jpg"), "https only");
+  assert.ok(!isAllowedImageUrl("https://mitiendanube.com/a.jpg"), "bare domain, as in Astro");
+  assert.ok(!isAllowedImageUrl("https://evilmitiendanube.com/a.jpg"));
+  assert.ok(!isAllowedImageUrl("https://dcdn.mitiendanube.com.evil.io/a.jpg"));
+  assert.ok(!isAllowedImageUrl("//dcdn.mitiendanube.com/a.jpg"), "not an absolute URL");
 });
