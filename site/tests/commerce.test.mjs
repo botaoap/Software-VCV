@@ -420,3 +420,15 @@ test("store client: trims the store id and token, and rejects malformed ones wit
     });
   }
 });
+
+// QA-4/CR-5: a 200 that is not the product list (maintenance HTML, an error object) is a clear error.
+test("store client: a 200 that is not a JSON array throws a clear error, never the token", async () => {
+  const answer = (body) => async () => new Response(body, { status: 200 });
+  const cases = [
+    ["<html>maintenance</html>", /^Nuvemshop products page 1: HTTP 200 but not JSON$/],
+    [JSON.stringify({ code: 401, message: "Unauthorized" }), /^Nuvemshop products page 1: expected a JSON array, got object \(Unauthorized\)$/],
+    [JSON.stringify({ code: 1, message: "bad bearer s3cret" }), /^Nuvemshop products page 1: expected a JSON array, got object \(bad bearer \[token\]\)$/],
+    ["null", /expected a JSON array, got null$/],
+  ];
+  for (const [body, message] of cases) await assert.rejects(client(answer(body)), { message });
+});

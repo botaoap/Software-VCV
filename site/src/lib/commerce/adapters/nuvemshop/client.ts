@@ -29,9 +29,21 @@ export async function fetchPublishedProducts({ apiUrl = API_URL, fetch = globalT
       headers: { Authentication: `bearer ${token}`, "User-Agent": "VCV site (Software-VCV)" },
     });
     if (response.status === 404 && page > 1) break; // past the last page
-    if (!response.ok) throw new Error(`Nuvemshop products page ${page}: HTTP ${response.status}`);
-    const batch = (await response.json()) as NsProduct[];
-    all.push(...batch);
+    const where = `Nuvemshop products page ${page}`;
+    if (!response.ok) throw new Error(`${where}: HTTP ${response.status}`);
+    let batch: unknown;
+    try {
+      batch = JSON.parse(await response.text());
+    } catch {
+      throw new Error(`${where}: HTTP ${response.status} but not JSON`);
+    }
+    if (!Array.isArray(batch)) {
+      // An error object's `message` helps; the token is masked in case the API echoes it.
+      const message = (batch as { message?: unknown } | null)?.message;
+      const detail = typeof message === "string" ? ` (${message.split(token).join("[token]")})` : "";
+      throw new Error(`${where}: expected a JSON array, got ${batch === null ? "null" : typeof batch}${detail}`);
+    }
+    all.push(...(batch as NsProduct[]));
     if (batch.length < PAGE_SIZE) break;
   }
   return all;
