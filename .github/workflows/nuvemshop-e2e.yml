@@ -1,0 +1,91 @@
+name: Nuvemshop e2e
+
+# Checks the real Nuvemshop store (VCV-49): the API answers with the store token, published products
+# map to the site, and every photo the site would publish loads. Runs by hand from the Actions tab,
+# and on PRs/pushes that touch the commerce code or what it reads. Needs the repo secrets NUVEMSHOP_STORE_ID and
+# NUVEMSHOP_TOKEN (site/README.md → "Nuvemshop end-to-end test"): without them a PR or push says
+# so and passes (forks never get secrets); a manual run fails.
+on:
+  workflow_dispatch:
+    inputs:
+      expect_handle:
+        description: Product handle (or id) that must map and have a photo, e.g. bermuda-teste
+        required: false
+        default: ''
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - 'site/src/lib/commerce/**'
+      - 'site/src/lib/catalog.ts'
+      - 'site/content/categories.json'
+      - 'site/astro.config.mjs'
+      - 'site/package.json'
+      - 'site/package-lock.json'
+      - 'site/tests/e2e/**'
+      - '.github/workflows/nuvemshop-e2e.yml'
+  push:
+    branches: [develop]
+    paths:
+      - 'site/src/lib/commerce/**'
+      - 'site/src/lib/catalog.ts'
+      - 'site/content/categories.json'
+      - 'site/astro.config.mjs'
+      - 'site/package.json'
+      - 'site/package-lock.json'
+      - 'site/tests/e2e/**'
+      - '.github/workflows/nuvemshop-e2e.yml'
+
+concurrency:
+  group: nuvemshop-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: Nuvemshop store (e2e)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: site
+    env:
+      NUVEMSHOP_STORE_ID: ${{ secrets.NUVEMSHOP_STORE_ID }}
+      NUVEMSHOP_TOKEN: ${{ secrets.NUVEMSHOP_TOKEN }}
+      NUVEMSHOP_EXPECT_HANDLE: ${{ inputs.expect_handle }}
+    steps:
+      - name: Check secrets
+        id: secrets
+        working-directory: .
+        run: |
+          if [ -n "$NUVEMSHOP_STORE_ID" ] && [ -n "$NUVEMSHOP_TOKEN" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Only one of the two set is likely a typo in a secret's name.
+          if [ -n "$NUVEMSHOP_STORE_ID" ]; then echo "::warning::NUVEMSHOP_STORE_ID is set but NUVEMSHOP_TOKEN is missing"; fi
+          if [ -n "$NUVEMSHOP_TOKEN" ]; then echo "::warning::NUVEMSHOP_TOKEN is set but NUVEMSHOP_STORE_ID is missing"; fi
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "::error::Set the repo secrets NUVEMSHOP_STORE_ID and NUVEMSHOP_TOKEN (site/README.md → Nuvemshop end-to-end test)"
+            exit 1
+          else
+            echo "::notice::Nuvemshop secrets not configured; e2e not run"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.secrets.outputs.configured == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.secrets.outputs.configured == 'true'
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - run: npm ci
+        if: steps.secrets.outputs.configured == 'true'
+
+      - name: E2E
+        if: steps.secrets.outputs.configured == 'true'
+        run: npm run test:e2e

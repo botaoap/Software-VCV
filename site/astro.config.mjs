@@ -2,6 +2,7 @@
 import { defineConfig } from "astro/config";
 import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
+import { remotePatterns } from "./src/lib/commerce/image-hosts.ts";
 
 // Static output only: every page is a real HTML file in dist/ (SEO + WhatsApp link previews),
 // served by any static host with no runtime.
@@ -22,8 +23,9 @@ export default defineConfig({
   build: { format: "directory" },
   // Placeholder photography is optimised at build time and self-hosted (no third-party request at
   // runtime). Replace the URLs in content/ with real campaign photos when they exist.
-  // Nuvemshop product photos (PUBLIC_COMMERCE=nuvemshop) come from its CDN and are self-hosted the same way.
-  image: { domains: ["images.unsplash.com"], remotePatterns: [{ protocol: "https", hostname: "**.mitiendanube.com" }] },
+  // Nuvemshop product photos (PUBLIC_COMMERCE=nuvemshop) come from its CDN and are self-hosted the same
+  // way; their hosts live in src/lib/commerce/image-hosts.ts, which the e2e test checks too.
+  image: { domains: ["images.unsplash.com"], remotePatterns: [...remotePatterns] },
   // Sections that no longer exist (VCV-39: no collections or "Novidades" at launch; "Atelier" became
   // "Sobre") keep their old links working. Static builds emit a redirect page for each.
   redirects: Object.fromEntries([

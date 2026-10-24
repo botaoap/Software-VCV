@@ -6,7 +6,9 @@ import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
+import { fetchPublishedProducts, PAGE_SIZE } from "../src/lib/commerce/adapters/nuvemshop/client.ts";
 import { fromNuvemshop } from "../src/lib/commerce/adapters/nuvemshop/map.ts";
+import { isAllowedImageUrl, remotePatterns } from "../src/lib/commerce/image-hosts.ts";
 import { checkout as staticCheckout } from "../src/lib/commerce/adapters/static/checkout.ts";
 import { fromContent } from "../src/lib/commerce/adapters/static/map.ts";
 import { badges, variantKey } from "../src/lib/commerce/port.ts";
@@ -337,4 +339,119 @@ test("size labels: letter grades upper-cased, other labels kept as typed", () =>
     categories: [{ id: 1, handle: { pt: "vestidos" }, name: { pt: "Vestidos" } }], tags: "",
   };
   assert.deepEqual(fromNuvemshop(product, { categoryIds }).sizes, ["P", "GG", "3-4 anos"]);
+});
+
+// VCV-49: the build and the e2e test read the store through the same client, tested here on a fake
+// fetch that serves `pages` (one array per page) and records each request.
+function fakeFetch(pages, { status = () => 200 } = {}) {
+  const calls = [];
+  const fetch = async (url, init) => {
+    calls.push({ url: String(url), headers: init.headers });
+    const page = Number(new URL(url).searchParams.get("page"));
+    const code = status(page);
+    if (code !== 200) return new Response("{}", { status: code });
+    return Response.json(pages[page - 1] ?? []);
+  };
+  return { fetch, calls };
+}
+const items = (n, from = 0) => Array.from({ length: n }, (_, i) => ({ id: from + i }));
+const client = (fetch) => fetchPublishedProducts({ storeId: "123", token: "s3cret", fetch });
+
+test("store client: pages until a page shorter than the page size", async () => {
+  const { fetch, calls } = fakeFetch([items(PAGE_SIZE), items(PAGE_SIZE, PAGE_SIZE), items(3, 2 * PAGE_SIZE)]);
+  const products = await client(fetch);
+  assert.equal(products.length, 2 * PAGE_SIZE + 3);
+  assert.equal(calls.length, 3);
+  assert.match(calls[0].url, /^https:\/\/api\.nuvemshop\.com\.br\/v1\/123\/products\?/);
+  assert.deepEqual(calls.map((c) => new URL(c.url).searchParams.get("page")), ["1", "2", "3"]);
+  assert.equal(new URL(calls[0].url).searchParams.get("published"), "true");
+});
+
+test("store client: a 404 past page 1 ends paging (the last page was full)", async () => {
+  const { fetch, calls } = fakeFetch([items(PAGE_SIZE)], { status: (page) => (page === 2 ? 404 : 200) });
+  assert.equal((await client(fetch)).length, PAGE_SIZE);
+  assert.equal(calls.length, 2);
+});
+
+test("store client: any other error throws with the HTTP status and never the token", async () => {
+  for (const [code, page] of [[401, 1], [404, 1], [500, 2]]) {
+    const { fetch } = fakeFetch([items(PAGE_SIZE)], { status: (p) => (p === page ? code : 200) });
+    await assert.rejects(client(fetch), (error) => {
+      assert.match(error.message, new RegExp(`HTTP ${code}`));
+      assert.ok(!error.message.includes("s3cret"), "token leaked into the error");
+      return true;
+    });
+  }
+});
+
+test("store client: sends 'Authentication: bearer <token>', a User-Agent, and honours a base URL", async () => {
+  const { fetch, calls } = fakeFetch([items(1)]);
+  await fetchPublishedProducts({ storeId: "9", token: "s3cret", fetch, apiUrl: "http://127.0.0.1:1/v1/" });
+  assert.equal(calls[0].headers.Authentication, "bearer s3cret");
+  assert.ok(calls[0].headers["User-Agent"]);
+  assert.match(calls[0].url, /^http:\/\/127\.0\.0\.1:1\/v1\/9\/products\?/);
+});
+
+// CR-10 / VCV-49: astro.config.mjs and the e2e test read the same list of photo hosts; the matcher
+// follows Astro's remotePatterns rules ("**.host" = one or more subdomains, never the bare domain).
+test("image hosts: store photos match the configured patterns, lookalikes do not", () => {
+  assert.ok(remotePatterns.length > 0);
+  assert.ok(isAllowedImageUrl("https://dcdn.mitiendanube.com/stores/1/products/a.jpg"));
+  assert.ok(isAllowedImageUrl("https://a.b.mitiendanube.com/a.jpg"), "any subdomain depth");
+  assert.ok(!isAllowedImageUrl("http://dcdn.mitiendanube.com/a.jpg"), "https only");
+  assert.ok(!isAllowedImageUrl("https://mitiendanube.com/a.jpg"), "bare domain, as in Astro");
+  assert.ok(!isAllowedImageUrl("https://evilmitiendanube.com/a.jpg"));
+  assert.ok(!isAllowedImageUrl("https://dcdn.mitiendanube.com.evil.io/a.jpg"));
+  assert.ok(!isAllowedImageUrl("//dcdn.mitiendanube.com/a.jpg"), "not an absolute URL");
+});
+
+// QA-3: pasted secrets often carry a newline or spaces; trim them, and refuse a value that would
+// break the header or the URL without ever echoing it.
+test("store client: trims the store id and token, and rejects malformed ones without echoing them", async () => {
+  const { fetch, calls } = fakeFetch([items(1)]);
+  await fetchPublishedProducts({ storeId: " 9\n", token: "  s3cret\n", fetch });
+  assert.equal(calls[0].headers.Authentication, "bearer s3cret");
+  assert.match(calls[0].url, /\/v1\/9\/products\?/);
+  for (const [storeId, token, secret] of [["9", "s3c\nret-PART", "PART"], ["9", "s3c ret-PART", "PART"], ["1 2-PART", "s3cret", "PART"], ["abc-PART", "s3cret", "PART"], ["", "s3cret", "s3cret"], ["9", "", "9/"]]) {
+    await assert.rejects(fetchPublishedProducts({ storeId, token, fetch }), (error) => {
+      assert.ok(!error.message.includes(secret), `value echoed: ${error.message}`);
+      assert.match(error.message, storeId.trim() && /^\d+$/.test(storeId.trim()) ? /token/ : /store id/);
+      return true;
+    });
+  }
+});
+
+// QA-4/CR-5: a 200 that is not the product list (maintenance HTML, an error object) is a clear error.
+test("store client: a 200 that is not a JSON array throws a clear error, never the token", async () => {
+  const answer = (body) => async () => new Response(body, { status: 200 });
+  const cases = [
+    ["<html>maintenance</html>", /^Nuvemshop products page 1: HTTP 200 but not JSON$/],
+    [JSON.stringify({ code: 401, message: "Unauthorized" }), /^Nuvemshop products page 1: expected a JSON array, got object \(Unauthorized\)$/],
+    [JSON.stringify({ code: 1, message: "bad bearer s3cret" }), /^Nuvemshop products page 1: expected a JSON array, got object \(bad bearer \[token\]\)$/],
+    ["null", /expected a JSON array, got null$/],
+  ];
+  for (const [body, message] of cases) await assert.rejects(client(answer(body)), { message });
+});
+
+// CR-2/QA-2: a page that never answers, or whose body drips forever, ends with a clear error. Like
+// the real fetch, these fakes tie the request and its body to the signal.
+test("store client: timeoutMs bounds each page, headers and body", { timeout: 2000 }, async (t) => {
+  const silent = async (_url, { signal }) => new Promise((_, reject) => signal.addEventListener("abort", () => reject(signal.reason)));
+  const drip = async (_url, { signal }) => {
+    const body = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode("["));
+        signal.addEventListener("abort", () => controller.error(signal.reason));
+      },
+    });
+    return new Response(body, { status: 200 });
+  };
+  // AbortSignal.timeout's timer does not hold Node open (a real socket would); released even on failure.
+  const keepAlive = setInterval(() => {}, 1000);
+  t.after(() => clearInterval(keepAlive));
+  for (const fetch of [silent, drip]) {
+    await assert.rejects(fetchPublishedProducts({ storeId: "1", token: "s3cret", fetch, timeoutMs: 50 }), {
+      message: "Nuvemshop products page 1: timed out after 0.05 s",
+    });
+  }
 });

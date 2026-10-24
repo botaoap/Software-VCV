@@ -16,6 +16,7 @@ npm run dev        # http://localhost:4321
 npm run build      # type-check (astro check) + static build → dist/
 npm run preview    # serve dist/ (the 404 and URLs behave like production)
 npm test           # contrast tokens + rules on the built HTML (build first)
+npm run test:e2e   # the real Nuvemshop store (opt-in, needs its token; see below)
 ```
 
 Node 22 or newer.
@@ -62,6 +63,34 @@ for the rails), and the UpSeller NF-e setting for Nuvemshop orders. Until then t
 adapter keeps the bag working, saved in the browser, with "Finalizar compra" disabled and
 "Pagamento online em breve"; no WhatsApp order is triggered.
 
+### Nuvemshop end-to-end test
+
+`npm run test:e2e` (not part of `npm test`, which stays offline) reads the real store through the
+build's own client and mapper (`adapters/nuvemshop/client.ts`, `map.ts`) and prints one line per
+published product: mapped, or skipped with the reason. It fails unless at least one product maps and
+every photo the site would publish is https, on a host in `src/lib/commerce/image-hosts.ts` (the
+list `astro.config.mjs` uses), and loads as an image. It is also the photo check: only the REST API
+returns a product's `images[]` (the store's MCP connector does not).
+
+```bash
+NUVEMSHOP_STORE_ID=<store id> NUVEMSHOP_TOKEN=<token> npm run test:e2e
+NUVEMSHOP_EXPECT_HANDLE=bermuda-teste …   # optional: this product must map and have a photo
+NUVEMSHOP_API_URL=http://localhost:8080/v1 …   # optional: another API root (a local fake server)
+```
+
+In CI, `.github/workflows/nuvemshop-e2e.yml` runs it by hand (Actions → Nuvemshop e2e, optional
+handle) and on PRs/pushes touching `src/lib/commerce/`, what it reads (`src/lib/catalog.ts`,
+`content/categories.json`, `astro.config.mjs`, the npm files) or `tests/e2e/`, with the repo secrets
+`NUVEMSHOP_STORE_ID` and `NUVEMSHOP_TOKEN`. Without them a PR or push only notes "not configured"
+(with a warning if just one is set); a manual run fails.
+
+Getting a token for one store (check each step against the current Nuvemshop/Tiendanube docs): in
+the Nuvemshop Partners portal create an app with the "read products" scope; install it on the store,
+which redirects to the app's URL with a `code`; within a few minutes exchange it with
+`POST https://www.tiendanube.com/apps/authorize/token` (`client_id`, `client_secret`,
+`grant_type=authorization_code`, `code`). The answer's `access_token` is `NUVEMSHOP_TOKEN` and its
+`user_id` is `NUVEMSHOP_STORE_ID`. The token is a secret: keep it out of the repo and of `PUBLIC_*`.
+
 **Contact channels are optional** (`content/brand.json` → `contact.whatsapp` / `instagram` / `email`).
 VCV has none yet (Felipe, 2026-10), so no WhatsApp button, Instagram link, `mailto:` or JSON-LD
 `sameAs` is rendered; Contato says the official channels come soon. Set a value and every place
@@ -80,7 +109,7 @@ src/components/          Header, Footer, PromoBar, HeroCarousel, ProductCard, Ca
 src/lib/commerce/        the commerce port + adapters (see above)
 src/scripts/cart.ts      the bag (localStorage `vcv.cart.v1`, shared across tabs)
 src/pages/               one file per route: /produtos, /produtos/{categoria}, /produto/{id}, /sobre, /busca, robots.txt, …
-tests/                   tokens.test.mjs (WCAG AA) · dist.test.mjs (built HTML) · commerce.test.mjs (adapter contract)
+tests/                   tokens.test.mjs (WCAG AA) · dist.test.mjs (built HTML) · commerce.test.mjs (adapter contract) · e2e/ (real store, opt-in)
 ```
 
 Menu (Felipe, 2026-10): **Produtos** (dropdown by garment type, from `content/categories.json`),
