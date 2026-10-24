@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
+import { fetchPublishedProducts, PAGE_SIZE } from "../src/lib/commerce/adapters/nuvemshop/client.ts";
 import { fromNuvemshop } from "../src/lib/commerce/adapters/nuvemshop/map.ts";
 import { checkout as staticCheckout } from "../src/lib/commerce/adapters/static/checkout.ts";
 import { fromContent } from "../src/lib/commerce/adapters/static/map.ts";
@@ -337,4 +338,55 @@ test("size labels: letter grades upper-cased, other labels kept as typed", () =>
     categories: [{ id: 1, handle: { pt: "vestidos" }, name: { pt: "Vestidos" } }], tags: "",
   };
   assert.deepEqual(fromNuvemshop(product, { categoryIds }).sizes, ["P", "GG", "3-4 anos"]);
+});
+
+// VCV-49: the build and the e2e test read the store through the same client, tested here on a fake
+// fetch that serves `pages` (one array per page) and records each request.
+function fakeFetch(pages, { status = () => 200 } = {}) {
+  const calls = [];
+  const fetch = async (url, init) => {
+    calls.push({ url: String(url), headers: init.headers });
+    const page = Number(new URL(url).searchParams.get("page"));
+    const code = status(page);
+    if (code !== 200) return new Response("{}", { status: code });
+    return Response.json(pages[page - 1] ?? []);
+  };
+  return { fetch, calls };
+}
+const items = (n, from = 0) => Array.from({ length: n }, (_, i) => ({ id: from + i }));
+const client = (fetch) => fetchPublishedProducts({ storeId: "123", token: "s3cret", fetch });
+
+test("store client: pages until a page shorter than the page size", async () => {
+  const { fetch, calls } = fakeFetch([items(PAGE_SIZE), items(PAGE_SIZE, PAGE_SIZE), items(3, 2 * PAGE_SIZE)]);
+  const products = await client(fetch);
+  assert.equal(products.length, 2 * PAGE_SIZE + 3);
+  assert.equal(calls.length, 3);
+  assert.match(calls[0].url, /^https:\/\/api\.nuvemshop\.com\.br\/v1\/123\/products\?/);
+  assert.deepEqual(calls.map((c) => new URL(c.url).searchParams.get("page")), ["1", "2", "3"]);
+  assert.equal(new URL(calls[0].url).searchParams.get("published"), "true");
+});
+
+test("store client: a 404 past page 1 ends paging (the last page was full)", async () => {
+  const { fetch, calls } = fakeFetch([items(PAGE_SIZE)], { status: (page) => (page === 2 ? 404 : 200) });
+  assert.equal((await client(fetch)).length, PAGE_SIZE);
+  assert.equal(calls.length, 2);
+});
+
+test("store client: any other error throws with the HTTP status and never the token", async () => {
+  for (const [code, page] of [[401, 1], [404, 1], [500, 2]]) {
+    const { fetch } = fakeFetch([items(PAGE_SIZE)], { status: (p) => (p === page ? code : 200) });
+    await assert.rejects(client(fetch), (error) => {
+      assert.match(error.message, new RegExp(`HTTP ${code}`));
+      assert.ok(!error.message.includes("s3cret"), "token leaked into the error");
+      return true;
+    });
+  }
+});
+
+test("store client: sends 'Authentication: bearer <token>', a User-Agent, and honours a base URL", async () => {
+  const { fetch, calls } = fakeFetch([items(1)]);
+  await fetchPublishedProducts({ storeId: "9", token: "s3cret", fetch, apiUrl: "http://127.0.0.1:1/v1/" });
+  assert.equal(calls[0].headers.Authentication, "bearer s3cret");
+  assert.ok(calls[0].headers["User-Agent"]);
+  assert.match(calls[0].url, /^http:\/\/127\.0\.0\.1:1\/v1\/9\/products\?/);
 });
