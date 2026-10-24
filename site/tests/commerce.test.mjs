@@ -436,8 +436,8 @@ test("store client: a 200 that is not a JSON array throws a clear error, never t
 // CR-2/QA-2: a page that never answers, or whose body drips forever, ends with a clear error. Like
 // the real fetch, these fakes tie the request and its body to the signal.
 test("store client: timeoutMs bounds each page, headers and body", async () => {
-  const silent = async (url, { signal }) => new Promise((_, reject) => signal.addEventListener("abort", () => reject(signal.reason)));
-  const drip = async (url, { signal }) => {
+  const silent = async (_url, { signal }) => new Promise((_, reject) => signal.addEventListener("abort", () => reject(signal.reason)));
+  const drip = async (_url, { signal }) => {
     const body = new ReadableStream({
       start(controller) {
         controller.enqueue(new TextEncoder().encode("["));
