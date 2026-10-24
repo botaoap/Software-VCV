@@ -79,9 +79,10 @@ NUVEMSHOP_API_URL=http://localhost:8080/v1 …   # optional: another API root (a
 ```
 
 In CI, `.github/workflows/nuvemshop-e2e.yml` runs it by hand (Actions → Nuvemshop e2e, optional
-handle) and on PRs/pushes touching `src/lib/commerce/` or `tests/e2e/`, with the repo secrets
-`NUVEMSHOP_STORE_ID` and `NUVEMSHOP_TOKEN`. Without them a PR or push only notes "not configured";
-a manual run fails.
+handle) and on PRs/pushes touching `src/lib/commerce/`, what it reads (`src/lib/catalog.ts`,
+`content/categories.json`, `astro.config.mjs`, the npm files) or `tests/e2e/`, with the repo secrets
+`NUVEMSHOP_STORE_ID` and `NUVEMSHOP_TOKEN`. Without them a PR or push only notes "not configured"
+(with a warning if just one is set); a manual run fails.
 
 Getting a token for one store (check each step against the current Nuvemshop/Tiendanube docs): in
 the Nuvemshop Partners portal create an app with the "read products" scope; install it on the store,
