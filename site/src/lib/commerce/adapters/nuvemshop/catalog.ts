@@ -19,7 +19,8 @@ export const catalog: CatalogPort = {
     // Fail the build rather than publish an empty store.
     if (!storeId || !token) throw new Error("PUBLIC_COMMERCE=nuvemshop needs NUVEMSHOP_STORE_ID and NUVEMSHOP_TOKEN at build time");
 
-    const all = await fetchPublishedProducts({ storeId, token });
+    // A stalled API fails the deploy instead of hanging it.
+    const all = await fetchPublishedProducts({ storeId, token, timeoutMs: 60_000 });
     const categoryIds = categoriesFile.map((category) => category.id);
     return all.flatMap((product) => fromNuvemshop(product, { categoryIds }) ?? []);
   },
