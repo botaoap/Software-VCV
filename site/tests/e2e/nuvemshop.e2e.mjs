@@ -13,13 +13,31 @@ import { isAllowedImageUrl } from "../../src/lib/commerce/image-hosts.ts";
 const { NUVEMSHOP_STORE_ID: storeId, NUVEMSHOP_TOKEN: token, NUVEMSHOP_API_URL: apiUrl, NUVEMSHOP_EXPECT_HANDLE: expectHandle } = process.env;
 const categoryIds = JSON.parse(readFileSync(new URL("../../content/categories.json", import.meta.url), "utf8")).map((c) => c.id);
 const pt = (text) => (text?.pt ?? text?.es ?? text?.en ?? "").trim();
+const TIMEOUT_MS = 30_000; // per API page and per photo, so a stalled server fails instead of hanging
+
+/** Why a photo would not load on the site, or null when it is fine. */
+async function photoProblem(url) {
+  if (!url.startsWith("https://")) return "not https";
+  if (!isAllowedImageUrl(url)) return "host not in src/lib/commerce/image-hosts.ts";
+  const signal = AbortSignal.timeout(TIMEOUT_MS);
+  try {
+    const response = await fetch(url, { signal });
+    const type = response.headers.get("content-type") ?? "";
+    await response.body?.cancel();
+    if (response.status !== 200) return `HTTP ${response.status}`;
+    if (!type.startsWith("image/")) return `content-type "${type}"`;
+    return null;
+  } catch (error) {
+    return signal.aborted ? `timed out after ${TIMEOUT_MS / 1000} s` : error.message;
+  }
+}
 
 test("nuvemshop store: published products map to the site and their photos load", async (t) => {
   assert.ok(
     storeId && token,
     "NUVEMSHOP_STORE_ID and NUVEMSHOP_TOKEN are not set. Run: NUVEMSHOP_STORE_ID=<store id> NUVEMSHOP_TOKEN=<token> npm run test:e2e (how to get them: site/README.md).",
   );
-  const raw = await fetchPublishedProducts({ storeId, token, apiUrl: apiUrl || undefined });
+  const raw = await fetchPublishedProducts({ storeId, token, apiUrl: apiUrl || undefined, timeoutMs: TIMEOUT_MS });
   assert.ok(raw.length > 0, `store ${storeId} returned no published product`);
 
   // Map each product as the build does, keeping the mapper's skip reason for the report.
@@ -38,15 +56,8 @@ test("nuvemshop store: published products map to the site and their photos load"
 
   const problems = [];
   for (const url of new Set(rows.flatMap((row) => row.photos))) {
-    if (!url.startsWith("https://")) problems.push(`${url}: not https`);
-    else if (!isAllowedImageUrl(url)) problems.push(`${url}: host not in src/lib/commerce/image-hosts.ts`);
-    else {
-      const response = await fetch(url).catch((error) => ({ ok: false, status: error.message, headers: new Headers() }));
-      const type = response.headers.get("content-type") ?? "";
-      await response.body?.cancel();
-      if (response.status !== 200) problems.push(`${url}: HTTP ${response.status}`);
-      else if (!type.startsWith("image/")) problems.push(`${url}: content-type "${type}"`);
-    }
+    const problem = await photoProblem(url);
+    if (problem) problems.push(`${url}: ${problem}`);
   }
   assert.deepEqual(problems, [], "every photo the site would publish must load");
 

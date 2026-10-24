@@ -36,6 +36,7 @@ jobs:
   e2e:
     name: Nuvemshop store (e2e)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: site

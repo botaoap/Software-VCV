@@ -432,3 +432,25 @@ test("store client: a 200 that is not a JSON array throws a clear error, never t
   ];
   for (const [body, message] of cases) await assert.rejects(client(answer(body)), { message });
 });
+
+// CR-2/QA-2: a page that never answers, or whose body drips forever, ends with a clear error. Like
+// the real fetch, these fakes tie the request and its body to the signal.
+test("store client: timeoutMs bounds each page, headers and body", async () => {
+  const silent = async (url, { signal }) => new Promise((_, reject) => signal.addEventListener("abort", () => reject(signal.reason)));
+  const drip = async (url, { signal }) => {
+    const body = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode("["));
+        signal.addEventListener("abort", () => controller.error(signal.reason));
+      },
+    });
+    return new Response(body, { status: 200 });
+  };
+  const keepAlive = setInterval(() => {}, 1000); // AbortSignal.timeout's timer does not hold Node open; a socket would
+  for (const fetch of [silent, drip]) {
+    await assert.rejects(fetchPublishedProducts({ storeId: "1", token: "s3cret", fetch, timeoutMs: 50 }), {
+      message: "Nuvemshop products page 1: timed out after 0.05 s",
+    });
+  }
+  clearInterval(keepAlive);
+});
