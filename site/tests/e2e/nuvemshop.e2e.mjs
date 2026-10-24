@@ -14,13 +14,30 @@ import { uniqueById } from "../../src/lib/catalog.ts";
 const { NUVEMSHOP_STORE_ID: storeId, NUVEMSHOP_TOKEN: token, NUVEMSHOP_API_URL: apiUrl, NUVEMSHOP_EXPECT_HANDLE: expectHandle } = process.env;
 const categoryIds = JSON.parse(readFileSync(new URL("../../content/categories.json", import.meta.url), "utf8")).map((c) => c.id);
 const pt = (text) => (text?.pt ?? text?.es ?? text?.en ?? "").trim();
-const TIMEOUT_MS = 30_000; // per API page and per photo, so a stalled server fails instead of hanging
+// A stalled server fails instead of hanging: limits per API page and per photo (photos run 8 at a time).
+const API_TIMEOUT_MS = 30_000;
+const PHOTO_TIMEOUT_MS = 15_000;
+const PHOTOS_AT_ONCE = 8;
+
+/** `task` on every item, at most `limit` at a time; results keep the input order. */
+async function mapLimited(items, limit, task) {
+  const results = [];
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const index = next++;
+      results[index] = await task(items[index]);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return results;
+}
 
 /** Why a photo would not load on the site, or null when it is fine. */
 async function photoProblem(url) {
   if (!url.startsWith("https://")) return "not https";
   if (!isAllowedImageUrl(url)) return "host not in src/lib/commerce/image-hosts.ts";
-  const signal = AbortSignal.timeout(TIMEOUT_MS);
+  const signal = AbortSignal.timeout(PHOTO_TIMEOUT_MS);
   try {
     // Redirects are followed here so every hop is checked: the build would download from the last one.
     for (let hops = 0, current = url; hops <= 10; hops++) {
@@ -39,7 +56,7 @@ async function photoProblem(url) {
     }
     return "more than 10 redirects";
   } catch (error) {
-    return signal.aborted ? `timed out after ${TIMEOUT_MS / 1000} s` : error.message;
+    return signal.aborted ? `timed out after ${PHOTO_TIMEOUT_MS / 1000} s` : error.message;
   }
 }
 
@@ -48,7 +65,7 @@ test("nuvemshop store: published products map to the site and their photos load"
     storeId && token,
     "NUVEMSHOP_STORE_ID and NUVEMSHOP_TOKEN are not set. Run: NUVEMSHOP_STORE_ID=<store id> NUVEMSHOP_TOKEN=<token> npm run test:e2e (how to get them: site/README.md).",
   );
-  const raw = await fetchPublishedProducts({ storeId, token, apiUrl: apiUrl || undefined, timeoutMs: TIMEOUT_MS });
+  const raw = await fetchPublishedProducts({ storeId, token, apiUrl: apiUrl || undefined, timeoutMs: API_TIMEOUT_MS });
   assert.ok(raw.length > 0, `store ${storeId} returned no published product`);
 
   // Map each product as the build does, keeping the mapper's skip reason for the report.
@@ -80,11 +97,8 @@ test("nuvemshop store: published products map to the site and their photos load"
   assert.deepEqual(crashing, [], `the build would crash on these products: ${crashing.join(", ")}`);
   assert.ok(rows.some((row) => row.mapped), "no published product maps to the site (see the skip reasons above)");
 
-  const problems = [];
-  for (const url of new Set(rows.flatMap((row) => row.photos))) {
-    const problem = await photoProblem(url);
-    if (problem) problems.push(`${url}: ${problem}`);
-  }
+  const urls = [...new Set(rows.flatMap((row) => row.photos))];
+  const problems = (await mapLimited(urls, PHOTOS_AT_ONCE, photoProblem)).flatMap((problem, i) => (problem ? [`${urls[i]}: ${problem}`] : []));
   assert.deepEqual(problems, [], "every photo the site would publish must load");
 
   if (expectHandle) {
