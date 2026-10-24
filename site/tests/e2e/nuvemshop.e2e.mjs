@@ -72,7 +72,9 @@ test("nuvemshop store: published products map to the site and their photos load"
   assert.deepEqual(problems, [], "every photo the site would publish must load");
 
   if (expectHandle) {
-    const row = rows.find((r) => r.handle === expectHandle || String(r.raw.id) === expectHandle);
+    // The site id, the store's handle or the numeric id, ignoring case and stray spaces.
+    const wanted = expectHandle.trim().toLowerCase();
+    const row = rows.find((r) => [r.mapped?.id, pt(r.raw.handle), String(r.raw.id)].some((key) => key?.toLowerCase() === wanted));
     assert.ok(row, `NUVEMSHOP_EXPECT_HANDLE "${expectHandle}" is not among the published products`);
     assert.ok(row.mapped, `"${expectHandle}" does not map to the site: ${row.result}`);
     assert.ok(row.photos.length > 0, `"${expectHandle}" has no photo`);
