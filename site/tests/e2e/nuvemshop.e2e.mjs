@@ -63,7 +63,7 @@ test("nuvemshop store: published products map to the site and their photos load"
       thrown = `mapper threw: ${error.message} (product id ${product?.id})`;
     }
     const reason = thrown ?? warn.mock.calls.slice(before).map((call) => String(call.arguments[0]).replace(/^.*skipped: /, "")).join("; ");
-    return { raw: product, mapped, handle: pt(product?.handle) || String(product?.id), result: mapped ? "mapped" : `skipped: ${reason}` };
+    return { raw: product, mapped, thrown, handle: pt(product?.handle) || String(product?.id), result: mapped ? "mapped" : `skipped: ${reason}` };
   });
   // Like the build, one page per site id: a repeat is dropped.
   const kept = new Set(uniqueById(rows.flatMap((row) => row.mapped ?? [])));
@@ -75,6 +75,9 @@ test("nuvemshop store: published products map to the site and their photos load"
   }
   console.table(rows.map(({ raw, handle, result, photos }) => ({ handle, result, "API photos": raw?.images?.length ?? 0, "site photos": photos.length })));
 
+  // The build does not catch a mapper error: one such product fails the whole deploy.
+  const crashing = rows.filter((row) => row.thrown).map((row) => row.handle);
+  assert.deepEqual(crashing, [], `the build would crash on these products: ${crashing.join(", ")}`);
   assert.ok(rows.some((row) => row.mapped), "no published product maps to the site (see the skip reasons above)");
 
   const problems = [];
