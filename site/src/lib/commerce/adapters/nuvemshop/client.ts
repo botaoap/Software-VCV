@@ -15,7 +15,12 @@ export type ClientOptions = {
 };
 
 /** Every published product, page by page. Throws on any HTTP error (status only, never the token). */
-export async function fetchPublishedProducts({ storeId, token, apiUrl = API_URL, fetch = globalThis.fetch }: ClientOptions): Promise<NsProduct[]> {
+export async function fetchPublishedProducts({ apiUrl = API_URL, fetch = globalThis.fetch, ...secrets }: ClientOptions): Promise<NsProduct[]> {
+  // Pasted secrets often end in a newline. Errors name the setting, never its value.
+  const storeId = secrets.storeId.trim();
+  const token = secrets.token.trim();
+  if (!/^\d+$/.test(storeId)) throw new Error("Nuvemshop store id must be digits only (check NUVEMSHOP_STORE_ID)");
+  if (!/^[\x21-\x7e]+$/.test(token)) throw new Error("Nuvemshop token is empty or has spaces or other characters a token cannot have (check NUVEMSHOP_TOKEN)");
   const root = apiUrl.replace(/\/+$/, "");
   const all: NsProduct[] = [];
   for (let page = 1; ; page++) {

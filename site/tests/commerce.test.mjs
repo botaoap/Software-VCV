@@ -404,3 +404,19 @@ test("image hosts: store photos match the configured patterns, lookalikes do not
   assert.ok(!isAllowedImageUrl("https://dcdn.mitiendanube.com.evil.io/a.jpg"));
   assert.ok(!isAllowedImageUrl("//dcdn.mitiendanube.com/a.jpg"), "not an absolute URL");
 });
+
+// QA-3: pasted secrets often carry a newline or spaces; trim them, and refuse a value that would
+// break the header or the URL without ever echoing it.
+test("store client: trims the store id and token, and rejects malformed ones without echoing them", async () => {
+  const { fetch, calls } = fakeFetch([items(1)]);
+  await fetchPublishedProducts({ storeId: " 9\n", token: "  s3cret\n", fetch });
+  assert.equal(calls[0].headers.Authentication, "bearer s3cret");
+  assert.match(calls[0].url, /\/v1\/9\/products\?/);
+  for (const [storeId, token, secret] of [["9", "s3c\nret-PART", "PART"], ["9", "s3c ret-PART", "PART"], ["1 2-PART", "s3cret", "PART"], ["abc-PART", "s3cret", "PART"], ["", "s3cret", "s3cret"], ["9", "", "9/"]]) {
+    await assert.rejects(fetchPublishedProducts({ storeId, token, fetch }), (error) => {
+      assert.ok(!error.message.includes(secret), `value echoed: ${error.message}`);
+      assert.match(error.message, storeId.trim() && /^\d+$/.test(storeId.trim()) ? /token/ : /store id/);
+      return true;
+    });
+  }
+});
