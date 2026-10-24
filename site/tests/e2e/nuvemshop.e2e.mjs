@@ -21,12 +21,22 @@ async function photoProblem(url) {
   if (!isAllowedImageUrl(url)) return "host not in src/lib/commerce/image-hosts.ts";
   const signal = AbortSignal.timeout(TIMEOUT_MS);
   try {
-    const response = await fetch(url, { signal });
-    const type = response.headers.get("content-type") ?? "";
-    await response.body?.cancel();
-    if (response.status !== 200) return `HTTP ${response.status}`;
-    if (!type.startsWith("image/")) return `content-type "${type}"`;
-    return null;
+    // Redirects are followed here so every hop is checked: the build would download from the last one.
+    for (let hops = 0, current = url; hops <= 10; hops++) {
+      const response = await fetch(current, { signal, redirect: "manual" });
+      const type = response.headers.get("content-type") ?? "";
+      const location = response.headers.get("location");
+      await response.body?.cancel();
+      if (response.status >= 300 && response.status < 400 && location) {
+        current = new URL(location, current).href;
+        if (!isAllowedImageUrl(current)) return `redirects to ${current}, a host not in src/lib/commerce/image-hosts.ts`;
+        continue;
+      }
+      if (response.status !== 200) return `HTTP ${response.status}`;
+      if (!type.startsWith("image/")) return `content-type "${type}"`;
+      return null;
+    }
+    return "more than 10 redirects";
   } catch (error) {
     return signal.aborted ? `timed out after ${TIMEOUT_MS / 1000} s` : error.message;
   }
