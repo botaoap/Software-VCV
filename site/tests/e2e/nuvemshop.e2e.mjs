@@ -34,7 +34,7 @@ async function photoProblem(url) {
         continue;
       }
       if (response.status !== 200) return `HTTP ${response.status}`;
-      if (!type.startsWith("image/")) return `content-type "${type}"`;
+      if (!type.toLowerCase().startsWith("image/")) return `content-type "${type}"`;
       return null;
     }
     return "more than 10 redirects";
