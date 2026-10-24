@@ -9,6 +9,7 @@ import { test } from "node:test";
 import { fetchPublishedProducts } from "../../src/lib/commerce/adapters/nuvemshop/client.ts";
 import { fromNuvemshop } from "../../src/lib/commerce/adapters/nuvemshop/map.ts";
 import { isAllowedImageUrl } from "../../src/lib/commerce/image-hosts.ts";
+import { uniqueById } from "../../src/lib/catalog.ts";
 
 const { NUVEMSHOP_STORE_ID: storeId, NUVEMSHOP_TOKEN: token, NUVEMSHOP_API_URL: apiUrl, NUVEMSHOP_EXPECT_HANDLE: expectHandle } = process.env;
 const categoryIds = JSON.parse(readFileSync(new URL("../../content/categories.json", import.meta.url), "utf8")).map((c) => c.id);
@@ -56,10 +57,16 @@ test("nuvemshop store: published products map to the site and their photos load"
     const before = warn.mock.callCount();
     const mapped = fromNuvemshop(product, { categoryIds });
     const reason = warn.mock.calls.slice(before).map((call) => String(call.arguments[0]).replace(/^.*skipped: /, "")).join("; ");
-    const photos = mapped ? [...new Set([...mapped.images, ...mapped.colors.flatMap((color) => color.images)].map((photo) => photo.url))] : [];
-    return { raw: product, mapped, handle: pt(product.handle) || String(product.id), result: mapped ? "mapped" : `skipped: ${reason}`, photos };
+    return { raw: product, mapped, handle: pt(product.handle) || String(product.id), result: mapped ? "mapped" : `skipped: ${reason}` };
   });
+  // Like the build, one page per site id: a repeat is dropped.
+  const kept = new Set(uniqueById(rows.flatMap((row) => row.mapped ?? [])));
   warn.mock.restore();
+  for (const row of rows) {
+    if (row.mapped && !kept.has(row.mapped)) Object.assign(row, { mapped: null, result: "skipped: duplicate id" });
+    const photos = row.mapped ? [...row.mapped.images, ...row.mapped.colors.flatMap((color) => color.images)] : [];
+    row.photos = [...new Set(photos.map((photo) => photo.url))];
+  }
   console.table(rows.map(({ raw, handle, result, photos }) => ({ handle, result, "API photos": raw.images?.length ?? 0, "site photos": photos.length })));
 
   assert.ok(rows.some((row) => row.mapped), "no published product maps to the site (see the skip reasons above)");
