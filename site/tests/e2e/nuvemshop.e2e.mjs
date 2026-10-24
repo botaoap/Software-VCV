@@ -18,6 +18,8 @@ const pt = (text) => (text?.pt ?? text?.es ?? text?.en ?? "").trim();
 const API_TIMEOUT_MS = 30_000;
 const PHOTO_TIMEOUT_MS = 15_000;
 const PHOTOS_AT_ONCE = 8;
+const REDIRECTS = [301, 302, 303, 307, 308];
+const MAX_REDIRECTS = 9;
 
 /** `task` on every item, at most `limit` at a time; results keep the input order. */
 async function mapLimited(items, limit, task) {
@@ -39,13 +41,15 @@ async function photoProblem(url) {
   if (!isAllowedImageUrl(url)) return "host not in src/lib/commerce/image-hosts.ts";
   const signal = AbortSignal.timeout(PHOTO_TIMEOUT_MS);
   try {
-    // Redirects are followed here so every hop is checked: the build would download from the last one.
-    for (let hops = 0, current = url; hops <= 10; hops++) {
+    // Redirects are followed here so every hop is checked, the way the build follows them (Astro's
+    // fetchWithRedirects: these statuses only, at most 9 redirects, each target an allowed host).
+    for (let redirects = 0, current = url; ; redirects++) {
       const response = await fetch(current, { signal, redirect: "manual" });
       const type = response.headers.get("content-type") ?? "";
       const location = response.headers.get("location");
       await response.body?.cancel();
-      if (response.status >= 300 && response.status < 400 && location) {
+      if (REDIRECTS.includes(response.status) && location) {
+        if (redirects === MAX_REDIRECTS) return `more than ${MAX_REDIRECTS} redirects`;
         current = new URL(location, current).href;
         if (!isAllowedImageUrl(current)) return `redirects to ${current}, a host not in src/lib/commerce/image-hosts.ts`;
         continue;
@@ -54,7 +58,6 @@ async function photoProblem(url) {
       if (!type.toLowerCase().startsWith("image/")) return `content-type "${type}"`;
       return null;
     }
-    return "more than 10 redirects";
   } catch (error) {
     return signal.aborted ? `timed out after ${PHOTO_TIMEOUT_MS / 1000} s` : error.message;
   }
