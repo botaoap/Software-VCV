@@ -55,9 +55,15 @@ test("nuvemshop store: published products map to the site and their photos load"
   const warn = t.mock.method(console, "warn", () => {});
   const rows = raw.map((product) => {
     const before = warn.mock.callCount();
-    const mapped = fromNuvemshop(product, { categoryIds });
-    const reason = warn.mock.calls.slice(before).map((call) => String(call.arguments[0]).replace(/^.*skipped: /, "")).join("; ");
-    return { raw: product, mapped, handle: pt(product.handle) || String(product.id), result: mapped ? "mapped" : `skipped: ${reason}` };
+    let mapped = null;
+    let thrown;
+    try {
+      mapped = fromNuvemshop(product, { categoryIds });
+    } catch (error) {
+      thrown = `mapper threw: ${error.message} (product id ${product?.id})`;
+    }
+    const reason = thrown ?? warn.mock.calls.slice(before).map((call) => String(call.arguments[0]).replace(/^.*skipped: /, "")).join("; ");
+    return { raw: product, mapped, handle: pt(product?.handle) || String(product?.id), result: mapped ? "mapped" : `skipped: ${reason}` };
   });
   // Like the build, one page per site id: a repeat is dropped.
   const kept = new Set(uniqueById(rows.flatMap((row) => row.mapped ?? [])));
@@ -67,7 +73,7 @@ test("nuvemshop store: published products map to the site and their photos load"
     const photos = row.mapped ? [...row.mapped.images, ...row.mapped.colors.flatMap((color) => color.images)] : [];
     row.photos = [...new Set(photos.map((photo) => photo.url))];
   }
-  console.table(rows.map(({ raw, handle, result, photos }) => ({ handle, result, "API photos": raw.images?.length ?? 0, "site photos": photos.length })));
+  console.table(rows.map(({ raw, handle, result, photos }) => ({ handle, result, "API photos": raw?.images?.length ?? 0, "site photos": photos.length })));
 
   assert.ok(rows.some((row) => row.mapped), "no published product maps to the site (see the skip reasons above)");
 
@@ -81,7 +87,7 @@ test("nuvemshop store: published products map to the site and their photos load"
   if (expectHandle) {
     // The site id, the store's handle or the numeric id, ignoring case and stray spaces.
     const wanted = expectHandle.trim().toLowerCase();
-    const row = rows.find((r) => [r.mapped?.id, pt(r.raw.handle), String(r.raw.id)].some((key) => key?.toLowerCase() === wanted));
+    const row = rows.find((r) => [r.mapped?.id, pt(r.raw?.handle), String(r.raw?.id)].some((key) => key?.toLowerCase() === wanted));
     assert.ok(row, `NUVEMSHOP_EXPECT_HANDLE "${expectHandle}" is not among the published products`);
     assert.ok(row.mapped, `"${expectHandle}" does not map to the site: ${row.result}`);
     assert.ok(row.photos.length > 0, `"${expectHandle}" has no photo`);
