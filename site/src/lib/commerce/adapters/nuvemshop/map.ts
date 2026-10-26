@@ -45,7 +45,7 @@ const latin1 = (
 ).split(" ");
 /** Greek capitals from U+0391 (no capital final sigma: the gap) and small letters from U+03B1 (sigmaf there). */
 const greek = "Alpha Beta Gamma Delta Epsilon Zeta Eta Theta Iota Kappa Lambda Mu Nu Xi Omicron Pi Rho  Sigma Tau Upsilon Phi Chi Psi Omega".split(" ");
-/** The other HTML 4 names (markup, General Punctuation, symbols, arrows, math), as "name hex" pairs. */
+/** The other HTML 4 names (markup, General Punctuation, symbols, arrows, math), as "name hex" pairs; lang/rang as in HTML5. */
 const others = (
   "quot 22 amp 26 apos 27 lt 3c gt 3e OElig 152 oelig 153 Scaron 160 scaron 161 Yuml 178 fnof 192 circ 2c6 tilde 2dc " +
   "thetasym 3d1 upsih 3d2 piv 3d6 ensp 2002 emsp 2003 thinsp 2009 zwnj 200c zwj 200d lrm 200e rlm 200f ndash 2013 " +
@@ -56,7 +56,7 @@ const others = (
   "notin 2209 ni 220b prod 220f sum 2211 minus 2212 lowast 2217 radic 221a prop 221d infin 221e ang 2220 and 2227 " +
   "or 2228 cap 2229 cup 222a int 222b there4 2234 sim 223c cong 2245 asymp 2248 ne 2260 equiv 2261 le 2264 ge 2265 " +
   "sub 2282 sup 2283 nsub 2284 sube 2286 supe 2287 oplus 2295 otimes 2297 perp 22a5 sdot 22c5 lceil 2308 rceil 2309 " +
-  "lfloor 230a rfloor 230b lang 2329 rang 232a loz 25ca spades 2660 clubs 2663 hearts 2665 diams 2666"
+  "lfloor 230a rfloor 230b lang 27e8 rang 27e9 loz 25ca spades 2660 clubs 2663 hearts 2665 diams 2666"
 ).split(" ");
 /** The HTML 4 entity set (plus &apos;), name → character; &nbsp; is U+00A0, collapsed like any whitespace. */
 const entities: Record<string, string> = Object.fromEntries(

@@ -243,7 +243,7 @@ test("nuvemshop mapping: every named entity a pt-BR editor writes is decoded (VC
   assert.equal(text("&ndash;&mdash;&lsquo;&rsquo;&ldquo;&rdquo;&laquo;&raquo;&hellip;&bull;&middot;&euro;&trade;&times;&apos;"), "–—‘’“”«»…•·€™×'");
   // QA-4: the rest of HTML 4 (Greek, math, arrows, symbols, General Punctuation).
   assert.equal(text("&alpha;&Omega;&sigmaf;&Sigma; &larr;&rArr;&crarr; &le;&ne;&infin;&sum;&radic; &hearts;&loz; &OElig;&scaron;&Yuml;"), "αΩςΣ ←⇒↵ ≤≠∞∑√ ♥◊ ŒšŸ");
-  assert.equal(text("&dagger;&Dagger;&permil;&lsaquo;&rsaquo;&prime;&Prime; &thetasym;&upsih;&piv;&fnof;&circ;&tilde; &lang;&rang;&lceil;&rfloor;"), "†‡‰‹›′″ ϑϒϖƒˆ˜ \u2329\u232A⌈⌋");
+  assert.equal(text("&dagger;&Dagger;&permil;&lsaquo;&rsaquo;&prime;&Prime; &thetasym;&upsih;&piv;&fnof;&circ;&tilde; &lang;&rang;&lceil;&rfloor;"), "†‡‰‹›′″ ϑϒϖƒˆ˜ \u27E8\u27E9⌈⌋", "&lang; &rang; as in HTML5 (QA2-4)");
   assert.equal(text("Dev &#x1F469;&zwj;&#x1F4BB;!"), "Dev \u{1F469}\u200D\u{1F4BB}!", "&zwj; joins an emoji sequence");
   assert.equal(text("d&#39;&aacute;gua &#xE9;"), "d'água é", "numeric entities still work");
   assert.equal(text("&OACUTE; &Oacute;"), "&OACUTE; Ó", "names are case-sensitive, as in HTML");
