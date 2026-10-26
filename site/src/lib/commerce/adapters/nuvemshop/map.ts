@@ -78,6 +78,11 @@ const decode = (text: string) =>
   });
 /** Store text that is not HTML (a name, an alt): entities decoded, whitespace collapsed. */
 const cleanText = (text: string) => decode(text).replace(/\s+/g, " ").trim();
+/** A photo's alt in any shape the API has sent (localized, a list, a string); "" for anything else. */
+const altText = (alt: unknown) => {
+  const value = Array.isArray(alt) ? alt[0] : typeof alt === "object" ? pt(alt as Localized) : alt;
+  return typeof value === "string" ? cleanText(value) : "";
+};
 const plainText = (html: string) => decode(html.replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").replace(/\s([.,;:!?])/g, "$1").trim();
 /** Tags that start a new line of text: paragraphs, headings and other blocks, and <br>. */
 const lineBreaks = /<\/?(?:p|div|h[1-6]|blockquote|section|article|header|footer|table|tr)\b[^>]*>|<br\b[^>]*>/gi;
@@ -184,7 +189,7 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
 
   const photo = (image: NsImage): Photo => ({
     url: image.src.startsWith("//") ? `https:${image.src}` : image.src,
-    alt: cleanText(typeof image.alt === "string" ? image.alt : Array.isArray(image.alt) ? (typeof image.alt[0] === "string" ? image.alt[0] : "") : pt(image.alt)) || name,
+    alt: altText(image.alt) || name,
     width: image.width ?? DEFAULT_SIZE.width,
     height: image.height ?? DEFAULT_SIZE.height,
   });
