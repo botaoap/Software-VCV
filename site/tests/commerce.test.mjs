@@ -371,6 +371,9 @@ test("buy box: the struck price belongs to the shown price, never overstating th
   assert.equal(struckPrice(shownPrice([was("a", "P", 100, 150), was("a", "M", 100, 150)])), 150);
   assert.equal(struckPrice(shownPrice([was("a", "P", 100, 150), was("a", "M", 120, 150)])), undefined, "A partir de: nothing struck");
   assert.equal(struckPrice(shownPrice([unit("a", "P", 100)])), undefined);
+  // CR2-4: the card follows the PDP rule: a product with several prices strikes nothing.
+  const mixed = map({ variants: [nsVariant(1, ["Coral", "M"], { price: "150.00", promotional_price: "100.00" }), nsVariant(2, ["Coral", "G"], { price: "120.00" })] });
+  assert.deepEqual([mixed.priceCents, struckPrice(shownPrice(mixed.variants))], [10000, undefined]);
   // The Pantalona's lowest price for sale is a promotion (off-white M, 149,90 → 129,90).
   assert.deepEqual([nuvemshopProducts[0].priceCents, nuvemshopProducts[0].compareAtCents], [12990, 14990]);
   assert.equal(nuvemshopProducts[1].compareAtCents, undefined, "no promotion: nothing struck");
