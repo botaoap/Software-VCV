@@ -39,15 +39,32 @@ const latin1 = (
   "THORN szlig agrave aacute acirc atilde auml aring aelig ccedil egrave eacute ecirc euml igrave iacute icirc iuml eth ntilde " +
   "ograve oacute ocirc otilde ouml divide oslash ugrave uacute ucirc uuml yacute thorn yuml"
 ).split(" ");
+/** Greek capitals from U+0391 (no capital final sigma: the gap) and small letters from U+03B1 (sigmaf there). */
+const greek = "Alpha Beta Gamma Delta Epsilon Zeta Eta Theta Iota Kappa Lambda Mu Nu Xi Omicron Pi Rho  Sigma Tau Upsilon Phi Chi Psi Omega".split(" ");
+/** The other HTML 4 names (markup, General Punctuation, symbols, arrows, math), as "name hex" pairs. */
+const others = (
+  "quot 22 amp 26 apos 27 lt 3c gt 3e OElig 152 oelig 153 Scaron 160 scaron 161 Yuml 178 fnof 192 circ 2c6 tilde 2dc " +
+  "thetasym 3d1 upsih 3d2 piv 3d6 ensp 2002 emsp 2003 thinsp 2009 zwnj 200c zwj 200d lrm 200e rlm 200f ndash 2013 " +
+  "mdash 2014 lsquo 2018 rsquo 2019 sbquo 201a ldquo 201c rdquo 201d bdquo 201e dagger 2020 Dagger 2021 bull 2022 " +
+  "hellip 2026 permil 2030 prime 2032 Prime 2033 lsaquo 2039 rsaquo 203a oline 203e frasl 2044 euro 20ac image 2111 " +
+  "weierp 2118 real 211c trade 2122 alefsym 2135 larr 2190 uarr 2191 rarr 2192 darr 2193 harr 2194 crarr 21b5 " +
+  "lArr 21d0 uArr 21d1 rArr 21d2 dArr 21d3 hArr 21d4 forall 2200 part 2202 exist 2203 empty 2205 nabla 2207 isin 2208 " +
+  "notin 2209 ni 220b prod 220f sum 2211 minus 2212 lowast 2217 radic 221a prop 221d infin 221e ang 2220 and 2227 " +
+  "or 2228 cap 2229 cup 222a int 222b there4 2234 sim 223c cong 2245 asymp 2248 ne 2260 equiv 2261 le 2264 ge 2265 " +
+  "sub 2282 sup 2283 nsub 2284 sube 2286 supe 2287 oplus 2295 otimes 2297 perp 22a5 sdot 22c5 lceil 2308 rceil 2309 " +
+  "lfloor 230a rfloor 230b lang 2329 rang 232a loz 25ca spades 2660 clubs 2663 hearts 2665 diams 2666"
+).split(" ");
+/** The HTML 4 entity set (plus &apos;), name → character. */
 const entities: Record<string, string> = {
-  ...Object.fromEntries(latin1.map((name, index) => [name, String.fromCodePoint(0xa0 + index)])),
+  ...Object.fromEntries([
+    ...latin1.map((name, index) => [name, 0xa0 + index]),
+    ...greek.flatMap((name, index) => [...(name ? [[name, 0x391 + index]] : []), [(name || "sigmaf").toLowerCase(), 0x3b1 + index]]),
+    ...others.flatMap((token, index) => (index % 2 === 0 ? [[token, Number.parseInt(others[index + 1], 16)]] : [])),
+  ].map(([name, point]) => [name, String.fromCodePoint(point as number)])),
   nbsp: " ",
-  amp: "&", lt: "<", gt: ">", quot: '"', apos: "'",
-  ndash: "–", mdash: "—", lsquo: "‘", rsquo: "’", sbquo: "‚", ldquo: "“", rdquo: "”", bdquo: "„",
-  hellip: "…", bull: "•", euro: "€", trade: "™",
 };
 /**
- * Named (Latin-1 and typographic, case-sensitive as in HTML) and numeric (&#39; &#233; &#xE9;) entities,
+ * Named (the HTML 4 set, case-sensitive as in HTML) and numeric (&#39; &#233; &#xE9;) entities,
  * decoded once (store text "&amp;lt;" stays "&lt;"); anything else is kept as typed.
  */
 const decode = (text: string) =>

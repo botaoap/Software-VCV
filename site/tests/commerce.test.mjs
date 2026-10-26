@@ -241,6 +241,10 @@ test("nuvemshop mapping: every named entity a pt-BR editor writes is decoded (VC
   assert.equal(text("&Agrave;&agrave; &Aacute;&atilde; &Ccedil;&ccedil; &Ntilde;&ntilde; &Ecirc;&otilde;&uuml;&yuml;"), "Àà Áã Çç Ññ Êõüÿ");
   assert.equal(text("1&ordm; 2&ordf; 30&deg; &copy; &reg; &sup2; &frac12; &iquest;"), "1º 2ª 30° © ® ² ½ ¿");
   assert.equal(text("&ndash;&mdash;&lsquo;&rsquo;&ldquo;&rdquo;&laquo;&raquo;&hellip;&bull;&middot;&euro;&trade;&times;&apos;"), "–—‘’“”«»…•·€™×'");
+  // QA-4: the rest of HTML 4 (Greek, math, arrows, symbols, General Punctuation).
+  assert.equal(text("&alpha;&Omega;&sigmaf;&Sigma; &larr;&rArr;&crarr; &le;&ne;&infin;&sum;&radic; &hearts;&loz; &OElig;&scaron;&Yuml;"), "αΩςΣ ←⇒↵ ≤≠∞∑√ ♥◊ ŒšŸ");
+  assert.equal(text("&dagger;&Dagger;&permil;&lsaquo;&rsaquo;&prime;&Prime; &thetasym;&upsih;&piv;&fnof;&circ;&tilde; &lang;&rang;&lceil;&rfloor;"), "†‡‰‹›′″ ϑϒϖƒˆ˜ \u2329\u232A⌈⌋");
+  assert.equal(text("Dev &#x1F469;&zwj;&#x1F4BB;!"), "Dev \u{1F469}\u200D\u{1F4BB}!", "&zwj; joins an emoji sequence");
   assert.equal(text("d&#39;&aacute;gua &#xE9;"), "d'água é", "numeric entities still work");
   assert.equal(text("&OACUTE; &Oacute;"), "&OACUTE; Ó", "names are case-sensitive, as in HTML");
   // Double-escaped text is decoded once: the shopper sees the entity the store typed, and a second pass
