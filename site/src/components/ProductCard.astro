@@ -1,7 +1,8 @@
 ---
 import type { Product } from "../lib/commerce/port";
 import Photo from "./Photo.astro";
-import { coverOf } from "../lib/catalog";
+import WasPrice from "./WasPrice.astro";
+import { coverOf, shownPrice, struckPrice } from "../lib/catalog";
 import { badgeLabels, formatBrl, labelOf } from "../lib/format";
 import { url } from "../lib/url";
 
@@ -23,6 +24,8 @@ const { product, index = 0, priority = false, heading: Heading = "h3", search, c
 const cover = coverOf(product);
 const badge = labelOf(product.badges);
 const MAX_SWATCHES = 5;
+// Same rule as the PDP: a struck price only next to a single price (never "A partir de").
+const wasCents = struckPrice(shownPrice(product.variants));
 ---
 
 <li
@@ -54,7 +57,12 @@ const MAX_SWATCHES = 5;
     <Heading class="mt-3 font-sans text-base leading-snug font-medium text-text group-hover:underline group-hover:decoration-rose group-hover:underline-offset-4">
       {product.name}
     </Heading>
-    <p class="mt-1 text-base font-medium text-wine">{formatBrl(product.priceCents)}</p>
+    <p class="mt-1 text-base font-medium text-wine">
+      {formatBrl(product.priceCents)}
+      {wasCents && (
+        <>{" "}<WasPrice cents={wasCents} class="text-sm" /></>
+      )}
+    </p>
     {
       product.colors.length > 1 && (
         <p class="mt-2 flex items-center gap-1.5">

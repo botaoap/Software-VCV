@@ -24,3 +24,11 @@ export const badgeLabels = {
 } as const satisfies Partial<Record<Badge, string>>;
 
 export const labelOf = (badges: readonly Badge[]) => (Object.keys(badgeLabels) as (keyof typeof badgeLabels)[]).find((badge) => badges.includes(badge));
+
+/**
+ * Data → the text of a <script type="application/ld+json">. Store text goes in there, so <, > and &
+ * (and the JS line separators) are written as \u escapes: "</script>" can never close the tag, and the
+ * JSON still parses to the same data.
+ */
+export const jsonLd = (data: unknown) =>
+  JSON.stringify(data).replace(/[<>&\u2028\u2029]/g, (char) => `\\u${char.charCodeAt(0).toString(16).padStart(4, "0")}`);

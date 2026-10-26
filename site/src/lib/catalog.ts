@@ -34,7 +34,7 @@ export const galleryOf = (product: ProductMedia, colorId?: string): Photo[] => {
 };
 
 // The PDP buy box. Pure, so the page, its script and the tests share one rule set.
-type Unit = Pick<Variant, "colorId" | "size" | "priceCents" | "available">;
+type Unit = Pick<Variant, "colorId" | "size" | "priceCents" | "compareAtCents" | "available">;
 type Offer = { colors: { id: string }[]; variants: Unit[] };
 
 /** Sizes of one color (or of a product without colors) that are for sale. */
@@ -55,12 +55,26 @@ export const sizeHint = (offer: Pick<Offer, "variants">, colorId: string | undef
       ? "Cor esgotada."
       : "Selecione um tamanho.";
 
-/** The price shown: the lowest among units for sale (all units when none is), "A partir de" when those differ. */
+/**
+ * The price shown: the lowest among units for sale (all units when none is), "A partir de" when those
+ * differ. Struck through next to it: the smallest compare-at of the units at that price, only when
+ * every one of them has one (a discount is never overstated).
+ */
 export const shownPrice = (variants: Unit[]) => {
   const priced = variants.some((v) => v.available) ? variants.filter((v) => v.available) : variants;
   const prices = priced.map((v) => v.priceCents);
-  return { cents: Math.min(...prices), from: new Set(prices).size > 1 };
+  const cents = Math.min(...prices);
+  const compareAts = priced.filter((v) => v.priceCents === cents).map((v) => v.compareAtCents ?? 0);
+  const compareAtCents = Math.min(...compareAts);
+  return { cents, from: new Set(prices).size > 1, ...(compareAtCents > cents && { compareAtCents }) };
 };
+
+/** The PDP's struck-through price: its shown price's compare-at, never next to "A partir de". */
+export const struckPrice = (price: ReturnType<typeof shownPrice>) => (price.from ? undefined : price.compareAtCents);
+
+/** All of a product's description as one line of text (search): its blocks, else the short description. */
+export const descriptionText = (product: Pick<Product, "shortDescription" | "description">) =>
+  product.description?.flatMap((block) => (block.kind === "list" ? block.items : [block.text])).join(" ") || product.shortDescription;
 
 export const audienceLabels = { feminino: "Feminino", masculino: "Masculino", unissex: "Unissex" } as const;
 export type Audience = keyof typeof audienceLabels;

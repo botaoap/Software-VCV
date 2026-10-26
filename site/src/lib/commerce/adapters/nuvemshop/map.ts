@@ -1,5 +1,5 @@
 import { letterSizes, shownPrice, sortSizes } from "../../../catalog.ts";
-import type { Audience, Badge, Color, Photo, Product, Variant } from "../../port.ts";
+import type { Audience, Badge, Color, DescriptionBlock, Photo, Product, Variant } from "../../port.ts";
 import { badges as knownBadges, variantKey } from "../../port.ts";
 import type { Localized, NsImage, NsProduct, NsVariant } from "./api.ts";
 
@@ -10,7 +10,11 @@ import type { Localized, NsImage, NsProduct, NsVariant } from "./api.ts";
 //   - tags carry the curated marks: "recomendado", "mais-vendido", "destaque", "novo", "ultimas-pecas",
 //     and the audience: "masculino" / "unissex" (default feminino)
 
-const pt = (text: Localized | undefined) => (text?.pt ?? text?.es ?? text?.en ?? "").trim();
+/** The pt text (else es, en) of a localized field; anything that is not text reads as "". */
+const pt = (text: Localized | undefined) => {
+  const value = text?.pt ?? text?.es ?? text?.en;
+  return typeof value === "string" ? value.trim() : "";
+};
 const slug = (text: string) =>
   text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 /** "189.90" → 18990; anything else (empty, "abc", "0", negative) → undefined, never a R$ 0,00 price. */
@@ -24,15 +28,124 @@ const priceOf = (variant: NsVariant) => {
   const promo = cents(variant.promotional_price);
   return price && promo && promo < price ? promo : price;
 };
-const entities: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', nbsp: " " };
-/** &amp; &lt; &gt; &quot; &nbsp; and numeric (&#39; &#233; &#xE9;) entities; anything else is kept as typed. */
+/** The price struck through: the regular one under a promotion, else compare_at_price; only when above the price charged. */
+const compareAtOf = (variant: NsVariant) => {
+  const charged = priceOf(variant)!;
+  const regular = cents(variant.price)!;
+  const compareAt = charged < regular ? regular : cents(variant.compare_at_price);
+  return compareAt && compareAt > charged ? compareAt : undefined;
+};
+/** The HTML 4 Latin-1 names, U+00A0 to U+00FF in order: the accents the store editor writes (&oacute; = ó). */
+const latin1 = (
+  "nbsp iexcl cent pound curren yen brvbar sect uml copy ordf laquo not shy reg macr deg plusmn sup2 sup3 acute micro para " +
+  "middot cedil sup1 ordm raquo frac14 frac12 frac34 iquest Agrave Aacute Acirc Atilde Auml Aring AElig Ccedil Egrave Eacute " +
+  "Ecirc Euml Igrave Iacute Icirc Iuml ETH Ntilde Ograve Oacute Ocirc Otilde Ouml times Oslash Ugrave Uacute Ucirc Uuml Yacute " +
+  "THORN szlig agrave aacute acirc atilde auml aring aelig ccedil egrave eacute ecirc euml igrave iacute icirc iuml eth ntilde " +
+  "ograve oacute ocirc otilde ouml divide oslash ugrave uacute ucirc uuml yacute thorn yuml"
+).split(" ");
+/** Greek capitals from U+0391 (no capital final sigma: the gap) and small letters from U+03B1 (sigmaf there). */
+const greek = "Alpha Beta Gamma Delta Epsilon Zeta Eta Theta Iota Kappa Lambda Mu Nu Xi Omicron Pi Rho  Sigma Tau Upsilon Phi Chi Psi Omega".split(" ");
+/** The other HTML 4 names (markup, General Punctuation, symbols, arrows, math), as "name hex" pairs; lang/rang as in HTML5. */
+const others = (
+  "quot 22 amp 26 apos 27 lt 3c gt 3e OElig 152 oelig 153 Scaron 160 scaron 161 Yuml 178 fnof 192 circ 2c6 tilde 2dc " +
+  "thetasym 3d1 upsih 3d2 piv 3d6 ensp 2002 emsp 2003 thinsp 2009 zwnj 200c zwj 200d lrm 200e rlm 200f ndash 2013 " +
+  "mdash 2014 lsquo 2018 rsquo 2019 sbquo 201a ldquo 201c rdquo 201d bdquo 201e dagger 2020 Dagger 2021 bull 2022 " +
+  "hellip 2026 permil 2030 prime 2032 Prime 2033 lsaquo 2039 rsaquo 203a oline 203e frasl 2044 euro 20ac image 2111 " +
+  "weierp 2118 real 211c trade 2122 alefsym 2135 larr 2190 uarr 2191 rarr 2192 darr 2193 harr 2194 crarr 21b5 " +
+  "lArr 21d0 uArr 21d1 rArr 21d2 dArr 21d3 hArr 21d4 forall 2200 part 2202 exist 2203 empty 2205 nabla 2207 isin 2208 " +
+  "notin 2209 ni 220b prod 220f sum 2211 minus 2212 lowast 2217 radic 221a prop 221d infin 221e ang 2220 and 2227 " +
+  "or 2228 cap 2229 cup 222a int 222b there4 2234 sim 223c cong 2245 asymp 2248 ne 2260 equiv 2261 le 2264 ge 2265 " +
+  "sub 2282 sup 2283 nsub 2284 sube 2286 supe 2287 oplus 2295 otimes 2297 perp 22a5 sdot 22c5 lceil 2308 rceil 2309 " +
+  "lfloor 230a rfloor 230b lang 27e8 rang 27e9 loz 25ca spades 2660 clubs 2663 hearts 2665 diams 2666"
+).split(" ");
+/** The HTML 4 entity set (plus &apos;), name → character; &nbsp; is U+00A0, collapsed like any whitespace. */
+const entities: Record<string, string> = Object.fromEntries(
+  [
+    ...latin1.map((name, index) => [name, 0xa0 + index]),
+    ...greek.flatMap((name, index) => [...(name ? [[name, 0x391 + index]] : []), [(name || "sigmaf").toLowerCase(), 0x3b1 + index]]),
+    ...others.flatMap((token, index) => (index % 2 === 0 ? [[token, Number.parseInt(others[index + 1], 16)]] : [])),
+  ].map(([name, point]) => [name, String.fromCodePoint(point as number)]),
+);
+/**
+ * Named (the HTML 4 set, case-sensitive as in HTML) and numeric (&#39; &#233; &#xE9;) entities,
+ * decoded once (store text "&amp;lt;" stays "&lt;"); anything else is kept as typed.
+ */
 const decode = (text: string) =>
-  text.replace(/&(?:#(x[0-9a-f]+|\d+)|([a-z]+));/gi, (entity, code?: string, name?: string) => {
-    if (name) return entities[name.toLowerCase()] ?? entity;
+  text.replace(/&(?:#(x[0-9a-f]+|\d+)|([a-z][a-z0-9]*));/gi, (entity, code?: string, name?: string) => {
+    if (name) return Object.hasOwn(entities, name) ? entities[name] : entity;
     const point = code!.startsWith("x") || code!.startsWith("X") ? Number.parseInt(code!.slice(1), 16) : Number(code);
     return point > 0 && point <= 0x10ffff ? String.fromCodePoint(point) : entity;
   });
-const plainText = (html: string) => decode(html.replace(/<(script|style)\b[\s\S]*?<\/\1>/gi, " ").replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").replace(/\s([.,;:!?])/g, "$1").trim();
+/** Store text that is not HTML (a name, an alt): entities decoded, whitespace collapsed. */
+const cleanText = (text: string) => decode(text).replace(/\s+/g, " ").trim();
+/** A photo's alt in any shape the API has sent (localized, a list, a string); "" for anything else. */
+const altText = (alt: unknown) => {
+  const value = Array.isArray(alt) ? alt[0] : typeof alt === "object" ? pt(alt as Localized) : alt;
+  return typeof value === "string" ? cleanText(value) : "";
+};
+const plainText = (html: string) => decode(html.replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").replace(/\s([.,;:!?])/g, "$1").trim();
+/** Tags that start a new line of text: paragraphs, headings and other blocks, and <br>. */
+const lineBreaks = /<\/?(?:p|div|h[1-6]|blockquote|section|article|header|footer|table|tr)\b[^>]*>|<br\b[^>]*>/gi;
+/**
+ * Store HTML → plain-text blocks: <ul>/<ol> items → a list; every other line (<p>, heading, <br>) → a
+ * paragraph. Inline tags are dropped, whitespace collapsed, empty blocks left out.
+ */
+const blocksOf = (html: string) => {
+  const blocks: DescriptionBlock[] = [];
+  const paragraphs = (chunk: string) => {
+    for (const line of chunk.replace(lineBreaks, "\n").split("\n")) {
+      const text = plainText(line);
+      if (text) blocks.push({ kind: "paragraph", text });
+    }
+  };
+  // Comments (Word's conditional ones too), scripts and styles go first. Source line breaks are only
+  // whitespace in HTML; "\n" then marks the lines made by tags.
+  const source = html
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/<(script|style)\b[\s\S]*?<\/\1>/gi, " ")
+    .replace(/\s+/g, " ");
+  // An outermost <ul>/<ol> (found by depth) is one list; the items of lists nested in it join it in order.
+  let rest = 0;
+  let depth = 0;
+  let start = 0;
+  const list = (end: number) => {
+    const items = source.slice(start, end).split(/<li\b[^>]*>/i).map(plainText).filter(Boolean);
+    if (items.length > 0) blocks.push({ kind: "list", items });
+  };
+  for (const tag of source.matchAll(/<(\/?)(?:ul|ol)\b[^>]*>/gi)) {
+    if (!tag[1] && depth++ === 0) {
+      paragraphs(source.slice(rest, tag.index));
+      start = tag.index + tag[0].length;
+    } else if (tag[1] && depth > 0 && --depth === 0) {
+      list(tag.index);
+      rest = tag.index + tag[0].length;
+    }
+  }
+  if (depth > 0) list(source.length);
+  else paragraphs(source.slice(rest));
+  return blocks;
+};
+
+/** Meta descriptions are cut by search engines at about this length. */
+const SHORT_LENGTH = 160;
+/** Texts joined by `separator`, or by a space after one that already ends in punctuation. */
+const joinText = (texts: string[], separator: string) =>
+  texts.reduce((line, text) => (!line ? text : `${line}${/[.!?;:…]$/.test(line) ? " " : separator}${text}`), "");
+/** Every block as one line (list items joined by "; ", blocks by ". "), cut at a word to SHORT_LENGTH with "…". */
+const shortOf = (blocks: DescriptionBlock[]) => {
+  const text = joinText(blocks.map((block) => (block.kind === "list" ? joinText(block.items, "; ") : block.text)), ". ");
+  // Counted in code points, so an emoji is never split in half.
+  const chars = [...text];
+  if (chars.length <= SHORT_LENGTH) return text;
+  // At the last list item that fits when that keeps most of the text, else at the last word.
+  const cut = chars.slice(0, SHORT_LENGTH).join("");
+  const item = cut.lastIndexOf("; ");
+  const end = item > SHORT_LENGTH / 2 ? item : cut.lastIndexOf(" ");
+  return `${(end > 0 ? cut.slice(0, end) : chars.slice(0, SHORT_LENGTH - 1).join("")).replace(/[\s.,;:–—-]+$/, "")}…`;
+};
+
+/** The text when it has a letter or a digit, else "" (a line of dots or dashes says nothing). */
+const words = (text: string) => (/[\p{L}\p{N}]/u.test(text) ? text : "");
 
 const tagBadges: Record<string, Badge> = {
   recomendado: "RECOMMENDED",
@@ -57,13 +170,13 @@ export type MapOptions = {
 };
 
 export function fromNuvemshop(product: NsProduct, options: MapOptions): Product | null {
-  const id = slug(pt(product.handle) || pt(product.name));
+  const id = slug(pt(product.handle) || cleanText(pt(product.name)));
   // A record the site cannot show is skipped (never a failed build), with the reason in the build log.
   const skip = (reason: string) => {
     console.warn(`Nuvemshop product "${id || product.id}" skipped: ${reason}`);
     return null;
   };
-  const name = pt(product.name);
+  const name = cleanText(pt(product.name));
   const categoryId = (product.categories ?? []).map((c) => pt(c.handle)).find((handle) => options.categoryIds.includes(handle));
   // A variant with no valid price is not for sale on the site.
   const forSale = (product.variants ?? []).filter((variant) => priceOf(variant));
@@ -79,7 +192,7 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
 
   const photo = (image: NsImage): Photo => ({
     url: image.src.startsWith("//") ? `https:${image.src}` : image.src,
-    alt: image.alt?.[0]?.trim() || name,
+    alt: altText(image.alt) || name,
     width: image.width ?? DEFAULT_SIZE.width,
     height: image.height ?? DEFAULT_SIZE.height,
   });
@@ -118,7 +231,16 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
     }
     const image = images.find((i) => i.id === variant.image_id);
     if (color && image && !color.images.some((p) => p.url === photo(image).url)) color.images.push(photo(image));
-    variants.push({ key, colorId: color?.id, size, priceCents: priceOf(variant)!, available: variant.stock === null || variant.stock > 0, ref: String(variant.id) });
+    const compareAtCents = compareAtOf(variant);
+    variants.push({
+      key,
+      colorId: color?.id,
+      size,
+      priceCents: priceOf(variant)!,
+      ...(compareAtCents && { compareAtCents }),
+      available: variant.stock === null || variant.stock > 0,
+      ref: String(variant.id),
+    });
   }
   const colors = [...colorsBySlug.values()];
   // On a product with colors, a variant with no color would be a size of no color: not sold.
@@ -133,6 +255,7 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
   const badges = [...new Set(tags.map((tag) => tagBadges[tag]).filter((badge): badge is Badge => Boolean(badge)))].sort(
     (a, b) => knownBadges.indexOf(a) - knownBadges.indexOf(b),
   );
+  const description = blocksOf(pt(product.description));
   const audience: Audience = tags.includes("masculino") ? "masculino" : tags.includes("unissex") ? "unissex" : "feminino";
 
   return {
@@ -143,7 +266,8 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
     audience,
     images: colors.length > 0 ? shared.filter((p) => !colors.some((c) => c.images[0]?.url === p.url)) : shared,
     colors,
-    shortDescription: plainText(pt(product.description)) || name,
+    shortDescription: words(shortOf(description)) || name,
+    ...(description.length > 0 && { description }),
     fabric: { care: [] },
     sizes: sortSizes(sold.map((variant) => variant.size)),
     badges,

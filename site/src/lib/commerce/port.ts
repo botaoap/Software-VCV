@@ -46,6 +46,9 @@ export type Audience = (typeof audiences)[number];
 export const badges = ["RECOMMENDED", "BEST_SELLER", "FEATURED", "NEW_IN", "LAST_UNITS"] as const;
 export type Badge = (typeof badges)[number];
 
+/** A block of a product's long description, in plain text (a page never renders platform HTML). */
+export type DescriptionBlock = { kind: "paragraph"; text: string } | { kind: "list"; items: string[] };
+
 /** One sellable unit: product + color + size. */
 export type Variant = {
   /** Our id, `variantKey(product, color, size)`; the bag line identity. */
@@ -54,6 +57,8 @@ export type Variant = {
   size: string;
   /** What the platform charges for this unit (promotions included). */
   priceCents: Cents;
+  /** The price shown struck through ("de R$ 150,00"): the price before a promotion. Only when above `priceCents`. */
+  compareAtCents?: Cents;
   available: boolean;
   /** The platform's own id for this unit, opaque to the site (only its adapter reads it). */
   ref?: string;
@@ -71,7 +76,10 @@ export type Product = {
   /** Photos shared by every color. */
   images: Photo[];
   colors: Color[];
+  /** One line of plain text: meta description, JSON-LD and search. */
   shortDescription: string;
+  /** The description with its paragraphs and lists, when the platform has one; else the page shows `shortDescription`. */
+  description?: DescriptionBlock[];
   fabric: { material?: string; origin?: string; care: string[]; notes?: string };
   /** Size labels in sale order ("P", "M"… or "38", "40"…). */
   sizes: string[];

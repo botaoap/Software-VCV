@@ -1,0 +1,13 @@
+---
+import { formatBrl } from "../lib/format";
+
+// The price before a promotion, struck through, after the selling price. Screen readers hear
+// "Preço anterior: R$ 150,00"; the visible "de" is for the eye only.
+interface Props {
+  cents: number;
+  class?: string;
+}
+const { cents, class: className } = Astro.props;
+---
+
+<span class:list={["font-normal text-text-muted", className]}><span class="sr-only">Preço anterior:</span> <span aria-hidden="true">de</span> <s>{formatBrl(cents)}</s></span>

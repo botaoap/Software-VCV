@@ -6,6 +6,7 @@ import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
 import PromoBar from "../components/PromoBar.astro";
 import { getBrand } from "../lib/content";
+import { jsonLd } from "../lib/format";
 import { photoSrc } from "../lib/images";
 import { brand } from "../lib/site";
 import { consentEnabled } from "../lib/services";
@@ -65,7 +66,7 @@ const ogImage = new URL(Astro.props.ogImage ?? defaultOg.src, site).href;
       document.documentElement.classList.add("js");
     </script>
     <slot name="head" />
-    {structuredData.map((data) => <script type="application/ld+json" set:html={JSON.stringify(data)} />)}
+    {structuredData.map((data) => <script type="application/ld+json" set:html={jsonLd(data)} />)}
   </head>
   <body class="flex min-h-dvh flex-col" data-base={url("/")}>
     <a

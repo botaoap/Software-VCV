@@ -12,7 +12,7 @@ import { isAllowedImageUrl, remotePatterns } from "../src/lib/commerce/image-hos
 import { checkout as staticCheckout } from "../src/lib/commerce/adapters/static/checkout.ts";
 import { fromContent } from "../src/lib/commerce/adapters/static/map.ts";
 import { badges, variantKey } from "../src/lib/commerce/port.ts";
-import { coverOf, openingColorId, shownPrice, sizeHint, sizesForSale, sortSizes, uniqueById } from "../src/lib/catalog.ts";
+import { coverOf, descriptionText, openingColorId, struckPrice, shownPrice, sizeHint, sizesForSale, sortSizes, uniqueById } from "../src/lib/catalog.ts";
 
 const json = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
 const categoryIds = json("../content/categories.json").map((c) => c.id);
@@ -32,7 +32,8 @@ const contentProducts = json("../content/products.json").map(({ id, category, ..
 );
 const nuvemshopProducts = json("./fixtures/nuvemshop-products.json").flatMap((p) => fromNuvemshop(p, { categoryIds }) ?? []);
 
-const adapters = { static: contentProducts, nuvemshop: nuvemshopProducts };
+const bermudaTeste = json("./fixtures/nuvemshop-bermuda-teste.json"); // the real store's test product (VCV-50)
+const adapters = { static: contentProducts, nuvemshop: nuvemshopProducts, "nuvemshop (Bermuda Teste)": [fromNuvemshop(bermudaTeste, { categoryIds })] };
 
 for (const [name, products] of Object.entries(adapters)) {
   test(`${name} adapter: every product honours the port's Product contract`, () => {
@@ -60,8 +61,10 @@ for (const [name, products] of Object.entries(adapters)) {
         if (v.colorId) assert.ok(p.colors.some((c) => c.id === v.colorId), `${p.id}: variant color ${v.colorId} exists`);
         assert.ok(v.ref === undefined || typeof v.ref === "string", `${p.id}: ref is opaque text`);
         assert.ok(Number.isInteger(v.priceCents) && v.priceCents > 0, `${p.id}: ${v.key} has its own integer price`);
+        assert.ok(v.compareAtCents === undefined || (Number.isInteger(v.compareAtCents) && v.compareAtCents > v.priceCents), `${p.id}: ${v.key} compare-at above its price`);
       }
       assert.equal(p.priceCents, shownPrice(p.variants).cents, `${p.id}: price = lowest price for sale`);
+      assert.ok(!("compareAtCents" in p), `${p.id}: the struck price is derived from the variants (CR3-1)`);
       assert.equal(p.available, p.variants.some((v) => v.available), `${p.id}: available = any variant for sale`);
     }
   });
@@ -226,7 +229,157 @@ test("sizes sort in wear order; unknown labels go last, alphabetically (QA-7)", 
 test("nuvemshop mapping: descriptions decode the common HTML entities (CR-9)", () => {
   const { shortDescription } = map({ description: { pt: "<p>Algodão &amp; linho&nbsp;&lt;leve&gt; &quot;fresco&quot; d&#39;água &#233;&#xE9;</p>" } });
   assert.equal(shortDescription, `Algodão & linho <leve> "fresco" d'água éé`);
-  assert.equal(map({ description: { pt: "&#99999999; &copy;" } }).shortDescription, "&#99999999; &copy;", "unknown entities kept, never a throw");
+  assert.equal(map({ description: { pt: "&#99999999; &bogus; &Oacute" } }).shortDescription, "&#99999999; &bogus; &Oacute", "unknown or unterminated entities kept, never a throw");
+});
+
+// VCV-50: the store editor writes accents as named entities ("C&oacute;s el&aacute;stico"), which the
+// site showed as typed.
+
+test("nuvemshop mapping: every named entity a pt-BR editor writes is decoded (VCV-50)", () => {
+  // The decoded text as the page shows it (a symbols-only line would make the short description the name).
+  const text = (html) => map({ description: { pt: html } }).description[0].text;
+  assert.match(fromNuvemshop(bermudaTeste, { categoryIds }).description[1].items[0], /^Cós elástico com cordão/, "the real store text");
+  assert.equal(text("&Agrave;&agrave; &Aacute;&atilde; &Ccedil;&ccedil; &Ntilde;&ntilde; &Ecirc;&otilde;&uuml;&yuml;"), "Àà Áã Çç Ññ Êõüÿ");
+  assert.equal(text("1&ordm; 2&ordf; 30&deg; &copy; &reg; &sup2; &frac12; &iquest;"), "1º 2ª 30° © ® ² ½ ¿");
+  assert.equal(text("&ndash;&mdash;&lsquo;&rsquo;&ldquo;&rdquo;&laquo;&raquo;&hellip;&bull;&middot;&euro;&trade;&times;&apos;"), "–—‘’“”«»…•·€™×'");
+  // QA-4: the rest of HTML 4 (Greek, math, arrows, symbols, General Punctuation).
+  assert.equal(text("&alpha;&Omega;&sigmaf;&Sigma; &larr;&rArr;&crarr; &le;&ne;&infin;&sum;&radic; &hearts;&loz; &OElig;&scaron;&Yuml;"), "αΩςΣ ←⇒↵ ≤≠∞∑√ ♥◊ ŒšŸ");
+  assert.equal(text("&dagger;&Dagger;&permil;&lsaquo;&rsaquo;&prime;&Prime; &thetasym;&upsih;&piv;&fnof;&circ;&tilde; &lang;&rang;&lceil;&rfloor;"), "†‡‰‹›′″ ϑϒϖƒˆ˜ \u27E8\u27E9⌈⌋", "&lang; &rang; as in HTML5 (QA2-4)");
+  assert.equal(text("Dev &#x1F469;&zwj;&#x1F4BB;!"), "Dev \u{1F469}\u200D\u{1F4BB}!", "&zwj; joins an emoji sequence");
+  assert.equal(text("d&#39;&aacute;gua &#xE9;"), "d'água é", "numeric entities still work");
+  assert.equal(text("&OACUTE; &Oacute;"), "&OACUTE; Ó", "names are case-sensitive, as in HTML");
+  // Double-escaped text is decoded once: the shopper sees the entity the store typed, and a second pass
+  // can never turn store text such as "&amp;lt;script&amp;gt;" into markup.
+  assert.equal(text("Cal&amp;ccedil;a &amp;lt;b&amp;gt;"), "Cal&ccedil;a &lt;b&gt;");
+});
+
+// VCV-50: the description keeps its paragraphs and lists as plain-text blocks (the page never gets
+// store HTML); shortDescription stays one short line for meta tags and JSON-LD (QA-5).
+test("nuvemshop mapping: the description keeps its paragraphs and lists (VCV-50)", () => {
+  const bermuda = fromNuvemshop(bermudaTeste, { categoryIds });
+  assert.deepEqual(bermuda.description, [
+    { kind: "paragraph", text: "Teste acima" },
+    { kind: "list", items: ["Cós elástico com cordão, bolsos funcionais e tecido macio.", "Conforto para o dia a dia.", "TESTE NUVEMSHOP"] },
+  ]);
+  assert.equal(bermuda.shortDescription, "Teste acima. Cós elástico com cordão, bolsos funcionais e tecido macio. Conforto para o dia a dia. TESTE NUVEMSHOP", "every block, not just a label (CR2-1)");
+  assert.equal(descriptionText(bermuda), "Teste acima Cós elástico com cordão, bolsos funcionais e tecido macio. Conforto para o dia a dia. TESTE NUVEMSHOP", "search reads every block");
+
+  const blocks = (html) => map({ description: { pt: html } }).description;
+  assert.deepEqual(blocks('<p><span style="color: #6b5f5a;">Tecido\n   macio</span>.</p>'), [{ kind: "paragraph", text: "Tecido macio." }], "inline tags and source line breaks are not blocks");
+  assert.deepEqual(blocks("<p>Um</p><p>Dois</p>"), [{ kind: "paragraph", text: "Um" }, { kind: "paragraph", text: "Dois" }]);
+  assert.deepEqual(blocks("Um<br>Dois<br />"), [{ kind: "paragraph", text: "Um" }, { kind: "paragraph", text: "Dois" }], "<br> lines");
+  assert.deepEqual(blocks("<h2>Detalhes</h2><ol><li>Um<br>dois</li>\n<li><strong>Três</strong></li></ol><p>Fim</p>"), [
+    { kind: "paragraph", text: "Detalhes" },
+    { kind: "list", items: ["Um dois", "Três"] },
+    { kind: "paragraph", text: "Fim" },
+  ]);
+  assert.deepEqual(blocks("<p>&lt;script&gt;alert(1)&lt;/script&gt;</p><script>alert(2)</script>"), [{ kind: "paragraph", text: "<script>alert(1)</script>" }], "text only: escaped markup stays text");
+
+  // QA-2: a nested list is flattened into the outer one, in order.
+  for (const tag of ["ul", "ol"]) {
+    assert.deepEqual(blocks(`<${tag}><li>A<${tag}><li>A1</li><li>A2</li></${tag}></li><li>B</li></${tag}><p>depois</p>`), [
+      { kind: "list", items: ["A", "A1", "A2", "B"] },
+      { kind: "paragraph", text: "depois" },
+    ], `nested <${tag}>`);
+  }
+  assert.deepEqual(blocks("<p>a</p></ul><ul><li>X<li>Y"), [{ kind: "paragraph", text: "a" }, { kind: "list", items: ["X", "Y"] }], "stray close, unclosed list");
+
+  // QA-3: HTML comments (Word pastes carry conditional ones) are dropped before anything else.
+  const word = '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Normal</w:View></w:WordDocument></xml><![endif]--><!--[if gte mso 10]><style>p.MsoNormal{margin:0}</style><![endif]--><p class="MsoNormal">Linho<o:p></o:p></p>';
+  assert.deepEqual(blocks(word), [{ kind: "paragraph", text: "Linho" }], "Word paste");
+  assert.deepEqual(blocks("<p>A<!-- x > y -->B</p>"), [{ kind: "paragraph", text: "AB" }]);
+
+  // QA-5 / CR2-1: the short description is every block in one line, at most 160 characters, cut at a word.
+  const short = (html) => map({ description: { pt: html } }).shortDescription;
+  assert.equal(short("<ul><li>Cós elástico</li><li>Bolsos</li></ul><p>Fim</p>"), "Cós elástico; Bolsos. Fim", "list items joined by '; ', blocks by '. '");
+  assert.equal(short("<h2>Detalhes</h2><p>Leve!</p><ul><li>Linho.</li><li>Algodão</li></ul>"), "Detalhes. Leve! Linho. Algodão", "no separator after punctuation");
+  const long = "Vestido midi de linho, leve e fresco, ".repeat(6).trim();
+  const cut = short(`<p>${long}</p><p>Outro</p>`);
+  assert.ok(cut.length <= 160 && cut.endsWith("…"), cut);
+  assert.ok(long.startsWith(cut.slice(0, -1).replace(/,$/, "")) && /[\s,]/.test(long[cut.length - 1]), `cut at a word: ${cut}`);
+  assert.equal(short(`<p>${"a".repeat(200)}</p>`).length, 160, "one long word is cut too");
+  const emoji = short(`<p>${"a".repeat(158)}\u{1F457}\u{1F457}\u{1F457}</p>`);
+  assert.equal(emoji, `${"a".repeat(158)}\u{1F457}…`, "cut by code point (QA2-2)");
+  assert.ok(!/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/.test(emoji), "no half surrogate pair");
+  // QA2-3: no punctuation before the "…", and a cut list keeps whole items.
+  for (const mark of [" —", ".", ",", " -", ":"]) {
+    assert.equal(short(`<p>${"a".repeat(150)}${mark} ${"b".repeat(20)}</p>`), `${"a".repeat(150)}…`, `"${mark}" before the cut`);
+  }
+  const items = Array.from({ length: 6 }, (_, i) => `Item ${i + 1}, algodão egípcio penteado`);
+  assert.equal(short(`<ul>${items.map((item) => `<li>${item}</li>`).join("")}</ul>`), `${items.slice(0, 4).join("; ")}…`, "whole items only");
+  assert.equal(map({ description: { pt: `<p>${long}</p>` } }).description[0].text, long, "the page keeps the full text");
+  assert.equal(descriptionText({ shortDescription: "Só isto" }), "Só isto", "no blocks: the short description");
+  const contentFile = json("../content/products.json");
+  assert.deepEqual(contentProducts.map((p) => p.shortDescription), contentFile.map((p) => p.shortDescription), "static text is never cut");
+
+  const empty = map({ description: { pt: "<p>&nbsp;</p><ul><li> </li></ul><p><br></p>" } });
+  assert.equal(empty.description, undefined, "empty blocks are dropped");
+  assert.equal(empty.shortDescription, "Vestido Ana", "no text: the name");
+  assert.equal(short(`<p>${".".repeat(300)}</p>`), "Vestido Ana", "no letter or digit: the name (QA3-3)");
+  assert.equal(short("<p>— …</p>"), "Vestido Ana");
+  assert.ok(contentProducts.every((p) => p.description === undefined), "static products need no description blocks");
+});
+
+// VCV-50: the API sends a photo's alt localized ({ "pt": "" }), not as a list.
+test("nuvemshop mapping: a photo's alt is the store's pt text, else the product name (VCV-50)", () => {
+  const alt = (value) => map({ images: [{ id: 10, src: "https://dcdn.mitiendanube.com/a.jpg", position: 1, alt: value }] }).colors[0].images[0].alt;
+  assert.equal(alt({ pt: "Bermuda azul de frente" }), "Bermuda azul de frente");
+  assert.equal(alt({ pt: "  " }), "Vestido Ana", "blank alt");
+  assert.equal(alt({ pt: "" }), "Vestido Ana");
+  assert.equal(alt({}), "Vestido Ana");
+  assert.equal(alt(["Vestido coral"]), "Vestido coral", "the older list shape still works");
+  // QA-10: a plain string works; anything that is not text is ignored, never a throw; entities decoded.
+  assert.equal(alt("  Vestido &amp; cinto "), "Vestido & cinto");
+  assert.equal(alt({ pt: "Cal&ccedil;a&nbsp;azul" }), "Calça azul");
+  for (const odd of [[5], [null], [{ pt: "x" }], { pt: 5 }, { pt: null, es: ["x"] }, 5, true, null]) {
+    assert.equal(alt(odd), "Vestido Ana", `alt ${JSON.stringify(odd)}`);
+  }
+  const named = map({ name: { pt: "Cal&ccedil;a &amp; Blusa" }, handle: {}, images: [{ id: 10, src: "https://dcdn.mitiendanube.com/a.jpg", position: 1 }] });
+  assert.deepEqual([named.name, named.id, named.colors[0].images[0].alt], ["Calça & Blusa", "calca-blusa", "Calça & Blusa"], "the name is decoded too");
+  assert.equal(fromNuvemshop(bermudaTeste, { categoryIds }).images[0].alt, "Bermuda Teste", "the real store photo");
+});
+
+// VCV-50: the price before a promotion is shown struck through ("de R$ 150,00"); the price charged
+// (bag, JSON-LD) stays the selling one.
+test("nuvemshop mapping: a promotion keeps the regular price as the compare-at price (VCV-50)", () => {
+  const bermuda = fromNuvemshop(bermudaTeste, { categoryIds });
+  assert.deepEqual(bermuda.variants.map((v) => [v.priceCents, v.compareAtCents]), [[10000, 15000]], "price 150, compare 150, promo 100");
+  assert.deepEqual([bermuda.priceCents, struckPrice(shownPrice(bermuda.variants))], [10000, 15000]);
+
+  const prices = (overrides) => {
+    const [variant] = map({ variants: [nsVariant(1, ["Coral", "M"], { price: "150.00", ...overrides })] }).variants;
+    return [variant.priceCents, variant.compareAtCents];
+  };
+  assert.deepEqual(prices({ promotional_price: "100.00" }), [10000, 15000], "promo, no compare_at_price");
+  assert.deepEqual(prices({ promotional_price: "100.00", compare_at_price: "200.00" }), [10000, 15000], "a promo is struck against the regular price");
+  for (const promotional_price of [null, "", "150.00", "180.00", "0.00", "abc"]) {
+    assert.deepEqual(prices({ promotional_price, compare_at_price: "150.00" }), [15000, undefined], `promo ${promotional_price}, compare = price: nothing struck`);
+  }
+  assert.deepEqual(prices({ compare_at_price: "180.00" }), [15000, 18000], "compare_at_price higher, no promo");
+  assert.deepEqual(prices({ promotional_price: "180.00", compare_at_price: "180.00" }), [15000, 18000], "an invalid promo falls back to compare_at_price");
+  for (const compare_at_price of ["120.00", "", "abc", "0", "-200", null, undefined]) {
+    assert.deepEqual(prices({ compare_at_price }), [15000, undefined], `compare_at_price ${compare_at_price}: nothing struck`);
+  }
+  assert.ok(contentProducts.every((p) => p.variants.every((v) => v.compareAtCents === undefined)), "static products: none");
+});
+
+test("buy box: the struck price belongs to the shown price, never overstating the discount (VCV-50)", () => {
+  const was = (colorId, size, priceCents, compareAtCents, available = true) => ({ ...unit(colorId, size, priceCents, available), compareAtCents });
+  assert.deepEqual(shownPrice([was("a", "P", 100, 150), was("a", "M", 100, 150)]), { cents: 100, from: false, compareAtCents: 150 });
+  assert.deepEqual(shownPrice([was("a", "P", 100, 150), was("a", "M", 100, 130)]), { cents: 100, from: false, compareAtCents: 130 }, "the smaller discount");
+  assert.deepEqual(shownPrice([was("a", "P", 100, 150), unit("a", "M", 100)]), { cents: 100, from: false }, "a unit at that price was never dearer");
+  assert.deepEqual(shownPrice([was("a", "P", 120, 150), unit("a", "M", 100)]), { cents: 100, from: true }, "the discounted unit is not the shown price");
+  assert.deepEqual(shownPrice([was("a", "P", 80, 150, false), was("a", "M", 100, 120)]), { cents: 100, from: false, compareAtCents: 120 }, "sold-out units are left out");
+  // CR-2: the PDP strikes the compare-at of its own shown price, never next to "A partir de".
+  assert.equal(struckPrice(shownPrice([was("a", "P", 100, 150), was("a", "M", 100, 150)])), 150);
+  assert.equal(struckPrice(shownPrice([was("a", "P", 100, 150), was("a", "M", 120, 150)])), undefined, "A partir de: nothing struck");
+  assert.equal(struckPrice(shownPrice([unit("a", "P", 100)])), undefined);
+  // CR2-4: the card follows the PDP rule: a product with several prices strikes nothing.
+  const mixed = map({ variants: [nsVariant(1, ["Coral", "M"], { price: "150.00", promotional_price: "100.00" }), nsVariant(2, ["Coral", "G"], { price: "120.00" })] });
+  assert.deepEqual([mixed.priceCents, struckPrice(shownPrice(mixed.variants))], [10000, undefined]);
+  // The Pantalona's lowest price for sale is a promotion (off-white M, 149,90 → 129,90).
+  assert.deepEqual([nuvemshopProducts[0].priceCents, shownPrice(nuvemshopProducts[0].variants).compareAtCents], [12990, 14990]);
+  assert.equal(shownPrice(nuvemshopProducts[1].variants).compareAtCents, undefined, "no promotion: nothing struck");
 });
 
 test("nuvemshop mapping: odd records never throw, and every skip says why (QA-14)", (t) => {
@@ -454,4 +607,14 @@ test("store client: timeoutMs bounds each page, headers and body", { timeout: 20
       message: "Nuvemshop products page 1: timed out after 0.05 s",
     });
   }
+});
+
+// CR-1 (VCV-50): store text reaches the JSON-LD <script>; it must never close the tag.
+test("JSON-LD: store text can never close its <script> tag, and the data parses back unchanged", async () => {
+  const { jsonLd } = await import("../src/lib/format.ts");
+  const data = { name: "</script><script>alert(1)</script>", description: "a & b <!-- c --> \u2028\u2029 >", n: 1 };
+  const out = jsonLd(data);
+  assert.ok(!/<\/script/i.test(out) && !out.includes("<!--"), out);
+  assert.ok(!/[<>&\u2028\u2029]/.test(out), "<, >, & and line separators escaped");
+  assert.deepEqual(JSON.parse(out), data);
 });

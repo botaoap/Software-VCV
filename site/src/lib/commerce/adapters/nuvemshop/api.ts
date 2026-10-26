@@ -6,7 +6,8 @@
  */
 export type Localized = { pt?: string; es?: string; en?: string };
 
-export type NsImage = { id: number; src: string; position: number; alt?: string[]; width?: number; height?: number };
+/** `alt` is localized ({ "pt": "" } when blank); older payloads sent a list of strings, or a string. */
+export type NsImage = { id: number; src: string; position: number; alt?: Localized | string[] | string; width?: number; height?: number };
 
 export type NsVariant = {
   id: number;
@@ -14,6 +15,8 @@ export type NsVariant = {
   /** Decimal string, e.g. "189.00". */
   price: string;
   promotional_price: string | null;
+  /** The "was" price the store shows struck through; often equal to `price` (then nothing is struck). */
+  compare_at_price?: string | null;
   /** null = stock not managed (always for sale). */
   stock: number | null;
   sku: string | null;

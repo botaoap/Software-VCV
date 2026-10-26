@@ -5,8 +5,9 @@ import Icon from "../../components/Icon.astro";
 import Photo from "../../components/Photo.astro";
 import ProductCard from "../../components/ProductCard.astro";
 import SectionHeading from "../../components/SectionHeading.astro";
+import WasPrice from "../../components/WasPrice.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { coverOf, galleryOf, openingColorId, shownPrice, sizeHint, sizesForSale } from "../../lib/catalog";
+import { coverOf, galleryOf, openingColorId, shownPrice, sizeHint, sizesForSale, struckPrice } from "../../lib/catalog";
 import { getCategoryOf, getProducts } from "../../lib/content";
 import { badgeLabels, formatBrl, labelOf } from "../../lib/format";
 import { photoSrc } from "../../lib/images";
@@ -45,6 +46,7 @@ const og = await getImage({ src: photoSrc(coverOf(product).url), width: 1200, he
 const openingColor = openingColorId(product);
 const offered = sizesForSale(product, openingColor);
 const price = shownPrice(product.variants);
+const wasCents = struckPrice(price);
 const label = labelOf(product.badges);
 
 const spec = [
@@ -155,9 +157,28 @@ const crumbsLd = {
       {label && <p class="mb-3"><span class:list={["badge", label === "LAST_UNITS" && "badge-alert"]}>{badgeLabels[label]}</span></p>}
       <p class="eyebrow">{category.data.title}</p>
       <h1 id="product-title" class="mt-3 text-4xl md:text-5xl">{product.name}</h1>
-      <p class="mt-4 font-sans text-2xl font-medium text-wine">{price.from && "A partir de "}{formatBrl(product.priceCents)}</p>
+      <p class="mt-4 font-sans text-2xl font-medium text-wine">
+        {price.from && "A partir de "}{formatBrl(product.priceCents)}
+        {wasCents && (
+          <>{" "}<WasPrice cents={wasCents} class="text-base" /></>
+        )}
+      </p>
       {!product.available && <p class="mt-2"><span class="badge badge-alert">Esgotado</span></p>}
-      <p class="mt-5 text-lg leading-relaxed text-text-muted">{product.shortDescription}</p>
+      {
+        product.description ? (
+          <div class="mt-5 space-y-3 text-lg leading-relaxed text-text-muted">
+            {product.description.map((block) =>
+              block.kind === "list" ? (
+                <ul class="list-disc space-y-1 pl-6 marker:text-rose">{block.items.map((item) => <li>{item}</li>)}</ul>
+              ) : (
+                <p>{block.text}</p>
+              ),
+            )}
+          </div>
+        ) : (
+          <p class="mt-5 text-lg leading-relaxed text-text-muted">{product.shortDescription}</p>
+        )
+      }
 
       <form
         class="js-only mt-8"
