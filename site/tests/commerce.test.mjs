@@ -548,3 +548,13 @@ test("store client: timeoutMs bounds each page, headers and body", { timeout: 20
     });
   }
 });
+
+// CR-1 (VCV-50): store text reaches the JSON-LD <script>; it must never close the tag.
+test("JSON-LD: store text can never close its <script> tag, and the data parses back unchanged", async () => {
+  const { jsonLd } = await import("../src/lib/format.ts");
+  const data = { name: "</script><script>alert(1)</script>", description: "a & b <!-- c --> \u2028\u2029 >", n: 1 };
+  const out = jsonLd(data);
+  assert.ok(!/<\/script/i.test(out) && !out.includes("<!--"), out);
+  assert.ok(!/[<>&\u2028\u2029]/.test(out), "<, >, & and line separators escaped");
+  assert.deepEqual(JSON.parse(out), data);
+});
