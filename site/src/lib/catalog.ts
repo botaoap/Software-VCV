@@ -69,5 +69,9 @@ export const shownPrice = (variants: Unit[]) => {
   return { cents, from: new Set(prices).size > 1, ...(compareAtCents > cents && { compareAtCents }) };
 };
 
+/** All of a product's description as one line of text (search): its blocks, else the short description. */
+export const descriptionText = (product: Pick<Product, "shortDescription" | "description">) =>
+  product.description?.flatMap((block) => (block.kind === "list" ? block.items : [block.text])).join(" ") || product.shortDescription;
+
 export const audienceLabels = { feminino: "Feminino", masculino: "Masculino", unissex: "Unissex" } as const;
 export type Audience = keyof typeof audienceLabels;

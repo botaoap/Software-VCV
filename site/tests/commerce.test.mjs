@@ -12,7 +12,7 @@ import { isAllowedImageUrl, remotePatterns } from "../src/lib/commerce/image-hos
 import { checkout as staticCheckout } from "../src/lib/commerce/adapters/static/checkout.ts";
 import { fromContent } from "../src/lib/commerce/adapters/static/map.ts";
 import { badges, variantKey } from "../src/lib/commerce/port.ts";
-import { coverOf, openingColorId, shownPrice, sizeHint, sizesForSale, sortSizes, uniqueById } from "../src/lib/catalog.ts";
+import { coverOf, descriptionText, openingColorId, shownPrice, sizeHint, sizesForSale, sortSizes, uniqueById } from "../src/lib/catalog.ts";
 
 const json = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
 const categoryIds = json("../content/categories.json").map((c) => c.id);
@@ -237,7 +237,7 @@ test("nuvemshop mapping: descriptions decode the common HTML entities (CR-9)", (
 
 test("nuvemshop mapping: every named entity a pt-BR editor writes is decoded (VCV-50)", () => {
   const text = (html) => map({ description: { pt: html } }).shortDescription;
-  assert.match(fromNuvemshop(bermudaTeste, { categoryIds }).shortDescription, /Cós elástico com cordão/, "the real store text");
+  assert.match(fromNuvemshop(bermudaTeste, { categoryIds }).description[1].items[0], /^Cós elástico com cordão/, "the real store text");
   assert.equal(text("&Agrave;&agrave; &Aacute;&atilde; &Ccedil;&ccedil; &Ntilde;&ntilde; &Ecirc;&otilde;&uuml;&yuml;"), "Àà Áã Çç Ññ Êõüÿ");
   assert.equal(text("1&ordm; 2&ordf; 30&deg; &copy; &reg; &sup2; &frac12; &iquest;"), "1º 2ª 30° © ® ² ½ ¿");
   assert.equal(text("&ndash;&mdash;&lsquo;&rsquo;&ldquo;&rdquo;&laquo;&raquo;&hellip;&bull;&middot;&euro;&trade;&times;&apos;"), "–—‘’“”«»…•·€™×'");
@@ -253,14 +253,15 @@ test("nuvemshop mapping: every named entity a pt-BR editor writes is decoded (VC
 });
 
 // VCV-50: the description keeps its paragraphs and lists as plain-text blocks (the page never gets
-// store HTML); shortDescription stays one line for meta tags, JSON-LD and search.
+// store HTML); shortDescription stays one short line for meta tags and JSON-LD (QA-5).
 test("nuvemshop mapping: the description keeps its paragraphs and lists (VCV-50)", () => {
   const bermuda = fromNuvemshop(bermudaTeste, { categoryIds });
   assert.deepEqual(bermuda.description, [
     { kind: "paragraph", text: "Teste acima" },
     { kind: "list", items: ["Cós elástico com cordão, bolsos funcionais e tecido macio.", "Conforto para o dia a dia.", "TESTE NUVEMSHOP"] },
   ]);
-  assert.equal(bermuda.shortDescription, "Teste acima Cós elástico com cordão, bolsos funcionais e tecido macio. Conforto para o dia a dia. TESTE NUVEMSHOP");
+  assert.equal(bermuda.shortDescription, "Teste acima", "the first block");
+  assert.equal(descriptionText(bermuda), "Teste acima Cós elástico com cordão, bolsos funcionais e tecido macio. Conforto para o dia a dia. TESTE NUVEMSHOP", "search reads every block");
 
   const blocks = (html) => map({ description: { pt: html } }).description;
   assert.deepEqual(blocks('<p><span style="color: #6b5f5a;">Tecido\n   macio</span>.</p>'), [{ kind: "paragraph", text: "Tecido macio." }], "inline tags and source line breaks are not blocks");
@@ -286,6 +287,19 @@ test("nuvemshop mapping: the description keeps its paragraphs and lists (VCV-50)
   const word = '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Normal</w:View></w:WordDocument></xml><![endif]--><!--[if gte mso 10]><style>p.MsoNormal{margin:0}</style><![endif]--><p class="MsoNormal">Linho<o:p></o:p></p>';
   assert.deepEqual(blocks(word), [{ kind: "paragraph", text: "Linho" }], "Word paste");
   assert.deepEqual(blocks("<p>A<!-- x > y -->B</p>"), [{ kind: "paragraph", text: "AB" }]);
+
+  // QA-5: the short description is the first block, at most 160 characters, cut at a word.
+  const short = (html) => map({ description: { pt: html } }).shortDescription;
+  assert.equal(short("<ul><li>Cós elástico</li><li>Bolsos</li></ul><p>Fim</p>"), "Cós elástico; Bolsos", "a list first: its items");
+  const long = "Vestido midi de linho, leve e fresco, ".repeat(6).trim();
+  const cut = short(`<p>${long}</p><p>Outro</p>`);
+  assert.ok(cut.length <= 160 && cut.endsWith("…"), cut);
+  assert.ok(long.startsWith(cut.slice(0, -1).replace(/,$/, "")) && /[\s,]/.test(long[cut.length - 1]), `cut at a word: ${cut}`);
+  assert.equal(short(`<p>${"a".repeat(200)}</p>`).length, 160, "one long word is cut too");
+  assert.equal(map({ description: { pt: `<p>${long}</p>` } }).description[0].text, long, "the page keeps the full text");
+  assert.equal(descriptionText({ shortDescription: "Só isto" }), "Só isto", "no blocks: the short description");
+  const contentFile = json("../content/products.json");
+  assert.deepEqual(contentProducts.map((p) => p.shortDescription), contentFile.map((p) => p.shortDescription), "static text is never cut");
 
   const empty = map({ description: { pt: "<p>&nbsp;</p><ul><li> </li></ul><p><br></p>" } });
   assert.equal(empty.description, undefined, "empty blocks are dropped");

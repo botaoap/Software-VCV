@@ -4,20 +4,20 @@ import Icon from "../../components/Icon.astro";
 import PageHeader from "../../components/PageHeader.astro";
 import ProductCard from "../../components/ProductCard.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { audienceLabels } from "../../lib/catalog";
+import { audienceLabels, descriptionText } from "../../lib/catalog";
 import { getCategoryOf, getProducts } from "../../lib/content";
 import { url } from "../../lib/url";
 
 // Search over the catalog, in the page: every product is rendered (hidden) and the island shows
-// the matches. Matches name, garment type, audience, fabric and colors; accents and case
+// the matches. Matches name, garment type, audience, fabric, colors and description; accents and case
 // are ignored.
 const normalize = (text: string) => text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const products = await getProducts();
 const items = await Promise.all(
   products.map(async (product) => {
     const category = await getCategoryOf(product);
-    const { audience, colors, fabric, name, shortDescription } = product;
-    const terms = [name, category.data.title, audienceLabels[audience], fabric.material, ...colors.map((c) => c.name), shortDescription];
+    const { audience, colors, fabric, name } = product;
+    const terms = [name, category.data.title, audienceLabels[audience], fabric.material, ...colors.map((c) => c.name), descriptionText(product)];
     return { product, search: normalize(terms.filter(Boolean).join(" ")) };
   }),
 );

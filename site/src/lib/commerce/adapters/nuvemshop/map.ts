@@ -115,6 +115,18 @@ const blocksOf = (html: string) => {
   return blocks;
 };
 
+/** Meta descriptions are cut by search engines at about this length. */
+const SHORT_LENGTH = 160;
+/** The first block as one line (a list's items joined by "; "), cut at a word to SHORT_LENGTH with "…". */
+const shortOf = (blocks: DescriptionBlock[]) => {
+  const first = blocks[0];
+  const text = !first ? "" : first.kind === "list" ? first.items.join("; ") : first.text;
+  if (text.length <= SHORT_LENGTH) return text;
+  const cut = text.slice(0, SHORT_LENGTH);
+  const word = cut.lastIndexOf(" ");
+  return `${(word > 0 ? cut.slice(0, word) : cut.slice(0, SHORT_LENGTH - 1)).replace(/[\s,;:]+$/, "")}…`;
+};
+
 const tagBadges: Record<string, Badge> = {
   recomendado: "RECOMMENDED",
   "mais-vendido": "BEST_SELLER",
@@ -236,7 +248,7 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
     audience,
     images: colors.length > 0 ? shared.filter((p) => !colors.some((c) => c.images[0]?.url === p.url)) : shared,
     colors,
-    shortDescription: description.flatMap((block) => (block.kind === "list" ? block.items : [block.text])).join(" ") || name,
+    shortDescription: shortOf(description) || name,
     ...(description.length > 0 && { description }),
     fabric: { care: [] },
     sizes: sortSizes(sold.map((variant) => variant.size)),
