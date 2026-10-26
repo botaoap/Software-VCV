@@ -24,11 +24,28 @@ const priceOf = (variant: NsVariant) => {
   const promo = cents(variant.promotional_price);
   return price && promo && promo < price ? promo : price;
 };
-const entities: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', nbsp: " " };
-/** &amp; &lt; &gt; &quot; &nbsp; and numeric (&#39; &#233; &#xE9;) entities; anything else is kept as typed. */
+/** The HTML 4 Latin-1 names, U+00A0 to U+00FF in order: the accents the store editor writes (&oacute; = ó). */
+const latin1 = (
+  "nbsp iexcl cent pound curren yen brvbar sect uml copy ordf laquo not shy reg macr deg plusmn sup2 sup3 acute micro para " +
+  "middot cedil sup1 ordm raquo frac14 frac12 frac34 iquest Agrave Aacute Acirc Atilde Auml Aring AElig Ccedil Egrave Eacute " +
+  "Ecirc Euml Igrave Iacute Icirc Iuml ETH Ntilde Ograve Oacute Ocirc Otilde Ouml times Oslash Ugrave Uacute Ucirc Uuml Yacute " +
+  "THORN szlig agrave aacute acirc atilde auml aring aelig ccedil egrave eacute ecirc euml igrave iacute icirc iuml eth ntilde " +
+  "ograve oacute ocirc otilde ouml divide oslash ugrave uacute ucirc uuml yacute thorn yuml"
+).split(" ");
+const entities: Record<string, string> = {
+  ...Object.fromEntries(latin1.map((name, index) => [name, String.fromCodePoint(0xa0 + index)])),
+  nbsp: " ",
+  amp: "&", lt: "<", gt: ">", quot: '"', apos: "'",
+  ndash: "–", mdash: "—", lsquo: "‘", rsquo: "’", sbquo: "‚", ldquo: "“", rdquo: "”", bdquo: "„",
+  hellip: "…", bull: "•", euro: "€", trade: "™",
+};
+/**
+ * Named (Latin-1 and typographic, case-sensitive as in HTML) and numeric (&#39; &#233; &#xE9;) entities,
+ * decoded once (store text "&amp;lt;" stays "&lt;"); anything else is kept as typed.
+ */
 const decode = (text: string) =>
-  text.replace(/&(?:#(x[0-9a-f]+|\d+)|([a-z]+));/gi, (entity, code?: string, name?: string) => {
-    if (name) return entities[name.toLowerCase()] ?? entity;
+  text.replace(/&(?:#(x[0-9a-f]+|\d+)|([a-z][a-z0-9]*));/gi, (entity, code?: string, name?: string) => {
+    if (name) return Object.hasOwn(entities, name) ? entities[name] : entity;
     const point = code!.startsWith("x") || code!.startsWith("X") ? Number.parseInt(code!.slice(1), 16) : Number(code);
     return point > 0 && point <= 0x10ffff ? String.fromCodePoint(point) : entity;
   });

@@ -226,7 +226,24 @@ test("sizes sort in wear order; unknown labels go last, alphabetically (QA-7)", 
 test("nuvemshop mapping: descriptions decode the common HTML entities (CR-9)", () => {
   const { shortDescription } = map({ description: { pt: "<p>Algodão &amp; linho&nbsp;&lt;leve&gt; &quot;fresco&quot; d&#39;água &#233;&#xE9;</p>" } });
   assert.equal(shortDescription, `Algodão & linho <leve> "fresco" d'água éé`);
-  assert.equal(map({ description: { pt: "&#99999999; &copy;" } }).shortDescription, "&#99999999; &copy;", "unknown entities kept, never a throw");
+  assert.equal(map({ description: { pt: "&#99999999; &bogus; &Oacute" } }).shortDescription, "&#99999999; &bogus; &Oacute", "unknown or unterminated entities kept, never a throw");
+});
+
+// VCV-50: the store editor writes accents as named entities ("C&oacute;s el&aacute;stico"), which the
+// site showed as typed.
+const bermudaTeste = json("./fixtures/nuvemshop-bermuda-teste.json");
+
+test("nuvemshop mapping: every named entity a pt-BR editor writes is decoded (VCV-50)", () => {
+  const text = (html) => map({ description: { pt: html } }).shortDescription;
+  assert.match(fromNuvemshop(bermudaTeste, { categoryIds }).shortDescription, /Cós elástico com cordão/, "the real store text");
+  assert.equal(text("&Agrave;&agrave; &Aacute;&atilde; &Ccedil;&ccedil; &Ntilde;&ntilde; &Ecirc;&otilde;&uuml;&yuml;"), "Àà Áã Çç Ññ Êõüÿ");
+  assert.equal(text("1&ordm; 2&ordf; 30&deg; &copy; &reg; &sup2; &frac12; &iquest;"), "1º 2ª 30° © ® ² ½ ¿");
+  assert.equal(text("&ndash;&mdash;&lsquo;&rsquo;&ldquo;&rdquo;&laquo;&raquo;&hellip;&bull;&middot;&euro;&trade;&times;&apos;"), "–—‘’“”«»…•·€™×'");
+  assert.equal(text("d&#39;&aacute;gua &#xE9;"), "d'água é", "numeric entities still work");
+  assert.equal(text("&OACUTE; &Oacute;"), "&OACUTE; Ó", "names are case-sensitive, as in HTML");
+  // Double-escaped text is decoded once: the shopper sees the entity the store typed, and a second pass
+  // can never turn store text such as "&amp;lt;script&amp;gt;" into markup.
+  assert.equal(text("Cal&amp;ccedil;a &amp;lt;b&amp;gt;"), "Cal&ccedil;a &lt;b&gt;");
 });
 
 test("nuvemshop mapping: odd records never throw, and every skip says why (QA-14)", (t) => {
