@@ -1,5 +1,5 @@
 import { letterSizes, shownPrice, sortSizes } from "../../../catalog.ts";
-import type { Audience, Badge, Color, Photo, Product, Variant } from "../../port.ts";
+import type { Audience, Badge, Color, DescriptionBlock, Photo, Product, Variant } from "../../port.ts";
 import { badges as knownBadges, variantKey } from "../../port.ts";
 import type { Localized, NsImage, NsProduct, NsVariant } from "./api.ts";
 
@@ -49,7 +49,33 @@ const decode = (text: string) =>
     const point = code!.startsWith("x") || code!.startsWith("X") ? Number.parseInt(code!.slice(1), 16) : Number(code);
     return point > 0 && point <= 0x10ffff ? String.fromCodePoint(point) : entity;
   });
-const plainText = (html: string) => decode(html.replace(/<(script|style)\b[\s\S]*?<\/\1>/gi, " ").replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").replace(/\s([.,;:!?])/g, "$1").trim();
+const plainText = (html: string) => decode(html.replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").replace(/\s([.,;:!?])/g, "$1").trim();
+/** Tags that start a new line of text: paragraphs, headings and other blocks, and <br>. */
+const lineBreaks = /<\/?(?:p|div|h[1-6]|blockquote|section|article|header|footer|table|tr)\b[^>]*>|<br\b[^>]*>/gi;
+/**
+ * Store HTML → plain-text blocks: <ul>/<ol> items → a list; every other line (<p>, heading, <br>) → a
+ * paragraph. Inline tags are dropped, whitespace collapsed, empty blocks left out.
+ */
+const blocksOf = (html: string) => {
+  const blocks: DescriptionBlock[] = [];
+  const paragraphs = (chunk: string) => {
+    for (const line of chunk.replace(lineBreaks, "\n").split("\n")) {
+      const text = plainText(line);
+      if (text) blocks.push({ kind: "paragraph", text });
+    }
+  };
+  // Source line breaks are only whitespace in HTML; "\n" then marks the lines made by tags.
+  const source = html.replace(/<(script|style)\b[\s\S]*?<\/\1>/gi, " ").replace(/\s+/g, " ");
+  let rest = 0;
+  for (const list of source.matchAll(/<(ul|ol)\b[^>]*>([\s\S]*?)<\/\1\s*>/gi)) {
+    paragraphs(source.slice(rest, list.index));
+    const items = list[2].split(/<li\b[^>]*>/i).map(plainText).filter(Boolean);
+    if (items.length > 0) blocks.push({ kind: "list", items });
+    rest = list.index + list[0].length;
+  }
+  paragraphs(source.slice(rest));
+  return blocks;
+};
 
 const tagBadges: Record<string, Badge> = {
   recomendado: "RECOMMENDED",
@@ -150,6 +176,7 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
   const badges = [...new Set(tags.map((tag) => tagBadges[tag]).filter((badge): badge is Badge => Boolean(badge)))].sort(
     (a, b) => knownBadges.indexOf(a) - knownBadges.indexOf(b),
   );
+  const description = blocksOf(pt(product.description));
   const audience: Audience = tags.includes("masculino") ? "masculino" : tags.includes("unissex") ? "unissex" : "feminino";
 
   return {
@@ -160,7 +187,8 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
     audience,
     images: colors.length > 0 ? shared.filter((p) => !colors.some((c) => c.images[0]?.url === p.url)) : shared,
     colors,
-    shortDescription: plainText(pt(product.description)) || name,
+    shortDescription: description.flatMap((block) => (block.kind === "list" ? block.items : [block.text])).join(" ") || name,
+    ...(description.length > 0 && { description }),
     fabric: { care: [] },
     sizes: sortSizes(sold.map((variant) => variant.size)),
     badges,

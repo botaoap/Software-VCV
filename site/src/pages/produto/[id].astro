@@ -157,7 +157,21 @@ const crumbsLd = {
       <h1 id="product-title" class="mt-3 text-4xl md:text-5xl">{product.name}</h1>
       <p class="mt-4 font-sans text-2xl font-medium text-wine">{price.from && "A partir de "}{formatBrl(product.priceCents)}</p>
       {!product.available && <p class="mt-2"><span class="badge badge-alert">Esgotado</span></p>}
-      <p class="mt-5 text-lg leading-relaxed text-text-muted">{product.shortDescription}</p>
+      {
+        product.description ? (
+          <div class="mt-5 space-y-3 text-lg leading-relaxed text-text-muted">
+            {product.description.map((block) =>
+              block.kind === "list" ? (
+                <ul class="list-disc space-y-1 pl-6 marker:text-rose">{block.items.map((item) => <li>{item}</li>)}</ul>
+              ) : (
+                <p>{block.text}</p>
+              ),
+            )}
+          </div>
+        ) : (
+          <p class="mt-5 text-lg leading-relaxed text-text-muted">{product.shortDescription}</p>
+        )
+      }
 
       <form
         class="js-only mt-8"

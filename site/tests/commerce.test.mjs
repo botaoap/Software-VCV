@@ -246,6 +246,33 @@ test("nuvemshop mapping: every named entity a pt-BR editor writes is decoded (VC
   assert.equal(text("Cal&amp;ccedil;a &amp;lt;b&amp;gt;"), "Cal&ccedil;a &lt;b&gt;");
 });
 
+// VCV-50: the description keeps its paragraphs and lists as plain-text blocks (the page never gets
+// store HTML); shortDescription stays one line for meta tags, JSON-LD and search.
+test("nuvemshop mapping: the description keeps its paragraphs and lists (VCV-50)", () => {
+  const bermuda = fromNuvemshop(bermudaTeste, { categoryIds });
+  assert.deepEqual(bermuda.description, [
+    { kind: "paragraph", text: "Teste acima" },
+    { kind: "list", items: ["Cós elástico com cordão, bolsos funcionais e tecido macio.", "Conforto para o dia a dia.", "TESTE NUVEMSHOP"] },
+  ]);
+  assert.equal(bermuda.shortDescription, "Teste acima Cós elástico com cordão, bolsos funcionais e tecido macio. Conforto para o dia a dia. TESTE NUVEMSHOP");
+
+  const blocks = (html) => map({ description: { pt: html } }).description;
+  assert.deepEqual(blocks('<p><span style="color: #6b5f5a;">Tecido\n   macio</span>.</p>'), [{ kind: "paragraph", text: "Tecido macio." }], "inline tags and source line breaks are not blocks");
+  assert.deepEqual(blocks("<p>Um</p><p>Dois</p>"), [{ kind: "paragraph", text: "Um" }, { kind: "paragraph", text: "Dois" }]);
+  assert.deepEqual(blocks("Um<br>Dois<br />"), [{ kind: "paragraph", text: "Um" }, { kind: "paragraph", text: "Dois" }], "<br> lines");
+  assert.deepEqual(blocks("<h2>Detalhes</h2><ol><li>Um<br>dois</li>\n<li><strong>Três</strong></li></ol><p>Fim</p>"), [
+    { kind: "paragraph", text: "Detalhes" },
+    { kind: "list", items: ["Um dois", "Três"] },
+    { kind: "paragraph", text: "Fim" },
+  ]);
+  assert.deepEqual(blocks("<p>&lt;script&gt;alert(1)&lt;/script&gt;</p><script>alert(2)</script>"), [{ kind: "paragraph", text: "<script>alert(1)</script>" }], "text only: escaped markup stays text");
+
+  const empty = map({ description: { pt: "<p>&nbsp;</p><ul><li> </li></ul><p><br></p>" } });
+  assert.equal(empty.description, undefined, "empty blocks are dropped");
+  assert.equal(empty.shortDescription, "Vestido Ana", "no text: the name");
+  assert.ok(contentProducts.every((p) => p.description === undefined), "static products need no description blocks");
+});
+
 test("nuvemshop mapping: odd records never throw, and every skip says why (QA-14)", (t) => {
   const warn = t.mock.method(console, "warn", () => {});
   const skipped = (overrides, reason) => {
