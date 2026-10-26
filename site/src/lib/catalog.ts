@@ -69,6 +69,9 @@ export const shownPrice = (variants: Unit[]) => {
   return { cents, from: new Set(prices).size > 1, ...(compareAtCents > cents && { compareAtCents }) };
 };
 
+/** The PDP's struck-through price: its shown price's compare-at, never next to "A partir de". */
+export const struckPrice = (price: ReturnType<typeof shownPrice>) => (price.from ? undefined : price.compareAtCents);
+
 /** All of a product's description as one line of text (search): its blocks, else the short description. */
 export const descriptionText = (product: Pick<Product, "shortDescription" | "description">) =>
   product.description?.flatMap((block) => (block.kind === "list" ? block.items : [block.text])).join(" ") || product.shortDescription;

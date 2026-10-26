@@ -12,7 +12,7 @@ import { isAllowedImageUrl, remotePatterns } from "../src/lib/commerce/image-hos
 import { checkout as staticCheckout } from "../src/lib/commerce/adapters/static/checkout.ts";
 import { fromContent } from "../src/lib/commerce/adapters/static/map.ts";
 import { badges, variantKey } from "../src/lib/commerce/port.ts";
-import { coverOf, descriptionText, openingColorId, shownPrice, sizeHint, sizesForSale, sortSizes, uniqueById } from "../src/lib/catalog.ts";
+import { coverOf, descriptionText, openingColorId, struckPrice, shownPrice, sizeHint, sizesForSale, sortSizes, uniqueById } from "../src/lib/catalog.ts";
 
 const json = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
 const categoryIds = json("../content/categories.json").map((c) => c.id);
@@ -357,6 +357,10 @@ test("buy box: the struck price belongs to the shown price, never overstating th
   assert.deepEqual(shownPrice([was("a", "P", 100, 150), unit("a", "M", 100)]), { cents: 100, from: false }, "a unit at that price was never dearer");
   assert.deepEqual(shownPrice([was("a", "P", 120, 150), unit("a", "M", 100)]), { cents: 100, from: true }, "the discounted unit is not the shown price");
   assert.deepEqual(shownPrice([was("a", "P", 80, 150, false), was("a", "M", 100, 120)]), { cents: 100, from: false, compareAtCents: 120 }, "sold-out units are left out");
+  // CR-2: the PDP strikes the compare-at of its own shown price, never next to "A partir de".
+  assert.equal(struckPrice(shownPrice([was("a", "P", 100, 150), was("a", "M", 100, 150)])), 150);
+  assert.equal(struckPrice(shownPrice([was("a", "P", 100, 150), was("a", "M", 120, 150)])), undefined, "A partir de: nothing struck");
+  assert.equal(struckPrice(shownPrice([unit("a", "P", 100)])), undefined);
   // The Pantalona's lowest price for sale is a promotion (off-white M, 149,90 → 129,90).
   assert.deepEqual([nuvemshopProducts[0].priceCents, nuvemshopProducts[0].compareAtCents], [12990, 14990]);
   assert.equal(nuvemshopProducts[1].compareAtCents, undefined, "no promotion: nothing struck");

@@ -6,7 +6,7 @@ import Photo from "../../components/Photo.astro";
 import ProductCard from "../../components/ProductCard.astro";
 import SectionHeading from "../../components/SectionHeading.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { coverOf, galleryOf, openingColorId, shownPrice, sizeHint, sizesForSale } from "../../lib/catalog";
+import { coverOf, galleryOf, openingColorId, shownPrice, sizeHint, sizesForSale, struckPrice } from "../../lib/catalog";
 import { getCategoryOf, getProducts } from "../../lib/content";
 import { badgeLabels, formatBrl, labelOf } from "../../lib/format";
 import { photoSrc } from "../../lib/images";
@@ -45,6 +45,7 @@ const og = await getImage({ src: photoSrc(coverOf(product).url), width: 1200, he
 const openingColor = openingColorId(product);
 const offered = sizesForSale(product, openingColor);
 const price = shownPrice(product.variants);
+const wasCents = struckPrice(price);
 const label = labelOf(product.badges);
 
 const spec = [
@@ -157,8 +158,8 @@ const crumbsLd = {
       <h1 id="product-title" class="mt-3 text-4xl md:text-5xl">{product.name}</h1>
       <p class="mt-4 font-sans text-2xl font-medium text-wine">
         {price.from && "A partir de "}{formatBrl(product.priceCents)}
-        {product.compareAtCents && (
-          <>{" "}<span class="ml-2 text-base font-normal text-text-muted"><span class="sr-only">Preço anterior:</span> de <s>{formatBrl(product.compareAtCents)}</s></span></>
+        {wasCents && (
+          <>{" "}<span class="ml-2 text-base font-normal text-text-muted"><span class="sr-only">Preço anterior:</span> de <s>{formatBrl(wasCents)}</s></span></>
         )}
       </p>
       {!product.available && <p class="mt-2"><span class="badge badge-alert">Esgotado</span></p>}
