@@ -71,8 +71,12 @@ const blocksOf = (html: string) => {
       if (text) blocks.push({ kind: "paragraph", text });
     }
   };
-  // Source line breaks are only whitespace in HTML; "\n" then marks the lines made by tags.
-  const source = html.replace(/<(script|style)\b[\s\S]*?<\/\1>/gi, " ").replace(/\s+/g, " ");
+  // Comments (Word's conditional ones too), scripts and styles go first. Source line breaks are only
+  // whitespace in HTML; "\n" then marks the lines made by tags.
+  const source = html
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/<(script|style)\b[\s\S]*?<\/\1>/gi, " ")
+    .replace(/\s+/g, " ");
   // An outermost <ul>/<ol> (found by depth) is one list; the items of lists nested in it join it in order.
   let rest = 0;
   let depth = 0;

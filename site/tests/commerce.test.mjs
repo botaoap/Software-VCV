@@ -278,6 +278,11 @@ test("nuvemshop mapping: the description keeps its paragraphs and lists (VCV-50)
   }
   assert.deepEqual(blocks("<p>a</p></ul><ul><li>X<li>Y"), [{ kind: "paragraph", text: "a" }, { kind: "list", items: ["X", "Y"] }], "stray close, unclosed list");
 
+  // QA-3: HTML comments (Word pastes carry conditional ones) are dropped before anything else.
+  const word = '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Normal</w:View></w:WordDocument></xml><![endif]--><!--[if gte mso 10]><style>p.MsoNormal{margin:0}</style><![endif]--><p class="MsoNormal">Linho<o:p></o:p></p>';
+  assert.deepEqual(blocks(word), [{ kind: "paragraph", text: "Linho" }], "Word paste");
+  assert.deepEqual(blocks("<p>A<!-- x > y -->B</p>"), [{ kind: "paragraph", text: "AB" }]);
+
   const empty = map({ description: { pt: "<p>&nbsp;</p><ul><li> </li></ul><p><br></p>" } });
   assert.equal(empty.description, undefined, "empty blocks are dropped");
   assert.equal(empty.shortDescription, "Vestido Ana", "no text: the name");
