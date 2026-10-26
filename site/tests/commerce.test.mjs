@@ -269,6 +269,15 @@ test("nuvemshop mapping: the description keeps its paragraphs and lists (VCV-50)
   ]);
   assert.deepEqual(blocks("<p>&lt;script&gt;alert(1)&lt;/script&gt;</p><script>alert(2)</script>"), [{ kind: "paragraph", text: "<script>alert(1)</script>" }], "text only: escaped markup stays text");
 
+  // QA-2: a nested list is flattened into the outer one, in order.
+  for (const tag of ["ul", "ol"]) {
+    assert.deepEqual(blocks(`<${tag}><li>A<${tag}><li>A1</li><li>A2</li></${tag}></li><li>B</li></${tag}><p>depois</p>`), [
+      { kind: "list", items: ["A", "A1", "A2", "B"] },
+      { kind: "paragraph", text: "depois" },
+    ], `nested <${tag}>`);
+  }
+  assert.deepEqual(blocks("<p>a</p></ul><ul><li>X<li>Y"), [{ kind: "paragraph", text: "a" }, { kind: "list", items: ["X", "Y"] }], "stray close, unclosed list");
+
   const empty = map({ description: { pt: "<p>&nbsp;</p><ul><li> </li></ul><p><br></p>" } });
   assert.equal(empty.description, undefined, "empty blocks are dropped");
   assert.equal(empty.shortDescription, "Vestido Ana", "no text: the name");

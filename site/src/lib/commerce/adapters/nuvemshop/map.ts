@@ -73,14 +73,25 @@ const blocksOf = (html: string) => {
   };
   // Source line breaks are only whitespace in HTML; "\n" then marks the lines made by tags.
   const source = html.replace(/<(script|style)\b[\s\S]*?<\/\1>/gi, " ").replace(/\s+/g, " ");
+  // An outermost <ul>/<ol> (found by depth) is one list; the items of lists nested in it join it in order.
   let rest = 0;
-  for (const list of source.matchAll(/<(ul|ol)\b[^>]*>([\s\S]*?)<\/\1\s*>/gi)) {
-    paragraphs(source.slice(rest, list.index));
-    const items = list[2].split(/<li\b[^>]*>/i).map(plainText).filter(Boolean);
+  let depth = 0;
+  let start = 0;
+  const list = (end: number) => {
+    const items = source.slice(start, end).split(/<li\b[^>]*>/i).map(plainText).filter(Boolean);
     if (items.length > 0) blocks.push({ kind: "list", items });
-    rest = list.index + list[0].length;
+  };
+  for (const tag of source.matchAll(/<(\/?)(?:ul|ol)\b[^>]*>/gi)) {
+    if (!tag[1] && depth++ === 0) {
+      paragraphs(source.slice(rest, tag.index));
+      start = tag.index + tag[0].length;
+    } else if (tag[1] && depth > 0 && --depth === 0) {
+      list(tag.index);
+      rest = tag.index + tag[0].length;
+    }
   }
-  paragraphs(source.slice(rest));
+  if (depth > 0) list(source.length);
+  else paragraphs(source.slice(rest));
   return blocks;
 };
 
