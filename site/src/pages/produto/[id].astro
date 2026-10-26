@@ -5,6 +5,7 @@ import Icon from "../../components/Icon.astro";
 import Photo from "../../components/Photo.astro";
 import ProductCard from "../../components/ProductCard.astro";
 import SectionHeading from "../../components/SectionHeading.astro";
+import WasPrice from "../../components/WasPrice.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { coverOf, galleryOf, openingColorId, shownPrice, sizeHint, sizesForSale, struckPrice } from "../../lib/catalog";
 import { getCategoryOf, getProducts } from "../../lib/content";
@@ -159,7 +160,7 @@ const crumbsLd = {
       <p class="mt-4 font-sans text-2xl font-medium text-wine">
         {price.from && "A partir de "}{formatBrl(product.priceCents)}
         {wasCents && (
-          <>{" "}<span class="ml-2 text-base font-normal text-text-muted"><span class="sr-only">Preço anterior:</span> de <s>{formatBrl(wasCents)}</s></span></>
+          <>{" "}<WasPrice cents={wasCents} class="text-base" /></>
         )}
       </p>
       {!product.available && <p class="mt-2"><span class="badge badge-alert">Esgotado</span></p>}

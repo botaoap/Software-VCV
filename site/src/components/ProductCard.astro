@@ -1,6 +1,7 @@
 ---
 import type { Product } from "../lib/commerce/port";
 import Photo from "./Photo.astro";
+import WasPrice from "./WasPrice.astro";
 import { coverOf } from "../lib/catalog";
 import { badgeLabels, formatBrl, labelOf } from "../lib/format";
 import { url } from "../lib/url";
@@ -57,7 +58,7 @@ const MAX_SWATCHES = 5;
     <p class="mt-1 text-base font-medium text-wine">
       {formatBrl(product.priceCents)}
       {product.compareAtCents && (
-        <>{" "}<span class="ml-1 text-sm font-normal text-text-muted"><span class="sr-only">Preço anterior:</span> de <s>{formatBrl(product.compareAtCents)}</s></span></>
+        <>{" "}<WasPrice cents={product.compareAtCents} class="text-sm" /></>
       )}
     </p>
     {
