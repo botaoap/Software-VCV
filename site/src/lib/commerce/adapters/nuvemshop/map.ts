@@ -123,10 +123,12 @@ const blocksOf = (html: string) => {
 
 /** Meta descriptions are cut by search engines at about this length. */
 const SHORT_LENGTH = 160;
-/** The first block as one line (a list's items joined by "; "), cut at a word to SHORT_LENGTH with "…". */
+/** Texts joined by `separator`, or by a space after one that already ends in punctuation. */
+const joinText = (texts: string[], separator: string) =>
+  texts.reduce((line, text) => (!line ? text : `${line}${/[.!?;:…]$/.test(line) ? " " : separator}${text}`), "");
+/** Every block as one line (list items joined by "; ", blocks by ". "), cut at a word to SHORT_LENGTH with "…". */
 const shortOf = (blocks: DescriptionBlock[]) => {
-  const first = blocks[0];
-  const text = !first ? "" : first.kind === "list" ? first.items.join("; ") : first.text;
+  const text = joinText(blocks.map((block) => (block.kind === "list" ? joinText(block.items, "; ") : block.text)), ". ");
   if (text.length <= SHORT_LENGTH) return text;
   const cut = text.slice(0, SHORT_LENGTH);
   const word = cut.lastIndexOf(" ");

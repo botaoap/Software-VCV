@@ -260,7 +260,7 @@ test("nuvemshop mapping: the description keeps its paragraphs and lists (VCV-50)
     { kind: "paragraph", text: "Teste acima" },
     { kind: "list", items: ["Cós elástico com cordão, bolsos funcionais e tecido macio.", "Conforto para o dia a dia.", "TESTE NUVEMSHOP"] },
   ]);
-  assert.equal(bermuda.shortDescription, "Teste acima", "the first block");
+  assert.equal(bermuda.shortDescription, "Teste acima. Cós elástico com cordão, bolsos funcionais e tecido macio. Conforto para o dia a dia. TESTE NUVEMSHOP", "every block, not just a label (CR2-1)");
   assert.equal(descriptionText(bermuda), "Teste acima Cós elástico com cordão, bolsos funcionais e tecido macio. Conforto para o dia a dia. TESTE NUVEMSHOP", "search reads every block");
 
   const blocks = (html) => map({ description: { pt: html } }).description;
@@ -288,9 +288,10 @@ test("nuvemshop mapping: the description keeps its paragraphs and lists (VCV-50)
   assert.deepEqual(blocks(word), [{ kind: "paragraph", text: "Linho" }], "Word paste");
   assert.deepEqual(blocks("<p>A<!-- x > y -->B</p>"), [{ kind: "paragraph", text: "AB" }]);
 
-  // QA-5: the short description is the first block, at most 160 characters, cut at a word.
+  // QA-5 / CR2-1: the short description is every block in one line, at most 160 characters, cut at a word.
   const short = (html) => map({ description: { pt: html } }).shortDescription;
-  assert.equal(short("<ul><li>Cós elástico</li><li>Bolsos</li></ul><p>Fim</p>"), "Cós elástico; Bolsos", "a list first: its items");
+  assert.equal(short("<ul><li>Cós elástico</li><li>Bolsos</li></ul><p>Fim</p>"), "Cós elástico; Bolsos. Fim", "list items joined by '; ', blocks by '. '");
+  assert.equal(short("<h2>Detalhes</h2><p>Leve!</p><ul><li>Linho.</li><li>Algodão</li></ul>"), "Detalhes. Leve! Linho. Algodão", "no separator after punctuation");
   const long = "Vestido midi de linho, leve e fresco, ".repeat(6).trim();
   const cut = short(`<p>${long}</p><p>Outro</p>`);
   assert.ok(cut.length <= 160 && cut.endsWith("…"), cut);
