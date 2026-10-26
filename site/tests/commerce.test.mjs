@@ -236,7 +236,8 @@ test("nuvemshop mapping: descriptions decode the common HTML entities (CR-9)", (
 // site showed as typed.
 
 test("nuvemshop mapping: every named entity a pt-BR editor writes is decoded (VCV-50)", () => {
-  const text = (html) => map({ description: { pt: html } }).shortDescription;
+  // The decoded text as the page shows it (a symbols-only line would make the short description the name).
+  const text = (html) => map({ description: { pt: html } }).description[0].text;
   assert.match(fromNuvemshop(bermudaTeste, { categoryIds }).description[1].items[0], /^Cós elástico com cordão/, "the real store text");
   assert.equal(text("&Agrave;&agrave; &Aacute;&atilde; &Ccedil;&ccedil; &Ntilde;&ntilde; &Ecirc;&otilde;&uuml;&yuml;"), "Àà Áã Çç Ññ Êõüÿ");
   assert.equal(text("1&ordm; 2&ordf; 30&deg; &copy; &reg; &sup2; &frac12; &iquest;"), "1º 2ª 30° © ® ² ½ ¿");
@@ -314,6 +315,8 @@ test("nuvemshop mapping: the description keeps its paragraphs and lists (VCV-50)
   const empty = map({ description: { pt: "<p>&nbsp;</p><ul><li> </li></ul><p><br></p>" } });
   assert.equal(empty.description, undefined, "empty blocks are dropped");
   assert.equal(empty.shortDescription, "Vestido Ana", "no text: the name");
+  assert.equal(short(`<p>${".".repeat(300)}</p>`), "Vestido Ana", "no letter or digit: the name (QA3-3)");
+  assert.equal(short("<p>— …</p>"), "Vestido Ana");
   assert.ok(contentProducts.every((p) => p.description === undefined), "static products need no description blocks");
 });
 

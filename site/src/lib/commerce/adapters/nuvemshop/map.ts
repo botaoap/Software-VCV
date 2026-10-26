@@ -144,6 +144,9 @@ const shortOf = (blocks: DescriptionBlock[]) => {
   return `${(end > 0 ? cut.slice(0, end) : chars.slice(0, SHORT_LENGTH - 1).join("")).replace(/[\s.,;:–—-]+$/, "")}…`;
 };
 
+/** The text when it has a letter or a digit, else "" (a line of dots or dashes says nothing). */
+const words = (text: string) => (/[\p{L}\p{N}]/u.test(text) ? text : "");
+
 const tagBadges: Record<string, Badge> = {
   recomendado: "RECOMMENDED",
   "mais-vendido": "BEST_SELLER",
@@ -263,7 +266,7 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
     audience,
     images: colors.length > 0 ? shared.filter((p) => !colors.some((c) => c.images[0]?.url === p.url)) : shared,
     colors,
-    shortDescription: shortOf(description) || name,
+    shortDescription: words(shortOf(description)) || name,
     ...(description.length > 0 && { description }),
     fabric: { care: [] },
     sizes: sortSizes(sold.map((variant) => variant.size)),
