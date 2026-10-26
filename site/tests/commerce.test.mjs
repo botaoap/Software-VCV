@@ -315,6 +315,14 @@ test("nuvemshop mapping: a photo's alt is the store's pt text, else the product 
   assert.equal(alt({ pt: "" }), "Vestido Ana");
   assert.equal(alt({}), "Vestido Ana");
   assert.equal(alt(["Vestido coral"]), "Vestido coral", "the older list shape still works");
+  // QA-10: a plain string works; anything that is not text is ignored, never a throw; entities decoded.
+  assert.equal(alt("  Vestido &amp; cinto "), "Vestido & cinto");
+  assert.equal(alt({ pt: "Cal&ccedil;a&nbsp;azul" }), "Calça azul");
+  for (const odd of [[5], [null], [{ pt: "x" }], { pt: 5 }, { pt: null, es: ["x"] }, 5, true, null]) {
+    assert.equal(alt(odd), "Vestido Ana", `alt ${JSON.stringify(odd)}`);
+  }
+  const named = map({ name: { pt: "Cal&ccedil;a &amp; Blusa" }, handle: {}, images: [{ id: 10, src: "https://dcdn.mitiendanube.com/a.jpg", position: 1 }] });
+  assert.deepEqual([named.name, named.id, named.colors[0].images[0].alt], ["Calça & Blusa", "calca-blusa", "Calça & Blusa"], "the name is decoded too");
   assert.equal(fromNuvemshop(bermudaTeste, { categoryIds }).images[0].alt, "Bermuda Teste", "the real store photo");
 });
 

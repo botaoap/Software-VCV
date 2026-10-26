@@ -10,7 +10,11 @@ import type { Localized, NsImage, NsProduct, NsVariant } from "./api.ts";
 //   - tags carry the curated marks: "recomendado", "mais-vendido", "destaque", "novo", "ultimas-pecas",
 //     and the audience: "masculino" / "unissex" (default feminino)
 
-const pt = (text: Localized | undefined) => (text?.pt ?? text?.es ?? text?.en ?? "").trim();
+/** The pt text (else es, en) of a localized field; anything that is not text reads as "". */
+const pt = (text: Localized | undefined) => {
+  const value = text?.pt ?? text?.es ?? text?.en;
+  return typeof value === "string" ? value.trim() : "";
+};
 const slug = (text: string) =>
   text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 /** "189.90" → 18990; anything else (empty, "abc", "0", negative) → undefined, never a R$ 0,00 price. */
@@ -72,6 +76,8 @@ const decode = (text: string) =>
     const point = code!.startsWith("x") || code!.startsWith("X") ? Number.parseInt(code!.slice(1), 16) : Number(code);
     return point > 0 && point <= 0x10ffff ? String.fromCodePoint(point) : entity;
   });
+/** Store text that is not HTML (a name, an alt): entities decoded, whitespace collapsed. */
+const cleanText = (text: string) => decode(text).replace(/\s+/g, " ").trim();
 const plainText = (html: string) => decode(html.replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").replace(/\s([.,;:!?])/g, "$1").trim();
 /** Tags that start a new line of text: paragraphs, headings and other blocks, and <br>. */
 const lineBreaks = /<\/?(?:p|div|h[1-6]|blockquote|section|article|header|footer|table|tr)\b[^>]*>|<br\b[^>]*>/gi;
@@ -150,13 +156,13 @@ export type MapOptions = {
 };
 
 export function fromNuvemshop(product: NsProduct, options: MapOptions): Product | null {
-  const id = slug(pt(product.handle) || pt(product.name));
+  const id = slug(pt(product.handle) || cleanText(pt(product.name)));
   // A record the site cannot show is skipped (never a failed build), with the reason in the build log.
   const skip = (reason: string) => {
     console.warn(`Nuvemshop product "${id || product.id}" skipped: ${reason}`);
     return null;
   };
-  const name = pt(product.name);
+  const name = cleanText(pt(product.name));
   const categoryId = (product.categories ?? []).map((c) => pt(c.handle)).find((handle) => options.categoryIds.includes(handle));
   // A variant with no valid price is not for sale on the site.
   const forSale = (product.variants ?? []).filter((variant) => priceOf(variant));
@@ -172,7 +178,7 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
 
   const photo = (image: NsImage): Photo => ({
     url: image.src.startsWith("//") ? `https:${image.src}` : image.src,
-    alt: (Array.isArray(image.alt) ? (image.alt[0] ?? "").trim() : pt(image.alt)) || name,
+    alt: cleanText(typeof image.alt === "string" ? image.alt : Array.isArray(image.alt) ? (typeof image.alt[0] === "string" ? image.alt[0] : "") : pt(image.alt)) || name,
     width: image.width ?? DEFAULT_SIZE.width,
     height: image.height ?? DEFAULT_SIZE.height,
   });
