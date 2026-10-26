@@ -15,6 +15,8 @@ export type NsVariant = {
   /** Decimal string, e.g. "189.00". */
   price: string;
   promotional_price: string | null;
+  /** The "was" price the store shows struck through; often equal to `price` (then nothing is struck). */
+  compare_at_price?: string | null;
   /** null = stock not managed (always for sale). */
   stock: number | null;
   sku: string | null;

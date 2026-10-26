@@ -32,7 +32,8 @@ const contentProducts = json("../content/products.json").map(({ id, category, ..
 );
 const nuvemshopProducts = json("./fixtures/nuvemshop-products.json").flatMap((p) => fromNuvemshop(p, { categoryIds }) ?? []);
 
-const adapters = { static: contentProducts, nuvemshop: nuvemshopProducts };
+const bermudaTeste = json("./fixtures/nuvemshop-bermuda-teste.json"); // the real store's test product (VCV-50)
+const adapters = { static: contentProducts, nuvemshop: nuvemshopProducts, "nuvemshop (Bermuda Teste)": [fromNuvemshop(bermudaTeste, { categoryIds })] };
 
 for (const [name, products] of Object.entries(adapters)) {
   test(`${name} adapter: every product honours the port's Product contract`, () => {
@@ -60,8 +61,10 @@ for (const [name, products] of Object.entries(adapters)) {
         if (v.colorId) assert.ok(p.colors.some((c) => c.id === v.colorId), `${p.id}: variant color ${v.colorId} exists`);
         assert.ok(v.ref === undefined || typeof v.ref === "string", `${p.id}: ref is opaque text`);
         assert.ok(Number.isInteger(v.priceCents) && v.priceCents > 0, `${p.id}: ${v.key} has its own integer price`);
+        assert.ok(v.compareAtCents === undefined || (Number.isInteger(v.compareAtCents) && v.compareAtCents > v.priceCents), `${p.id}: ${v.key} compare-at above its price`);
       }
       assert.equal(p.priceCents, shownPrice(p.variants).cents, `${p.id}: price = lowest price for sale`);
+      assert.equal(p.compareAtCents, shownPrice(p.variants).compareAtCents, `${p.id}: compare-at of the shown price`);
       assert.equal(p.available, p.variants.some((v) => v.available), `${p.id}: available = any variant for sale`);
     }
   });
@@ -231,7 +234,6 @@ test("nuvemshop mapping: descriptions decode the common HTML entities (CR-9)", (
 
 // VCV-50: the store editor writes accents as named entities ("C&oacute;s el&aacute;stico"), which the
 // site showed as typed.
-const bermudaTeste = json("./fixtures/nuvemshop-bermuda-teste.json");
 
 test("nuvemshop mapping: every named entity a pt-BR editor writes is decoded (VCV-50)", () => {
   const text = (html) => map({ description: { pt: html } }).shortDescription;
@@ -282,6 +284,42 @@ test("nuvemshop mapping: a photo's alt is the store's pt text, else the product 
   assert.equal(alt({}), "Vestido Ana");
   assert.equal(alt(["Vestido coral"]), "Vestido coral", "the older list shape still works");
   assert.equal(fromNuvemshop(bermudaTeste, { categoryIds }).images[0].alt, "Bermuda Teste", "the real store photo");
+});
+
+// VCV-50: the price before a promotion is shown struck through ("de R$ 150,00"); the price charged
+// (bag, JSON-LD) stays the selling one.
+test("nuvemshop mapping: a promotion keeps the regular price as the compare-at price (VCV-50)", () => {
+  const bermuda = fromNuvemshop(bermudaTeste, { categoryIds });
+  assert.deepEqual(bermuda.variants.map((v) => [v.priceCents, v.compareAtCents]), [[10000, 15000]], "price 150, compare 150, promo 100");
+  assert.deepEqual([bermuda.priceCents, bermuda.compareAtCents], [10000, 15000]);
+
+  const prices = (overrides) => {
+    const [variant] = map({ variants: [nsVariant(1, ["Coral", "M"], { price: "150.00", ...overrides })] }).variants;
+    return [variant.priceCents, variant.compareAtCents];
+  };
+  assert.deepEqual(prices({ promotional_price: "100.00" }), [10000, 15000], "promo, no compare_at_price");
+  assert.deepEqual(prices({ promotional_price: "100.00", compare_at_price: "200.00" }), [10000, 15000], "a promo is struck against the regular price");
+  for (const promotional_price of [null, "", "150.00", "180.00", "0.00", "abc"]) {
+    assert.deepEqual(prices({ promotional_price, compare_at_price: "150.00" }), [15000, undefined], `promo ${promotional_price}, compare = price: nothing struck`);
+  }
+  assert.deepEqual(prices({ compare_at_price: "180.00" }), [15000, 18000], "compare_at_price higher, no promo");
+  assert.deepEqual(prices({ promotional_price: "180.00", compare_at_price: "180.00" }), [15000, 18000], "an invalid promo falls back to compare_at_price");
+  for (const compare_at_price of ["120.00", "", "abc", "0", "-200", null, undefined]) {
+    assert.deepEqual(prices({ compare_at_price }), [15000, undefined], `compare_at_price ${compare_at_price}: nothing struck`);
+  }
+  assert.ok(contentProducts.every((p) => p.compareAtCents === undefined && p.variants.every((v) => v.compareAtCents === undefined)), "static products: none");
+});
+
+test("buy box: the struck price belongs to the shown price, never overstating the discount (VCV-50)", () => {
+  const was = (colorId, size, priceCents, compareAtCents, available = true) => ({ ...unit(colorId, size, priceCents, available), compareAtCents });
+  assert.deepEqual(shownPrice([was("a", "P", 100, 150), was("a", "M", 100, 150)]), { cents: 100, from: false, compareAtCents: 150 });
+  assert.deepEqual(shownPrice([was("a", "P", 100, 150), was("a", "M", 100, 130)]), { cents: 100, from: false, compareAtCents: 130 }, "the smaller discount");
+  assert.deepEqual(shownPrice([was("a", "P", 100, 150), unit("a", "M", 100)]), { cents: 100, from: false }, "a unit at that price was never dearer");
+  assert.deepEqual(shownPrice([was("a", "P", 120, 150), unit("a", "M", 100)]), { cents: 100, from: true }, "the discounted unit is not the shown price");
+  assert.deepEqual(shownPrice([was("a", "P", 80, 150, false), was("a", "M", 100, 120)]), { cents: 100, from: false, compareAtCents: 120 }, "sold-out units are left out");
+  // The Pantalona's lowest price for sale is a promotion (off-white M, 149,90 → 129,90).
+  assert.deepEqual([nuvemshopProducts[0].priceCents, nuvemshopProducts[0].compareAtCents], [12990, 14990]);
+  assert.equal(nuvemshopProducts[1].compareAtCents, undefined, "no promotion: nothing struck");
 });
 
 test("nuvemshop mapping: odd records never throw, and every skip says why (QA-14)", (t) => {

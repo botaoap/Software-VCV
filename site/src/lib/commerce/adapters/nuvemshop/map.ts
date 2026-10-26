@@ -24,6 +24,13 @@ const priceOf = (variant: NsVariant) => {
   const promo = cents(variant.promotional_price);
   return price && promo && promo < price ? promo : price;
 };
+/** The price struck through: the regular one under a promotion, else compare_at_price; only when above the price charged. */
+const compareAtOf = (variant: NsVariant) => {
+  const charged = priceOf(variant)!;
+  const regular = cents(variant.price)!;
+  const compareAt = charged < regular ? regular : cents(variant.compare_at_price);
+  return compareAt && compareAt > charged ? compareAt : undefined;
+};
 /** The HTML 4 Latin-1 names, U+00A0 to U+00FF in order: the accents the store editor writes (&oacute; = ó). */
 const latin1 = (
   "nbsp iexcl cent pound curren yen brvbar sect uml copy ordf laquo not shy reg macr deg plusmn sup2 sup3 acute micro para " +
@@ -161,7 +168,16 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
     }
     const image = images.find((i) => i.id === variant.image_id);
     if (color && image && !color.images.some((p) => p.url === photo(image).url)) color.images.push(photo(image));
-    variants.push({ key, colorId: color?.id, size, priceCents: priceOf(variant)!, available: variant.stock === null || variant.stock > 0, ref: String(variant.id) });
+    const compareAtCents = compareAtOf(variant);
+    variants.push({
+      key,
+      colorId: color?.id,
+      size,
+      priceCents: priceOf(variant)!,
+      ...(compareAtCents && { compareAtCents }),
+      available: variant.stock === null || variant.stock > 0,
+      ref: String(variant.id),
+    });
   }
   const colors = [...colorsBySlug.values()];
   // On a product with colors, a variant with no color would be a size of no color: not sold.
@@ -179,11 +195,13 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
   const description = blocksOf(pt(product.description));
   const audience: Audience = tags.includes("masculino") ? "masculino" : tags.includes("unissex") ? "unissex" : "feminino";
 
+  const price = shownPrice(sold);
   return {
     id,
     name,
     categoryId,
-    priceCents: shownPrice(sold).cents,
+    priceCents: price.cents,
+    ...(price.compareAtCents && { compareAtCents: price.compareAtCents }),
     audience,
     images: colors.length > 0 ? shared.filter((p) => !colors.some((c) => c.images[0]?.url === p.url)) : shared,
     colors,

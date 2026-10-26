@@ -57,6 +57,8 @@ export type Variant = {
   size: string;
   /** What the platform charges for this unit (promotions included). */
   priceCents: Cents;
+  /** The price shown struck through ("de R$ 150,00"): the price before a promotion. Only when above `priceCents`. */
+  compareAtCents?: Cents;
   available: boolean;
   /** The platform's own id for this unit, opaque to the site (only its adapter reads it). */
   ref?: string;
@@ -70,6 +72,8 @@ export type Product = {
   categoryId: string;
   /** The lowest price among variants for sale (all when none is): lib/catalog.ts `shownPrice`. */
   priceCents: Cents;
+  /** The struck-through price that goes with `priceCents` (lib/catalog.ts `shownPrice`), when there is one. */
+  compareAtCents?: Cents;
   audience: Audience;
   /** Photos shared by every color. */
   images: Photo[];
