@@ -48,3 +48,7 @@ captures
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
+# Local env files (store token); site/.env.example is the committed template
+.env
+.env.*
+!.env.example

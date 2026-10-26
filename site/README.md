@@ -63,6 +63,14 @@ for the rails), and the UpSeller NF-e setting for Nuvemshop orders. Until then t
 adapter keeps the bag working, saved in the browser, with "Finalizar compra" disabled and
 "Pagamento online em breve"; no WhatsApp order is triggered.
 
+### See the Nuvemshop store locally
+
+`cp .env.example .env`, fill in `NUVEMSHOP_STORE_ID` and `NUVEMSHOP_TOKEN`, then `npm run dev` (or
+`npm run build`). With `PUBLIC_COMMERCE=nuvemshop` the whole catalog comes from the store (products
+not following the store conventions are skipped, with the reason in the terminal); delete `.env` or
+set `PUBLIC_COMMERCE=static` to go back to `content/products.json`. `.env` is git-ignored. GitHub
+Pages still builds the static catalog (Gabriel, 2026-10-26: switch once the real catalog is in the store).
+
 ### Nuvemshop end-to-end test
 
 `npm run test:e2e` (not part of `npm test`, which stays offline) reads the real store through the
