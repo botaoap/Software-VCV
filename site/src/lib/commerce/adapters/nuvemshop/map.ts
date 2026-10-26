@@ -255,13 +255,11 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
   const description = blocksOf(pt(product.description));
   const audience: Audience = tags.includes("masculino") ? "masculino" : tags.includes("unissex") ? "unissex" : "feminino";
 
-  const price = shownPrice(sold);
   return {
     id,
     name,
     categoryId,
-    priceCents: price.cents,
-    ...(price.compareAtCents && { compareAtCents: price.compareAtCents }),
+    priceCents: shownPrice(sold).cents,
     audience,
     images: colors.length > 0 ? shared.filter((p) => !colors.some((c) => c.images[0]?.url === p.url)) : shared,
     colors,

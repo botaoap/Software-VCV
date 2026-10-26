@@ -72,8 +72,6 @@ export type Product = {
   categoryId: string;
   /** The lowest price among variants for sale (all when none is): lib/catalog.ts `shownPrice`. */
   priceCents: Cents;
-  /** The struck-through price that goes with `priceCents` (lib/catalog.ts `shownPrice`), when there is one. */
-  compareAtCents?: Cents;
   audience: Audience;
   /** Photos shared by every color. */
   images: Photo[];
