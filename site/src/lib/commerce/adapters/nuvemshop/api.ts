@@ -6,7 +6,8 @@
  */
 export type Localized = { pt?: string; es?: string; en?: string };
 
-export type NsImage = { id: number; src: string; position: number; alt?: string[]; width?: number; height?: number };
+/** `alt` is localized ({ "pt": "" } when blank); older payloads sent a list of strings. */
+export type NsImage = { id: number; src: string; position: number; alt?: Localized | string[]; width?: number; height?: number };
 
 export type NsVariant = {
   id: number;

@@ -273,6 +273,17 @@ test("nuvemshop mapping: the description keeps its paragraphs and lists (VCV-50)
   assert.ok(contentProducts.every((p) => p.description === undefined), "static products need no description blocks");
 });
 
+// VCV-50: the API sends a photo's alt localized ({ "pt": "" }), not as a list.
+test("nuvemshop mapping: a photo's alt is the store's pt text, else the product name (VCV-50)", () => {
+  const alt = (value) => map({ images: [{ id: 10, src: "https://dcdn.mitiendanube.com/a.jpg", position: 1, alt: value }] }).colors[0].images[0].alt;
+  assert.equal(alt({ pt: "Bermuda azul de frente" }), "Bermuda azul de frente");
+  assert.equal(alt({ pt: "  " }), "Vestido Ana", "blank alt");
+  assert.equal(alt({ pt: "" }), "Vestido Ana");
+  assert.equal(alt({}), "Vestido Ana");
+  assert.equal(alt(["Vestido coral"]), "Vestido coral", "the older list shape still works");
+  assert.equal(fromNuvemshop(bermudaTeste, { categoryIds }).images[0].alt, "Bermuda Teste", "the real store photo");
+});
+
 test("nuvemshop mapping: odd records never throw, and every skip says why (QA-14)", (t) => {
   const warn = t.mock.method(console, "warn", () => {});
   const skipped = (overrides, reason) => {

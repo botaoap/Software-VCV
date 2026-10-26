@@ -122,7 +122,7 @@ export function fromNuvemshop(product: NsProduct, options: MapOptions): Product 
 
   const photo = (image: NsImage): Photo => ({
     url: image.src.startsWith("//") ? `https:${image.src}` : image.src,
-    alt: image.alt?.[0]?.trim() || name,
+    alt: (Array.isArray(image.alt) ? (image.alt[0] ?? "").trim() : pt(image.alt)) || name,
     width: image.width ?? DEFAULT_SIZE.width,
     height: image.height ?? DEFAULT_SIZE.height,
   });
