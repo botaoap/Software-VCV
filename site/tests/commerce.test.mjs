@@ -300,6 +300,12 @@ test("nuvemshop mapping: the description keeps its paragraphs and lists (VCV-50)
   const emoji = short(`<p>${"a".repeat(158)}\u{1F457}\u{1F457}\u{1F457}</p>`);
   assert.equal(emoji, `${"a".repeat(158)}\u{1F457}…`, "cut by code point (QA2-2)");
   assert.ok(!/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/.test(emoji), "no half surrogate pair");
+  // QA2-3: no punctuation before the "…", and a cut list keeps whole items.
+  for (const mark of [" —", ".", ",", " -", ":"]) {
+    assert.equal(short(`<p>${"a".repeat(150)}${mark} ${"b".repeat(20)}</p>`), `${"a".repeat(150)}…`, `"${mark}" before the cut`);
+  }
+  const items = Array.from({ length: 6 }, (_, i) => `Item ${i + 1}, algodão egípcio penteado`);
+  assert.equal(short(`<ul>${items.map((item) => `<li>${item}</li>`).join("")}</ul>`), `${items.slice(0, 4).join("; ")}…`, "whole items only");
   assert.equal(map({ description: { pt: `<p>${long}</p>` } }).description[0].text, long, "the page keeps the full text");
   assert.equal(descriptionText({ shortDescription: "Só isto" }), "Só isto", "no blocks: the short description");
   const contentFile = json("../content/products.json");

@@ -132,9 +132,11 @@ const shortOf = (blocks: DescriptionBlock[]) => {
   // Counted in code points, so an emoji is never split in half.
   const chars = [...text];
   if (chars.length <= SHORT_LENGTH) return text;
+  // At the last list item that fits when that keeps most of the text, else at the last word.
   const cut = chars.slice(0, SHORT_LENGTH).join("");
-  const word = cut.lastIndexOf(" ");
-  return `${(word > 0 ? cut.slice(0, word) : chars.slice(0, SHORT_LENGTH - 1).join("")).replace(/[\s,;:]+$/, "")}…`;
+  const item = cut.lastIndexOf("; ");
+  const end = item > SHORT_LENGTH / 2 ? item : cut.lastIndexOf(" ");
+  return `${(end > 0 ? cut.slice(0, end) : chars.slice(0, SHORT_LENGTH - 1).join("")).replace(/[\s.,;:–—-]+$/, "")}…`;
 };
 
 const tagBadges: Record<string, Badge> = {
