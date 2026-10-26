@@ -297,6 +297,9 @@ test("nuvemshop mapping: the description keeps its paragraphs and lists (VCV-50)
   assert.ok(cut.length <= 160 && cut.endsWith("…"), cut);
   assert.ok(long.startsWith(cut.slice(0, -1).replace(/,$/, "")) && /[\s,]/.test(long[cut.length - 1]), `cut at a word: ${cut}`);
   assert.equal(short(`<p>${"a".repeat(200)}</p>`).length, 160, "one long word is cut too");
+  const emoji = short(`<p>${"a".repeat(158)}\u{1F457}\u{1F457}\u{1F457}</p>`);
+  assert.equal(emoji, `${"a".repeat(158)}\u{1F457}…`, "cut by code point (QA2-2)");
+  assert.ok(!/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/.test(emoji), "no half surrogate pair");
   assert.equal(map({ description: { pt: `<p>${long}</p>` } }).description[0].text, long, "the page keeps the full text");
   assert.equal(descriptionText({ shortDescription: "Só isto" }), "Só isto", "no blocks: the short description");
   const contentFile = json("../content/products.json");

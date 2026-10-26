@@ -129,10 +129,12 @@ const joinText = (texts: string[], separator: string) =>
 /** Every block as one line (list items joined by "; ", blocks by ". "), cut at a word to SHORT_LENGTH with "…". */
 const shortOf = (blocks: DescriptionBlock[]) => {
   const text = joinText(blocks.map((block) => (block.kind === "list" ? joinText(block.items, "; ") : block.text)), ". ");
-  if (text.length <= SHORT_LENGTH) return text;
-  const cut = text.slice(0, SHORT_LENGTH);
+  // Counted in code points, so an emoji is never split in half.
+  const chars = [...text];
+  if (chars.length <= SHORT_LENGTH) return text;
+  const cut = chars.slice(0, SHORT_LENGTH).join("");
   const word = cut.lastIndexOf(" ");
-  return `${(word > 0 ? cut.slice(0, word) : cut.slice(0, SHORT_LENGTH - 1)).replace(/[\s,;:]+$/, "")}…`;
+  return `${(word > 0 ? cut.slice(0, word) : chars.slice(0, SHORT_LENGTH - 1).join("")).replace(/[\s,;:]+$/, "")}…`;
 };
 
 const tagBadges: Record<string, Badge> = {
