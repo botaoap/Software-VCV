@@ -54,15 +54,14 @@ const others = (
   "sub 2282 sup 2283 nsub 2284 sube 2286 supe 2287 oplus 2295 otimes 2297 perp 22a5 sdot 22c5 lceil 2308 rceil 2309 " +
   "lfloor 230a rfloor 230b lang 2329 rang 232a loz 25ca spades 2660 clubs 2663 hearts 2665 diams 2666"
 ).split(" ");
-/** The HTML 4 entity set (plus &apos;), name → character. */
-const entities: Record<string, string> = {
-  ...Object.fromEntries([
+/** The HTML 4 entity set (plus &apos;), name → character; &nbsp; is U+00A0, collapsed like any whitespace. */
+const entities: Record<string, string> = Object.fromEntries(
+  [
     ...latin1.map((name, index) => [name, 0xa0 + index]),
     ...greek.flatMap((name, index) => [...(name ? [[name, 0x391 + index]] : []), [(name || "sigmaf").toLowerCase(), 0x3b1 + index]]),
     ...others.flatMap((token, index) => (index % 2 === 0 ? [[token, Number.parseInt(others[index + 1], 16)]] : [])),
-  ].map(([name, point]) => [name, String.fromCodePoint(point as number)])),
-  nbsp: " ",
-};
+  ].map(([name, point]) => [name, String.fromCodePoint(point as number)]),
+);
 /**
  * Named (the HTML 4 set, case-sensitive as in HTML) and numeric (&#39; &#233; &#xE9;) entities,
  * decoded once (store text "&amp;lt;" stays "&lt;"); anything else is kept as typed.
