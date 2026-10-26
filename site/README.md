@@ -84,12 +84,15 @@ handle) and on PRs/pushes touching `src/lib/commerce/`, what it reads (`src/lib/
 `NUVEMSHOP_STORE_ID` and `NUVEMSHOP_TOKEN`. Without them a PR or push only notes "not configured"
 (with a warning if just one is set); a manual run fails.
 
-Getting a token for one store (check each step against the current Nuvemshop/Tiendanube docs): in
-the Nuvemshop Partners portal create an app with the "read products" scope; install it on the store,
-which redirects to the app's URL with a `code`; within a few minutes exchange it with
-`POST https://www.tiendanube.com/apps/authorize/token` (`client_id`, `client_secret`,
-`grant_type=authorization_code`, `code`). The answer's `access_token` is `NUVEMSHOP_TOKEN` and its
-`user_id` is `NUVEMSHOP_STORE_ID`. The token is a secret: keep it out of the repo and of `PUBLIC_*`.
+Getting a token for one store ([apps FAQ](https://nuvemshop.dev/en-US/apps/admin/faq),
+[authentication](https://nuvemshop.dev/en-US/api/authentication)): in the Nuvemshop Partners portal
+create a private app ("For your customers") with the `read_products` scope and a Redirect URL you
+control (the default Partners URL lands on the partner login instead). Signed in to the store's
+admin, open `<store admin URL>/admin/apps/<app id>/authorize` and accept; the browser lands on the
+Redirect URL with `?code=…`. Within 5 minutes exchange it with a JSON body:
+`curl -X POST https://www.tiendanube.com/apps/authorize/token -H 'Content-Type: application/json'
+-d '{"client_id":"…","client_secret":"…","grant_type":"authorization_code","code":"…"}'`.
+The answer's `access_token` is `NUVEMSHOP_TOKEN` and its `user_id` is `NUVEMSHOP_STORE_ID`. The token is a secret: keep it out of the repo and of `PUBLIC_*`.
 
 **Contact channels are optional** (`content/brand.json` → `contact.whatsapp` / `instagram` / `email`).
 VCV has none yet (Felipe, 2026-10), so no WhatsApp button, Instagram link, `mailto:` or JSON-LD
